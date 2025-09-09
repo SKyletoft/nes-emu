@@ -8,18 +8,27 @@
 		flake-utils.lib.eachDefaultSystem(system:
 			let
 				pkgs = nixpkgs.legacyPackages.${system};
+				nativeBuildInputs = with pkgs; [
+					rustc
+					cargo
+					clippy
+					rustfmt
+					rust-analyzer
+				];
+				buildInputs = with pkgs; [
+					gcc
+				];
 			in {
 				devShells.default = pkgs.mkShell {
-					nativeBuildInputs = with pkgs; [
-						rustc
-						cargo
-						clippy
-						rustfmt
-						rust-analyzer
-					];
-					buildInputs = with pkgs; [
-						gcc
-					];
+					inherit nativeBuildInputs buildInputs;
+				};
+				packages.default = pkgs.rustPlatform.buildRustPackage {
+					pname = "nes-emu";
+					version = "0.0.1";
+					src = ./.;
+					cargoLock.lockFile = ./Cargo.lock;
+
+					inherit buildInputs;
 				};
 			}
 		);
