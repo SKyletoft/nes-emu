@@ -10,13 +10,18 @@ impl TryFrom<Vec<u8>> for NesFile {
 			bail!("Missing header!");
 		}
 
-		todo!()
+		Ok(NesFile {})
 	}
 }
 
 #[cfg(test)]
 mod test {
+	use super::*;
+
 	#[test]
 	fn load_smb3() {
+		let buffer = std::fs::read("non-free/SMB3.nes").expect("Failed to read SMB3.nes");
+		let result = NesFile::try_from(buffer);
+		assert!(result.is_ok());
 	}
 }
