@@ -14,6 +14,8 @@
 					clippy
 					rustfmt
 					rust-analyzer
+
+					python3
 				];
 				buildInputs = with pkgs; [
 					gcc
