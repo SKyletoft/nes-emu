@@ -83,6 +83,12 @@ instr_modes = {
 	"NOPU": ["Immediate","ZeroPage","ZeroPageX","Absolute","AbsoluteX","AbsoluteY"], # unofficial NOP variants
 }
 
+conditional_jumps = {
+	"BCC", "BCS", "BEQ", "BMI", "BNE", "BPL", "BVC", "BVS"
+}
+
+print("#![allow(unused)]")
+print()
 print("// Auto-generated NES CPU instruction set")
 print("pub enum Inst {")
 for instr, modes in instr_modes.items():
@@ -123,3 +129,38 @@ for instr, modes in instr_modes.items():
 			else:
 				print(f"\t{m}(u8),")
 		print("}\n")
+
+print("impl Inst {\n\tfn ends_bb(&self) -> bool {\n\t\tmatch self {")
+for instr_name, modes in instr_modes.items():
+	# Check if instruction is a conditional jump
+	is_conditional_jump = instr_name in conditional_jumps
+
+	# Check if instruction is an unconditional jump (JMP, JSR, RTS, RTI)
+	is_unconditional_jump = instr_name in ["JMP", "JSR", "RTS", "RTI"]
+
+	# Check if instruction is a return (RTS, RTI)
+	is_return = instr_name in ["RTS", "RTI"]
+
+	# Instructions that end basic blocks
+	if is_conditional_jump or is_unconditional_jump or is_return:
+		# For instructions with no parameters, we use just the name
+		# For instructions with parameters, we use the pattern with ..
+		if len(modes) == 1:
+			m = modes[0]
+			if m in ("Implied", "Accumulator"):
+				print(f"\t\t\tInst::{instr_name} => true,")
+			else:
+				print(f"\t\t\tInst::{instr_name}(..) => true,")
+		else:
+			print(f"\t\t\tInst::{instr_name}(..) => true,")
+	else:
+		# For instructions that don't end basic blocks
+		if len(modes) == 1:
+			m = modes[0]
+			if m in ("Implied", "Accumulator"):
+				print(f"\t\t\tInst::{instr_name} => false,")
+			else:
+				print(f"\t\t\tInst::{instr_name}(..) => false,")
+		else:
+			print(f"\t\t\tInst::{instr_name}(..) => false,")
+print("\t\t}\n\t}\n}")
