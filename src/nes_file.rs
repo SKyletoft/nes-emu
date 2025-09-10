@@ -2,7 +2,7 @@ use anyhow::{Result, bail};
 
 use crate::inst::{
 	ADC, AHX, AND, ASL, BIT, CMP, CPX, CPY, DCP, DEC, EOR, INC, ISC, Inst, JMP, LAX, LDA, LDX, LDY,
-	LSR, NOPU, ORA, RLA, ROL, ROR, RRA, SAX, SBC, SLO, SRE, STA, STX, STY,
+	LSR, ORA, RLA, ROL, ROR, RRA, SAX, SBC, SLO, SRE, STA, STX, STY,
 };
 
 pub struct NesFile {
@@ -22,7 +22,7 @@ impl TryFrom<Vec<u8>> for NesFile {
 			prg_size,
 			chr_size,
 			flags_6,
-			flags_7,
+			_flags_7,
 			_,
 			_,
 			_,
