@@ -28,20 +28,20 @@ fn evaluate_instruction_c() {
 	let mut build = cc::Build::new();
 	build.file("src/evaluate_instruction.c");
 
+	build.flag("-Wall").flag("-Wextra");
 	// Check the optimization level
 	let opt_level = std::env::var("OPT_LEVEL").unwrap_or_default();
 	match opt_level.as_str() {
 		"0" => {
 			// Debug build
-			build.flag("-Wall").flag("-Wextra").flag("-Og").flag("-g3");
+			build.flag("-Og").flag("-g3");
 		}
 		"1" | "2" | "3" | "s" | "z" => {
 			// Release build
-			build.flag("-w").flag("-O3");
+			build.flag("-O3");
 		}
 		_ => {
-			// Default to release flags if unknown
-			build.flag("-Wall").flag("-Wextra").flag("-O3");
+			panic!("Unknown opt_level!");
 		}
 	}
 
