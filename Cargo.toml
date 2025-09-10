@@ -6,7 +6,6 @@ edition = "2024"
 [dependencies]
 bitflags = "2.9"
 anyhow = "1.0"
-mmap-rs = "0.6"
 
 [build-dependencies]
 bindgen = "0.72"
