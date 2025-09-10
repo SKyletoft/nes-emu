@@ -83,8 +83,89 @@ instr_modes = {
 	"NOPU": ["Immediate","ZeroPage","ZeroPageX","Absolute","AbsoluteX","AbsoluteY"], # unofficial NOP variants
 }
 
+# Instructions that are conditional jumps (they modify PC)
 conditional_jumps = {
 	"BCC", "BCS", "BEQ", "BMI", "BNE", "BPL", "BVC", "BVS"
+}
+
+# Instruction lengths in bytes
+instruction_lengths = {
+	"ADC": {"Immediate": 2, "ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"AND": {"Immediate": 2, "ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"ASL": {"Accumulator": 1, "ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3},
+	"BCC": {"Relative": 2},
+	"BCS": {"Relative": 2},
+	"BEQ": {"Relative": 2},
+	"BIT": {"ZeroPage": 2, "Absolute": 3},
+	"BMI": {"Relative": 2},
+	"BNE": {"Relative": 2},
+	"BPL": {"Relative": 2},
+	"BRK": {"Implied": 1},
+	"BVC": {"Relative": 2},
+	"BVS": {"Relative": 2},
+	"CLC": {"Implied": 1},
+	"CLD": {"Implied": 1},
+	"CLI": {"Implied": 1},
+	"CLV": {"Implied": 1},
+	"CMP": {"Immediate": 2, "ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"CPX": {"Immediate": 2, "ZeroPage": 2, "Absolute": 3},
+	"CPY": {"Immediate": 2, "ZeroPage": 2, "Absolute": 3},
+	"DEC": {"ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3},
+	"DEX": {"Implied": 1},
+	"DEY": {"Implied": 1},
+	"EOR": {"Immediate": 2, "ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"INC": {"ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3},
+	"INX": {"Implied": 1},
+	"INY": {"Implied": 1},
+	"JMP": {"Absolute": 3, "Indirect": 3},
+	"JSR": {"Absolute": 3},
+	"LDA": {"Immediate": 2, "ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"LDX": {"Immediate": 2, "ZeroPage": 2, "ZeroPageY": 2, "Absolute": 3, "AbsoluteY": 3},
+	"LDY": {"Immediate": 2, "ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3},
+	"LSR": {"Accumulator": 1, "ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3},
+	"NOP": {"Implied": 1},
+	"ORA": {"Immediate": 2, "ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"PHA": {"Implied": 1},
+	"PHP": {"Implied": 1},
+	"PLA": {"Implied": 1},
+	"PLP": {"Implied": 1},
+	"ROL": {"Accumulator": 1, "ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3},
+	"ROR": {"Accumulator": 1, "ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3},
+	"RTI": {"Implied": 1},
+	"RTS": {"Implied": 1},
+	"SBC": {"Immediate": 2, "ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"SEC": {"Implied": 1},
+	"SED": {"Implied": 1},
+	"SEI": {"Implied": 1},
+	"STA": {"ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"STX": {"ZeroPage": 2, "ZeroPageY": 2, "Absolute": 3},
+	"STY": {"ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3},
+	"TAX": {"Implied": 1},
+	"TAY": {"Implied": 1},
+	"TSX": {"Implied": 1},
+	"TXA": {"Implied": 1},
+	"TXS": {"Implied": 1},
+	"TYA": {"Implied": 1},
+
+	# Unofficials
+	"LAX": {"ZeroPage": 2, "ZeroPageY": 2, "Absolute": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"SAX": {"ZeroPage": 2, "ZeroPageY": 2, "Absolute": 3, "IndirectX": 2},
+	"DCP": {"ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"ISC": {"ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"RLA": {"ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"RRA": {"ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"SLO": {"ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"SRE": {"ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3, "IndirectX": 2, "IndirectY": 2},
+	"ANC": {"Immediate": 2},
+	"ALR": {"Immediate": 2},
+	"ARR": {"Immediate": 2},
+	"AXS": {"Immediate": 2},
+	"LAS": {"AbsoluteY": 3},
+	"TAS": {"AbsoluteY": 3},
+	"SHY": {"AbsoluteX": 3},
+	"SHX": {"AbsoluteY": 3},
+	"AHX": {"AbsoluteY": 3, "IndirectY": 2},
+	"NOPU": {"Immediate": 2, "ZeroPage": 2, "ZeroPageX": 2, "Absolute": 3, "AbsoluteX": 3, "AbsoluteY": 3},
 }
 
 print("#![allow(unused)]")
@@ -163,4 +244,25 @@ for instr_name, modes in instr_modes.items():
 				print(f"\t\t\tInst::{instr_name}(..) => false,")
 		else:
 			print(f"\t\t\tInst::{instr_name}(..) => false,")
+print("\t\t}\n\t}\n")
+
+# Add method to get instruction length
+print("\tpub fn len(&self) -> u8 {")
+print("\t\tmatch self {")
+for instr_name, modes in instr_modes.items():
+	if len(modes) == 1:
+		m = modes[0]
+		instr_len = instruction_lengths[instr_name][m]
+		if m in ("Implied", "Accumulator"):
+			print(f"\t\t\tInst::{instr_name} => {instr_len},")
+		else:
+			print(f"\t\t\tInst::{instr_name}(..) => {instr_len},")
+	else:
+		# For instructions with multiple variants, we need to match each variant
+		for mode in modes:
+			instr_len = instruction_lengths[instr_name][mode]
+			if mode in ("Implied", "Accumulator"):
+				print(f"\t\t\tInst::{instr_name}({instr_name}::{mode}) => {instr_len},")
+			else:
+				print(f"\t\t\tInst::{instr_name}({instr_name}::{mode}(..)) => {instr_len},")
 print("\t\t}\n\t}\n}")
