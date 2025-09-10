@@ -265,4 +265,9 @@ for instr_name, modes in instr_modes.items():
 				print(f"\t\t\tInst::{instr_name}({instr_name}::{mode}) => {instr_len},")
 			else:
 				print(f"\t\t\tInst::{instr_name}({instr_name}::{mode}(..)) => {instr_len},")
+print("\t\t}\n\t}\n")
+
+print("\tpub fn evaluate(&self, cpu: &mut Cpu) {")
+for instr_name, moes in instr_modes.items():
+	# Do stuff
 print("\t\t}\n\t}\n}")
