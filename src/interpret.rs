@@ -10,7 +10,7 @@ const END_OF_RAM: u16 = 0x1FFF;
 pub struct State {
 	pub cpu: Cpu,
 	pub game: NesFile,
-	// ram: _
+	pub ram: Ram,
 }
 
 pub struct Ram {
@@ -18,6 +18,10 @@ pub struct Ram {
 }
 
 impl Ram {
+	pub fn new() -> Self {
+		Self { mem: [0; _] }
+	}
+
 	pub fn get(&self, idx: usize) -> Result<&u8> {
 		if idx > 8192 {
 			bail!("Out of bounds RAM-access");
@@ -25,6 +29,7 @@ impl Ram {
 		let idx = idx % 2048;
 		Ok(unsafe { self.mem.get_unchecked(idx) })
 	}
+
 	pub fn get_mut(&mut self, idx: usize) -> Result<&mut u8> {
 		if idx > 8192 {
 			bail!("Out of bounds RAM-access");
@@ -62,9 +67,9 @@ impl State {
 			pc: 0,
 		};
 
-		// TODO: Create a memory mapping of RAM that has 2k wrapped four times.
+		let ram = Ram::new();
 
-		Self { cpu, game }
+		Self { cpu, game, ram }
 	}
 
 	fn interpret(mut self) -> Self {
