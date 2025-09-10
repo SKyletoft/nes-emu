@@ -20,11 +20,12 @@
 					llvmPackages_21.clang-tools
 				];
 				buildInputs = with pkgs; [
-					gcc
+					clang
 				];
 			in {
 				devShells.default = pkgs.mkShell {
 					inherit nativeBuildInputs buildInputs;
+					LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
 				};
 				packages.default = pkgs.rustPlatform.buildRustPackage {
 					pname = "nes-emu";
