@@ -171,7 +171,7 @@ instruction_lengths = {
 print("#![allow(unused)]")
 print()
 print("// Auto-generated NES CPU instruction set")
-print("pub enum Inst {")
+print("#[derive(Debug, Copy, Clone, Eq, PartialEq)]\npub enum Inst {")
 for instr, modes in instr_modes.items():
 	if len(modes) == 1:
 		m = modes[0]
@@ -195,7 +195,7 @@ for instr, modes in instr_modes.items():
 	if len(modes) == 1:
 		pass
 	else:
-		print(f"pub enum {instr} {{")
+		print(f"#[derive(Debug, Copy, Clone, Eq, PartialEq)]\npub enum {instr} {{")
 		for m in modes:
 			if m == "Immediate":
 				print(f"\tImmediate(u8),")
@@ -211,7 +211,7 @@ for instr, modes in instr_modes.items():
 				print(f"\t{m}(u8),")
 		print("}\n")
 
-print("impl Inst {\n\tfn ends_bb(&self) -> bool {\n\t\tmatch self {")
+print("impl Inst {\n\tpub fn ends_bb(&self) -> bool {\n\t\tmatch self {")
 for instr_name, modes in instr_modes.items():
 	# Check if instruction is a conditional jump
 	is_conditional_jump = instr_name in conditional_jumps
