@@ -10,7 +10,7 @@ fn cpu_h() {
 	// Generate bindings from the header file
 	let bindings = bindgen::Builder::default()
 		.header("inc/cpu.h")
-		.parse_callbacks(Box::new(bindgen::CargoCallbacks))
+		.parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
 		.generate()
 		.expect("Unable to generate bindings");
 
