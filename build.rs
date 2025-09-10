@@ -29,6 +29,8 @@ fn evaluate_instruction_c() {
 	build.file("src/evaluate_instruction.c");
 
 	build.flag("-Wall").flag("-Wextra");
+	build.flag("-I.");
+
 	// Check the optimization level
 	let opt_level = std::env::var("OPT_LEVEL").unwrap_or_default();
 	match opt_level.as_str() {
