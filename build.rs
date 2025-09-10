@@ -27,4 +27,9 @@ fn main() {
 	bindings
 		.write_to_file(out_path.join("instbindings.rs"))
 		.expect("Couldn't write bindings!");
+
+	// Compile the evaluate_instruction.c file
+	cc::Build::new()
+		.file("src/evaluate_instruction.c")
+		.compile("evaluate_instruction");
 }
