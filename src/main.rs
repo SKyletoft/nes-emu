@@ -5,5 +5,6 @@ mod interpret;
 mod evaluate_instruction;
 
 fn main() {
-	println!("Hello, world!");
+	let x = unsafe { evaluate_instruction::test() };
+	println!("{x}");
 }
