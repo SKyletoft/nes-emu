@@ -22,21 +22,28 @@ fn cpu_h() {
 }
 
 fn evaluate_instruction_c() {
-	// Generate bindings from the header file
-	let bindings = bindgen::Builder::default()
-		.header("src/evaluate_instruction.c")
-		.parse_callbacks(Box::new(bindgen::CargoCallbacks))
-		.generate()
-		.expect("Unable to generate bindings");
+	// Tell cargo to invalidate the built crate whenever the header changes
+	println!("cargo:rerun-if-changed=src/evaluate_instruction.c");
 
-	// Write the bindings to the $OUT_DIR/bindings.rs file
-	let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
-	bindings
-		.write_to_file(out_path.join("instbindings.rs"))
-		.expect("Couldn't write bindings!");
+	let mut build = cc::Build::new();
+	build.file("src/evaluate_instruction.c");
 
-	// Compile the evaluate_instruction.c file
-	cc::Build::new()
-		.file("src/evaluate_instruction.c")
-		.compile("evaluate_instruction");
+	// Check the optimization level
+	let opt_level = std::env::var("OPT_LEVEL").unwrap_or_default();
+	match opt_level.as_str() {
+		"0" => {
+			// Debug build
+			build.flag("-Wall").flag("-Wextra").flag("-Og").flag("-g3");
+		}
+		"1" | "2" | "3" | "s" | "z" => {
+			// Release build
+			build.flag("-w").flag("-O3");
+		}
+		_ => {
+			// Default to release flags if unknown
+			build.flag("-w").flag("-O3");
+		}
+	}
+
+	build.compile("evaluate_instruction");
 }
