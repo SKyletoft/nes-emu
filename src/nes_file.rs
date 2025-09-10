@@ -75,6 +75,21 @@ impl TryFrom<Vec<u8>> for NesFile {
 	}
 }
 
+impl NesFile {
+	fn parse_bb(&self, stack_ptr: u16, rom_bank: usize) -> Result<Vec<Inst>> {
+		let mut out = Vec::new();
+		let mut slice = &self.prg_roms[rom_bank][stack_ptr as usize..];
+		loop {
+			let inst = parse_instruction(&mut slice).unwrap();
+			out.push(inst);
+			if inst.ends_bb() {
+				break;
+			}
+		}
+		Ok(out)
+	}
+}
+
 fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 	match code {
 		// ADC instructions
