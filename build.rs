@@ -17,7 +17,7 @@ fn main() {
 
 	// Generate bindings from the header file
 	let bindings = bindgen::Builder::default()
-		.header("src/evaluate-instruction.c")
+		.header("src/evaluate_instruction.c")
 		.parse_callbacks(Box::new(bindgen::CargoCallbacks))
 		.generate()
 		.expect("Unable to generate bindings");
