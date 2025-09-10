@@ -41,7 +41,7 @@ fn evaluate_instruction_c() {
 		}
 		_ => {
 			// Default to release flags if unknown
-			build.flag("-w").flag("-O3");
+			build.flag("-Wall").flag("-Wextra").flag("-O3");
 		}
 	}
 
