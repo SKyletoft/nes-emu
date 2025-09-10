@@ -1,4 +1,4 @@
-use anyhow::bail;
+use anyhow::{Result, bail};
 
 pub struct NesFile {
 	prg_roms: Vec<[u8; 16 * 1024]>,
@@ -66,10 +66,7 @@ impl TryFrom<Vec<u8>> for NesFile {
 			chr_roms.push(bank);
 		}
 
-		Ok(NesFile {
-			prg_roms,
-			chr_roms,
-		})
+		Ok(NesFile { prg_roms, chr_roms })
 	}
 }
 
