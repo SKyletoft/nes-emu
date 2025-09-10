@@ -1,4 +1,9 @@
 fn main() {
+	cpu_h();
+	evaluate_instruction_c();
+}
+
+fn cpu_h() {
 	// Tell cargo to invalidate the built crate whenever the header changes
 	println!("cargo:rerun-if-changed=inc/cpu.h");
 
@@ -14,7 +19,9 @@ fn main() {
 	bindings
 		.write_to_file(out_path.join("cpubindings.rs"))
 		.expect("Couldn't write bindings!");
+}
 
+fn evaluate_instruction_c() {
 	// Generate bindings from the header file
 	let bindings = bindgen::Builder::default()
 		.header("src/evaluate_instruction.c")
