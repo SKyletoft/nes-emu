@@ -16,6 +16,8 @@
 					rust-analyzer
 
 					python3
+
+					llvmPackages_21.clang-tools
 				];
 				buildInputs = with pkgs; [
 					gcc
