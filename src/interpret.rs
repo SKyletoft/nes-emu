@@ -86,6 +86,19 @@ impl State {
 	}
 
 	fn interpret(mut self) -> Self {
+		let inst = if self.cpu.pc < END_OF_RAM {
+			let arr = self.ram.get_copied_slice(self.cpu.pc as _).unwrap();
+			let mut slice = arr.as_slice();
+			nes_file::parse_instruction(&mut slice)
+				.expect("Instruction parse can only fail if there aren't enough operands")
+		} else {
+			let memory_bank = 0;
+			let idx = self.game.programs[memory_bank]
+				.binary_search_by_key(&&self.cpu.pc, |(x, _)| x)
+				.unwrap();
+			self.game.programs[memory_bank][idx].1
+		};
+
 		self
 	}
 }
