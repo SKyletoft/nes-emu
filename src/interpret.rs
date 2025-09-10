@@ -1,6 +1,10 @@
 use std::ops::{Index, IndexMut};
 
-use crate::{cpu::Cpu, nes_file::NesFile};
+use crate::{
+	cpu::Cpu,
+	nes_file::{self, NesFile},
+	evaluate_instruction,
+};
 
 use anyhow::{Result, bail};
 
@@ -36,6 +40,15 @@ impl Ram {
 		}
 		let idx = idx % 2048;
 		Ok(unsafe { self.mem.get_unchecked_mut(idx) })
+	}
+
+	pub fn get_copied_slice(&self, idx: usize) -> Result<[u8; 4]> {
+		Ok([
+			*self.get(idx)?,
+			*self.get(idx + 1)?,
+			*self.get(idx + 2)?,
+			*self.get(idx + 3)?,
+		])
 	}
 }
 

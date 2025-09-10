@@ -6,8 +6,9 @@ use crate::inst::{
 };
 
 pub struct NesFile {
-	prg_roms: Vec<[u8; 16 * 1024]>,
-	chr_roms: Vec<[u8; 8 * 1024]>,
+	pub prg_roms: Vec<[u8; 16 * 1024]>,
+	pub programs: Vec<Vec<(u16, Inst)>>,
+	pub chr_roms: Vec<[u8; 8 * 1024]>,
 }
 
 impl TryFrom<Vec<u8>> for NesFile {
@@ -56,6 +57,17 @@ impl TryFrom<Vec<u8>> for NesFile {
 			prg_roms.push(bank);
 		}
 
+		let programs = prg_roms.iter().map(|txt| {
+			let mut txt = txt.as_slice();
+			let mut out = Vec::new();
+			while !txt.is_empty() {
+				let idx = (16384 - txt.len()) as _;
+				let inst = parse_instruction(&mut txt)?;
+				out.push((idx, inst));
+			}
+			Ok(out)
+		}).collect::<Result<Vec<_>>>()?;
+
 		// Parse CHR ROM banks
 		let mut chr_roms = Vec::new();
 		for i in 0..*chr_size {
@@ -71,14 +83,14 @@ impl TryFrom<Vec<u8>> for NesFile {
 			chr_roms.push(bank);
 		}
 
-		Ok(NesFile { prg_roms, chr_roms })
+		Ok(NesFile { prg_roms, programs, chr_roms })
 	}
 }
 
 impl NesFile {
-	fn parse_bb(&self, stack_ptr: u16, rom_bank: usize) -> Result<Vec<Inst>> {
+	fn parse_bb(prg_roms: &[[u8; 16 * 1024]], stack_ptr: u16, rom_bank: usize) -> Result<Vec<Inst>> {
 		let mut out = Vec::new();
-		let mut slice = &self.prg_roms[rom_bank][stack_ptr as usize..];
+		let mut slice = &prg_roms[rom_bank][stack_ptr as usize..];
 		loop {
 			let inst = parse_instruction(&mut slice).unwrap();
 			out.push(inst);
@@ -90,7 +102,7 @@ impl NesFile {
 	}
 }
 
-fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
+pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 	match code {
 		// ADC instructions
 		[0x69, imm, rest @ ..] => {
