@@ -42,7 +42,8 @@ fn evaluate_instruction_c() {
 	let mut build = cc::Build::new();
 	build.file("src/evaluate_instruction.c");
 
-	build.flag("-Wall").flag("-Wextra");
+	build.flag("-w");
+	// build.flag("-Wall").flag("-Wextra");
 	build.flag("-I.");
 
 	// Check the optimization level
