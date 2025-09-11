@@ -691,7 +691,7 @@ impl Inst {
 	}
 
 	pub fn evaluate(&self, cpu: &mut Cpu) {
-		let cpu = &raw *cpu;
+		let cpu = &raw * cpu;
 		unsafe {
 			match self {
 				Inst::ADC(ADC::Immediate(x)) => adc_immediate(cpu, *x),
@@ -907,7 +907,7 @@ impl Inst {
 				Inst::SHX(x) => shx(cpu, *x),
 				Inst::AHX(AHX::AbsoluteY(a)) => ahx_absolute_y(cpu, *a),
 				Inst::AHX(AHX::IndirectY(x)) => ahx_indirect_y(cpu, *x),
-Inst::NOPU(..) => {}
+				Inst::NOPU(..) => {}
 			}
 		}
 	}

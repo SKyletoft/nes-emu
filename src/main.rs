@@ -1,8 +1,8 @@
 mod cpu;
-mod inst;
-mod nes_file;
-mod interpret;
 mod evaluate_instruction;
+mod inst;
+mod interpret;
+mod nes_file;
 
 fn main() {
 	let x = unsafe { evaluate_instruction::test() };

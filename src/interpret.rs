@@ -2,8 +2,8 @@ use std::ops::{Index, IndexMut};
 
 use crate::{
 	cpu::Cpu,
-	nes_file::{self, NesFile},
 	evaluate_instruction,
+	nes_file::{self, NesFile},
 };
 
 use anyhow::{Result, bail};
