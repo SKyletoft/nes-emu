@@ -1,4 +1,6 @@
 #![allow(unused)]
+use crate::cpu::Cpu;
+use crate::evaluate_instruction::*;
 
 // Auto-generated NES CPU instruction set
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

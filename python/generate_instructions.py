@@ -169,6 +169,8 @@ instruction_lengths = {
 }
 
 print("#![allow(unused)]")
+print("use crate::cpu::Cpu;")
+print("use crate::evaluate_instruction::*;")
 print()
 print("// Auto-generated NES CPU instruction set")
 print("#[derive(Debug, Copy, Clone, Eq, PartialEq)]\npub enum Inst {")
