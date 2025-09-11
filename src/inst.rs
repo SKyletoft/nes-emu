@@ -691,7 +691,7 @@ impl Inst {
 	}
 
 	pub fn evaluate(&self, cpu: &mut Cpu) {
-		let cpu = &raw * cpu;
+		let cpu = cpu as *mut Cpu;
 		unsafe {
 			match self {
 				Inst::ADC(ADC::Immediate(x)) => adc_immediate(cpu, *x),
