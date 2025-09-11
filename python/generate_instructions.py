@@ -269,7 +269,54 @@ for instr_name, modes in instr_modes.items():
 				print(f"\t\t\tInst::{instr_name}({instr_name}::{mode}(..)) => {instr_len},")
 print("\t\t}\n\t}\n")
 
-print("\tpub fn evaluate(&self, cpu: &mut Cpu) {")
-for instr_name, moes in instr_modes.items():
-	# Do stuff
-print("\t\t}\n\t}\n}")
+print("\tpub fn evaluate(&self, cpu: &mut Cpu) {\n\t\tlet cpu = &raw *cpu;\n\t\tunsafe {\n\t\t\tmatch self {")
+for instr_name, modes in instr_modes.items():
+	if instr_name == "NOPU":
+		print("Inst::NOPU(..) => {}")
+	elif len(modes) == 1:
+		m = modes[0]
+		match (m):
+			case "Implied":
+				print(f"\t\t\t\tInst::{instr_name} => {instr_name.lower()}(cpu),")
+			case "Accumulator":
+				print(f"\t\t\t\tInst::{instr_name} => {instr_name.lower()}(cpu),")
+			case "Relative":
+				print(f"\t\t\t\tInst::{instr_name}(x) => {instr_name.lower()}(cpu, *x),")
+			case "Immediate":
+				print(f"\t\t\t\tInst::{instr_name}(x) => {instr_name.lower()}(cpu, *x),")
+			case "Absolute":
+				print(f"\t\t\t\tInst::{instr_name}(x) => {instr_name.lower()}(cpu, *x),")
+			case "AbsoluteX":
+				print(f"\t\t\t\tInst::{instr_name}(x) => {instr_name.lower()}(cpu, *x),")
+			case "AbsoluteY":
+				print(f"\t\t\t\tInst::{instr_name}(x) => {instr_name.lower()}(cpu, *x),")
+			case _:
+				print(f"{m} {instr_name} (lonely)")
+	else:
+		for mode in modes:
+			match mode:
+				case "Accumulator":
+					print(f"\t\t\t\tInst::{instr_name}({instr_name}::{mode}) => {instr_name.lower()}_accumulator(cpu),")
+				case "Immediate":
+					print(f"\t\t\t\tInst::{instr_name}({instr_name}::{mode}(x)) => {instr_name.lower()}_immediate(cpu, *x),")
+				case "ZeroPage":
+					print(f"\t\t\t\tInst::{instr_name}({instr_name}::{mode}(x)) => {instr_name.lower()}_zero_page(cpu, *x),")
+				case "ZeroPageX":
+					print(f"\t\t\t\tInst::{instr_name}({instr_name}::{mode}(x)) => {instr_name.lower()}_zero_page_x(cpu, *x),")
+				case "ZeroPageY":
+					print(f"\t\t\t\tInst::{instr_name}({instr_name}::{mode}(x)) => {instr_name.lower()}_zero_page_y(cpu, *x),")
+				case "Absolute":
+					print(f"\t\t\t\tInst::{instr_name}({instr_name}::{mode}(a)) => {instr_name.lower()}_absolute(cpu, *a),")
+				case "AbsoluteX":
+					print(f"\t\t\t\tInst::{instr_name}({instr_name}::{mode}(a)) => {instr_name.lower()}_absolute_x(cpu, *a),")
+				case "AbsoluteY":
+					print(f"\t\t\t\tInst::{instr_name}({instr_name}::{mode}(a)) => {instr_name.lower()}_absolute_y(cpu, *a),")
+				case "Indirect":
+					print(f"\t\t\t\tInst::{instr_name}({instr_name}::{mode}(x)) => {instr_name.lower()}_indirect(cpu, *x),")
+				case "IndirectX":
+					print(f"\t\t\t\tInst::{instr_name}({instr_name}::{mode}(x)) => {instr_name.lower()}_indirect_x(cpu, *x),")
+				case "IndirectY":
+					print(f"\t\t\t\tInst::{instr_name}({instr_name}::{mode}(x)) => {instr_name.lower()}_indirect_y(cpu, *x),")
+				case _:
+					print(f"{mode} {instr_name}")
+print("\t\t\t}\n\t\t}\n\t}\n}")
