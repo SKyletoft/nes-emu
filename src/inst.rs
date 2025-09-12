@@ -691,7 +691,8 @@ impl Inst {
 	}
 
 	pub fn evaluate(&self, cpu: &mut Cpu) {
-		let cpu = cpu as *mut Cpu;
+		// Iffy cast, but it's the same type handled by bindgen twice from two different header inclusions.
+		let cpu = cpu as *mut Cpu as *mut crate::evaluate_instruction::Cpu;
 		unsafe {
 			match self {
 				Inst::ADC(ADC::Immediate(x)) => adc_immediate(cpu, *x),
