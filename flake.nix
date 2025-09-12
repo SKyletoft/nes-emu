@@ -18,6 +18,8 @@
 					python3
 
 					llvmPackages_21.clang-tools
+
+					fceux # For comparison
 				];
 				buildInputs = with pkgs; [
 					clang
