@@ -67,17 +67,17 @@ impl IndexMut<usize> for Ram {
 }
 
 impl State {
-	fn new(game: NesFile) -> Self {
+	pub fn new(game: NesFile) -> Self {
 		let cpu = Cpu {
 			a: 0,
 			x: 0,
 			y: 0,
-			s: 0,
+			s: 0xFD,
 			p: crate::cpu::P {
 				_bitfield_align_1: [],
-				_bitfield_1: crate::cpu::P::new_bitfield_1(0, 0, 0, 0, 0, 0, 0, 0),
+				_bitfield_1: crate::cpu::P::new_bitfield_1(0, 0, 1, 0, 0, 0, 0, 0),
 			},
-			pc: 0,
+			pc: 0xFFFC,
 		};
 
 		let ram = Ram::new();
