@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+// C-implementations of NES instructions
+
 int test() {
 	return 5;
 }
@@ -958,3 +960,66 @@ void tya(Cpu *cpu) {
 	cpu->p.Z = 0 == cpu->a;
 	cpu->p.N = (cpu->a & 0x80) >> 7;
 }
+
+void lax_zero_page(Cpu *cpu, uint8_t val) {}
+void lax_zero_page_y(Cpu *cpu, uint8_t val) {}
+void lax_absolute(Cpu *cpu, uint8_t val) {}
+void lax_absolute_y(Cpu *cpu, uint8_t val) {}
+void lax_indirect_x(Cpu *cpu, uint8_t val) {}
+void lax_indirect_y(Cpu *cpu, uint8_t val) {}
+void sax_zero_page(Cpu *cpu, uint8_t val) {}
+void sax_zero_page_y(Cpu *cpu, uint8_t val) {}
+void sax_absolute(Cpu *cpu, uint8_t val) {}
+void sax_indirect_x(Cpu *cpu, uint8_t val) {}
+void dcp_zero_page(Cpu *cpu, uint8_t val) {}
+void dcp_zero_page_x(Cpu *cpu, uint8_t val) {}
+void dcp_absolute(Cpu *cpu, uint8_t val) {}
+void dcp_absolute_x(Cpu *cpu, uint8_t val) {}
+void dcp_absolute_y(Cpu *cpu, uint8_t val) {}
+void dcp_indirect_x(Cpu *cpu, uint8_t val) {}
+void dcp_indirect_y(Cpu *cpu, uint8_t val) {}
+void isc_zero_page(Cpu *cpu, uint8_t val) {}
+void isc_zero_page_x(Cpu *cpu, uint8_t val) {}
+void isc_absolute(Cpu *cpu, uint8_t val) {}
+void isc_absolute_x(Cpu *cpu, uint8_t val) {}
+void isc_absolute_y(Cpu *cpu, uint8_t val) {}
+void isc_indirect_x(Cpu *cpu, uint8_t val) {}
+void isc_indirect_y(Cpu *cpu, uint8_t val) {}
+void rla_zero_page(Cpu *cpu, uint8_t val) {}
+void rla_zero_page_x(Cpu *cpu, uint8_t val) {}
+void rla_absolute(Cpu *cpu, uint8_t val) {}
+void rla_absolute_x(Cpu *cpu, uint8_t val) {}
+void rla_absolute_y(Cpu *cpu, uint8_t val) {}
+void rla_indirect_x(Cpu *cpu, uint8_t val) {}
+void rla_indirect_y(Cpu *cpu, uint8_t val) {}
+void rra_zero_page(Cpu *cpu, uint8_t val) {}
+void rra_zero_page_x(Cpu *cpu, uint8_t val) {}
+void rra_absolute(Cpu *cpu, uint8_t val) {}
+void rra_absolute_x(Cpu *cpu, uint8_t val) {}
+void rra_absolute_y(Cpu *cpu, uint8_t val) {}
+void rra_indirect_x(Cpu *cpu, uint8_t val) {}
+void rra_indirect_y(Cpu *cpu, uint8_t val) {}
+void slo_zero_page(Cpu *cpu, uint8_t val) {}
+void slo_zero_page_x(Cpu *cpu, uint8_t val) {}
+void slo_absolute(Cpu *cpu, uint8_t val) {}
+void slo_absolute_x(Cpu *cpu, uint8_t val) {}
+void slo_absolute_y(Cpu *cpu, uint8_t val) {}
+void slo_indirect_x(Cpu *cpu, uint8_t val) {}
+void slo_indirect_y(Cpu *cpu, uint8_t val) {}
+void sre_zero_page(Cpu *cpu, uint8_t val) {}
+void sre_zero_page_x(Cpu *cpu, uint8_t val) {}
+void sre_absolute(Cpu *cpu, uint8_t val) {}
+void sre_absolute_x(Cpu *cpu, uint8_t val) {}
+void sre_absolute_y(Cpu *cpu, uint8_t val) {}
+void sre_indirect_x(Cpu *cpu, uint8_t val) {}
+void sre_indirect_y(Cpu *cpu, uint8_t val) {}
+void anc(Cpu *cpu, uint8_t val) {}
+void alr(Cpu *cpu, uint8_t val) {}
+void arr(Cpu *cpu, uint8_t val) {}
+void axs(Cpu *cpu, uint8_t val) {}
+void las(Cpu *cpu, uint8_t val) {}
+void tas(Cpu *cpu, uint8_t val) {}
+void shy(Cpu *cpu, uint8_t val) {}
+void shx(Cpu *cpu, uint8_t val) {}
+void ahx_absolute_y(Cpu *cpu, uint8_t val) {}
+void ahx_indirect_y(Cpu *cpu, uint8_t val) {}
