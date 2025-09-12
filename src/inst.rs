@@ -33,7 +33,7 @@ pub enum Inst {
 	INX,
 	INY,
 	JMP(JMP),
-	JSR(u8, u8),
+	JSR(u16),
 	LDA(LDA),
 	LDX(LDX),
 	LDY(LDY),
@@ -73,10 +73,10 @@ pub enum Inst {
 	ALR(u8),
 	ARR(u8),
 	AXS(u8),
-	LAS(u8, u8),
-	TAS(u8, u8),
-	SHY(u8, u8),
-	SHX(u8, u8),
+	LAS(u8),
+	TAS(u8),
+	SHY(u8),
+	SHX(u8),
 	AHX(AHX),
 	NOPU(NOPU),
 }
@@ -86,9 +86,9 @@ pub enum ADC {
 	Immediate(u8),
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -98,9 +98,9 @@ pub enum AND {
 	Immediate(u8),
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -110,14 +110,14 @@ pub enum ASL {
 	Accumulator,
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum BIT {
 	ZeroPage(u8),
-	Absolute(u8, u8),
+	Absolute(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -125,9 +125,9 @@ pub enum CMP {
 	Immediate(u8),
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -136,22 +136,22 @@ pub enum CMP {
 pub enum CPX {
 	Immediate(u8),
 	ZeroPage(u8),
-	Absolute(u8, u8),
+	Absolute(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum CPY {
 	Immediate(u8),
 	ZeroPage(u8),
-	Absolute(u8, u8),
+	Absolute(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum DEC {
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -159,9 +159,9 @@ pub enum EOR {
 	Immediate(u8),
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -170,14 +170,14 @@ pub enum EOR {
 pub enum INC {
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum JMP {
-	Absolute(u8, u8),
-	Indirect(u8, u8),
+	Absolute(u16),
+	Indirect(u16),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -185,9 +185,9 @@ pub enum LDA {
 	Immediate(u8),
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -197,8 +197,8 @@ pub enum LDX {
 	Immediate(u8),
 	ZeroPage(u8),
 	ZeroPageY(u8),
-	Absolute(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteY(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -206,8 +206,8 @@ pub enum LDY {
 	Immediate(u8),
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -215,8 +215,8 @@ pub enum LSR {
 	Accumulator,
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -224,9 +224,9 @@ pub enum ORA {
 	Immediate(u8),
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -236,8 +236,8 @@ pub enum ROL {
 	Accumulator,
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -245,8 +245,8 @@ pub enum ROR {
 	Accumulator,
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -254,9 +254,9 @@ pub enum SBC {
 	Immediate(u8),
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -265,9 +265,9 @@ pub enum SBC {
 pub enum STA {
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -276,22 +276,22 @@ pub enum STA {
 pub enum STX {
 	ZeroPage(u8),
 	ZeroPageY(u8),
-	Absolute(u8, u8),
+	Absolute(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum STY {
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
+	Absolute(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum LAX {
 	ZeroPage(u8),
 	ZeroPageY(u8),
-	Absolute(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -300,7 +300,7 @@ pub enum LAX {
 pub enum SAX {
 	ZeroPage(u8),
 	ZeroPageY(u8),
-	Absolute(u8, u8),
+	Absolute(u8),
 	IndirectX(u8),
 }
 
@@ -308,9 +308,9 @@ pub enum SAX {
 pub enum DCP {
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -319,9 +319,9 @@ pub enum DCP {
 pub enum ISC {
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -330,9 +330,9 @@ pub enum ISC {
 pub enum RLA {
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -341,9 +341,9 @@ pub enum RLA {
 pub enum RRA {
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -352,9 +352,9 @@ pub enum RRA {
 pub enum SLO {
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -363,16 +363,16 @@ pub enum SLO {
 pub enum SRE {
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 	IndirectX(u8),
 	IndirectY(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum AHX {
-	AbsoluteY(u8, u8),
+	AbsoluteY(u8),
 	IndirectY(u8),
 }
 
@@ -381,9 +381,9 @@ pub enum NOPU {
 	Immediate(u8),
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8, u8),
-	AbsoluteX(u8, u8),
-	AbsoluteY(u8, u8),
+	Absolute(u8),
+	AbsoluteX(u8),
+	AbsoluteY(u8),
 }
 
 impl Inst {
