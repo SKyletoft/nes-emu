@@ -34,26 +34,25 @@ impl TryFrom<Vec<u8>> for NesFile {
 			bail!("Missing header!");
 		};
 
-		let trainer_present = flags_6 & 0x04 != 0;
+		let trainer_present = flags_6 & (1 << 2) != 0;
 		let trainer_offset = if trainer_present { 512 } else { 0 };
 		let prg_offset = 16 + trainer_offset;
 		let chr_offset = prg_offset + (*prg_size as usize * 16 * 1024);
 		let mapper = Mapper::try_from((*flags_7 & 0xF0) | *flags_6 >> 4)?;
 
 		// Parse PRG ROM banks
-		let mut prg_roms = Vec::new();
-		for i in 0..*prg_size {
-			let start = prg_offset + (i as usize * 16 * 1024);
-			let end = start + (16 * 1024);
-
-			if end > buffer.len() {
-				bail!("PRG ROM data is too short");
-			}
-
-			let mut bank = [0u8; 16 * 1024];
-			bank.copy_from_slice(&buffer[start..end]);
-			prg_roms.push(bank);
-		}
+		let prg_roms = buffer[prg_offset..]
+			.chunks(16 * 1024)
+			.take(*prg_size as _)
+			.map(|slice| {
+				let mut arr = [0; _];
+				if slice.len() != 16 * 1024 {
+					bail!("Incorrect length of memory bank {}", slice.len());
+				}
+				arr.copy_from_slice(slice);
+				Ok(arr)
+			})
+			.collect::<Result<Vec<_>>>()?;
 
 		let programs = prg_roms
 			.iter()
@@ -72,19 +71,18 @@ impl TryFrom<Vec<u8>> for NesFile {
 			.collect::<Result<Vec<_>>>()?;
 
 		// Parse CHR ROM banks
-		let mut chr_roms = Vec::new();
-		for i in 0..*chr_size {
-			let start = chr_offset + (i as usize * 8 * 1024);
-			let end = start + (8 * 1024);
-
-			if end > buffer.len() {
-				bail!("CHR ROM data is too short");
-			}
-
-			let mut bank = [0u8; 8 * 1024];
-			bank.copy_from_slice(&buffer[start..end]);
-			chr_roms.push(bank);
-		}
+		let chr_roms = buffer[chr_offset..]
+			.chunks(8 * 1024)
+			.take(*prg_size as _)
+			.map(|slice| {
+				let mut arr = [0; _];
+				if slice.len() != 8 * 1024 {
+					bail!("Incorrect length of memory bank {}", slice.len());
+				}
+				arr.copy_from_slice(slice);
+				Ok(arr)
+			})
+			.collect::<Result<Vec<_>>>()?;
 
 		Ok(NesFile {
 			prg_roms,
