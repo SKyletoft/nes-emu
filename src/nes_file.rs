@@ -64,7 +64,9 @@ impl TryFrom<Vec<u8>> for NesFile {
 				let mut out = Vec::new();
 				while !txt.is_empty() {
 					let idx = (16384 - txt.len()) as _;
-					let inst = parse_instruction(&mut txt)?;
+					let Ok(inst) = parse_instruction(&mut txt) else {
+						break;
+					};
 					out.push((idx, inst));
 				}
 				Ok(out)
