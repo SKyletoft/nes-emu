@@ -99,11 +99,4 @@ impl State {
 
 		self
 	}
-
-	pub fn interpret_in_place(&mut self) {
-		let ptr = self as *mut State;
-		let mut state = unsafe { ptr.read() };
-		state = state.interpret();
-		unsafe { ptr.write(state) };
-	}
 }

@@ -1,9 +1,6 @@
 use anyhow::{Result, bail};
 
-use crate::inst::{
-	ADC, AHX, AND, ASL, BIT, CMP, CPX, CPY, DCP, DEC, EOR, INC, ISC, Inst, JMP, LAX, LDA, LDX, LDY,
-	LSR, ORA, RLA, ROL, ROR, RRA, SAX, SBC, SLO, SRE, STA, STX, STY,
-};
+use crate::inst::{self, Inst};
 
 pub struct NesFile {
 	pub prg_roms: Vec<[u8; 16 * 1024]>,
