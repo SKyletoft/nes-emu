@@ -64,7 +64,7 @@ impl TryFrom<Vec<u8>> for NesFile {
 				let mut out = Vec::new();
 				while !txt.is_empty() {
 					let idx = (16384 - txt.len()) as _;
-					let Ok(inst) = parse_instruction(&mut txt) else {
+					let Ok(inst) = inst::parse_instruction(&mut txt) else {
 						break;
 					};
 					out.push((idx, inst));
@@ -105,7 +105,7 @@ impl NesFile {
 		let mut out = Vec::new();
 		let mut slice = &prg_roms[rom_bank][stack_ptr as usize..];
 		loop {
-			let inst = parse_instruction(&mut slice).unwrap();
+			let inst = inst::parse_instruction(&mut slice).unwrap();
 			out.push(inst);
 			if inst.ends_bb() {
 				break;
@@ -133,7 +133,7 @@ mod test {
 			buf[0] = byte;
 			let mut code = buf.as_slice();
 
-			let res = parse_instruction(&mut code);
+			let res = inst::parse_instruction(&mut code);
 			assert!(res.is_ok());
 		}
 	}

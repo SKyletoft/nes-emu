@@ -1,10 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use crate::{
-	cpu::Cpu,
-	evaluate_instruction,
-	nes_file::{self, NesFile},
-};
+use crate::{cpu::Cpu, inst, nes_file::NesFile};
 
 use anyhow::{Result, bail};
 
@@ -89,7 +85,7 @@ impl State {
 		let inst = if self.cpu.pc < END_OF_RAM {
 			let arr = self.ram.get_copied_slice(self.cpu.pc as _).unwrap();
 			let mut slice = arr.as_slice();
-			nes_file::parse_instruction(&mut slice)
+			inst::parse_instruction(&mut slice)
 				.expect("Instruction parse can only fail if there aren't enough operands")
 		} else {
 			// Yes this is stupid, but it's temporary until the ROM-code is recompiled to x86
