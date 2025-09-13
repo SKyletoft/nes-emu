@@ -1146,6 +1146,160 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			Ok(Inst::NOP)
 		}
 
+		// Generated invalid op-codes, to be looked up later
+		[0x02, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x04, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x0C, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x12, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x14, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x1C, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x22, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x32, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x34, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x3C, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x42, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x44, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x52, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x54, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x5C, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x62, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x64, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x72, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x74, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x7C, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x80, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x82, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x89, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x8B, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0x92, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0xAB, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0xB2, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0xC2, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0xD2, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0xD4, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0xDC, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0xE2, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0xEB, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0xF2, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0xF4, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0xFC, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0xF7, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+		[0xFF, rest @ ..] => {
+			*code = rest;
+			Ok(Inst::NOP)
+		}
+
 		// Default case - unknown instruction
 		x => Err(anyhow::anyhow!("Unknown opcode: {:02x?}", &x[..1])),
 	}
@@ -1163,11 +1317,13 @@ mod test {
 
 	#[test]
 	fn all_opcodes_parse() {
-		let mut buf = [0,0,0,0];
+		let mut buf = [0, 0, 0, 0];
 		for byte in u8::MIN..=u8::MAX {
 			buf[0] = byte;
 			let mut code = buf.as_slice();
-			assert!(parse_instruction(&mut code).is_ok());
+
+			let res = parse_instruction(&mut code);
+			assert!(res.is_ok());
 		}
 	}
 }
