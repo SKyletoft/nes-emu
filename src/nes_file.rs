@@ -1291,14 +1291,6 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::NOP)
 		}
-		[0xF7, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xFF, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
 
 		// Default case - unknown instruction
 		x => Err(anyhow::anyhow!("Unknown opcode: {:02x?}", &x[..1])),
