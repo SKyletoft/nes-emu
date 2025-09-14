@@ -6,6 +6,7 @@ pub struct NesFile {
 	pub prg_roms: Vec<[u8; 16 * 1024]>,
 	pub programs: Vec<Vec<(u16, Inst)>>,
 	pub chr_roms: Vec<[u8; 8 * 1024]>,
+	pub mapper: Mapper,
 }
 
 impl TryFrom<Vec<u8>> for NesFile {
@@ -88,6 +89,7 @@ impl TryFrom<Vec<u8>> for NesFile {
 			prg_roms,
 			programs,
 			chr_roms,
+			mapper
 		})
 	}
 }
@@ -111,14 +113,18 @@ impl NesFile {
 	}
 }
 
-enum Mapper {}
+enum Mapper {
+	MMC3,
+}
 
 impl TryFrom<u8> for Mapper {
 	type Error = anyhow::Error;
 
 	fn try_from(value: u8) -> Result<Self> {
-		dbg!(value);
-		todo!()
+		match value {
+			4 => Ok(Self::MMC3),
+			_ => bail!("{value}"),
+		}
 	}
 }
 
