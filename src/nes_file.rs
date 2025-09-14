@@ -20,7 +20,7 @@ impl TryFrom<Vec<u8>> for NesFile {
 			prg_size,
 			chr_size,
 			flags_6,
-			_flags_7,
+			flags_7,
 			_,
 			_,
 			_,
@@ -38,6 +38,7 @@ impl TryFrom<Vec<u8>> for NesFile {
 		let trainer_offset = if trainer_present { 512 } else { 0 };
 		let prg_offset = 16 + trainer_offset;
 		let chr_offset = prg_offset + (*prg_size as usize * 16 * 1024);
+		let mapper = Mapper::try_from((*flags_7 & 0xF0) | *flags_6 >> 4)?;
 
 		// Parse PRG ROM banks
 		let mut prg_roms = Vec::new();
@@ -109,6 +110,17 @@ impl NesFile {
 			}
 		}
 		Ok(out)
+	}
+}
+
+enum Mapper {}
+
+impl TryFrom<u8> for Mapper {
+	type Error = anyhow::Error;
+
+	fn try_from(value: u8) -> Result<Self> {
+		dbg!(value);
+		todo!()
 	}
 }
 
