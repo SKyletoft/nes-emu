@@ -89,7 +89,7 @@ impl TryFrom<Vec<u8>> for NesFile {
 			prg_roms,
 			programs,
 			chr_roms,
-			mapper
+			mapper,
 		})
 	}
 }
@@ -113,8 +113,14 @@ impl NesFile {
 	}
 }
 
-enum Mapper {
-	MMC3,
+#[derive(Debug, Copy, Clone)]
+pub enum Mapper {
+	MMC3 {
+		h8000: u16,
+		hA000: u16,
+		hC000: u16,
+		hE000: u16,
+	},
 }
 
 impl TryFrom<u8> for Mapper {
@@ -122,7 +128,12 @@ impl TryFrom<u8> for Mapper {
 
 	fn try_from(value: u8) -> Result<Self> {
 		match value {
-			4 => Ok(Self::MMC3),
+			4 => Ok(Self::MMC3 {
+				h8000: 0,
+				hA000: 0,
+				hC000: 0,
+				hE000: 0,
+			}),
 			_ => bail!("{value}"),
 		}
 	}
