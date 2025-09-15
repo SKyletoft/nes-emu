@@ -10,56 +10,7 @@ const END_OF_RAM: u16 = 0x1FFF;
 pub struct State {
 	pub cpu: Cpu,
 	pub game: NesFile,
-	pub ram: Ram,
-}
-
-pub struct Ram {
-	mem: [u8; 2048],
-}
-
-impl Ram {
-	pub fn new() -> Self {
-		Self { mem: [0; _] }
-	}
-
-	pub fn get(&self, idx: usize) -> Result<&u8> {
-		if idx > 8192 {
-			bail!("Out of bounds RAM-access");
-		}
-		let idx = idx % 2048;
-		Ok(unsafe { self.mem.get_unchecked(idx) })
-	}
-
-	pub fn get_mut(&mut self, idx: usize) -> Result<&mut u8> {
-		if idx > 8192 {
-			bail!("Out of bounds RAM-access");
-		}
-		let idx = idx % 2048;
-		Ok(unsafe { self.mem.get_unchecked_mut(idx) })
-	}
-
-	pub fn get_copied_slice(&self, idx: usize) -> Result<[u8; 4]> {
-		Ok([
-			*self.get(idx)?,
-			*self.get(idx + 1)?,
-			*self.get(idx + 2)?,
-			*self.get(idx + 3)?,
-		])
-	}
-}
-
-impl Index<usize> for Ram {
-	type Output = u8;
-
-	fn index(&self, index: usize) -> &Self::Output {
-		self.get(index).unwrap()
-	}
-}
-
-impl IndexMut<usize> for Ram {
-	fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-		self.get_mut(index).unwrap()
-	}
+	pub ram: [u8; 2048],
 }
 
 impl State {
@@ -76,14 +27,19 @@ impl State {
 			pc: 0xFFFC,
 		};
 
-		let ram = Ram::new();
+		let ram = [0; _];
 
 		Self { cpu, game, ram }
 	}
 
 	pub fn interpret(mut self) -> Self {
 		let inst = if self.cpu.pc < END_OF_RAM {
-			let arr = self.ram.get_copied_slice(self.cpu.pc as _).unwrap();
+			let arr = [
+				self.ram[(self.cpu.pc as usize + 0) % 2048],
+				self.ram[(self.cpu.pc as usize + 1) % 2048],
+				self.ram[(self.cpu.pc as usize + 2) % 2048],
+				self.ram[(self.cpu.pc as usize + 3) % 2048],
+			];
 			let mut slice = arr.as_slice();
 			inst::parse_instruction(&mut slice)
 				.expect("Instruction parse can only fail if there aren't enough operands")
