@@ -1,20 +1,17 @@
-use std::ops::{Index, IndexMut};
-
-use crate::{cpu::Cpu, inst, nes_file::{Mapper, NesFile}};
-
-use anyhow::{Result, bail};
+use crate::{cpu::Cpu, inst, nes_file::Mapper};
 
 // Actually RAM ends at 0x07FF, but it's then repeated four times for some reason.
 const END_OF_RAM: u16 = 0x1FFF;
 
+#[repr(C)]
 pub struct State {
 	pub cpu: Cpu,
-	pub game: NesFile,
+	pub rom: Box<Mapper>,
 	pub ram: [u8; 2048],
 }
 
 impl State {
-	pub fn new(game: NesFile) -> Self {
+	pub fn new(rom: Mapper) -> Self {
 		let cpu = Cpu {
 			a: 0,
 			x: 0,
@@ -27,9 +24,10 @@ impl State {
 			pc: 0xFFFC,
 		};
 
-		let ram = [0; _];
+		let ram = [0; 2048];
+		let rom = Box::new(rom);
 
-		Self { cpu, game, ram }
+		Self { cpu, rom, ram }
 	}
 
 	pub fn interpret(mut self) -> Self {
@@ -45,11 +43,7 @@ impl State {
 				.expect("Instruction parse can only fail if there aren't enough operands")
 		} else {
 			// Yes this is stupid, but it's temporary until the ROM-code is recompiled to x86
-			let memory_bank = 0;
-			let idx = self.game.programs[memory_bank]
-				.binary_search_by_key(&self.cpu.pc, |(x, _)| *x)
-				.unwrap();
-			self.game.programs[memory_bank][idx].1
+			todo!()
 		};
 		inst.evaluate(&mut self.cpu);
 
@@ -64,8 +58,18 @@ impl State {
 			0x2008..0x4000 => todo!(),
 			0x4000..0x4018 => todo!(),
 			0x4018..0x4020 => todo!(),
-			0x4020..=0xFFFF => match self.game.mapper {
-				Mapper::MMC3 => {
+			0x4020..=0xFFFF => match &*self.rom {
+				Mapper::MMC3 {
+					h8000,
+					hA000,
+					hC000,
+					hE000,
+					prg_banks,
+				} => {
+					if adr < 0x8000 {
+						return 0;
+					}
+
 					todo!()
 				}
 			},

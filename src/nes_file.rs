@@ -2,14 +2,34 @@ use anyhow::{Result, bail};
 
 use crate::inst::{self, Inst};
 
-pub struct NesFile {
-	pub prg_roms: Vec<[u8; 16 * 1024]>,
-	pub programs: Vec<Vec<(u16, Inst)>>,
-	pub chr_roms: Vec<[u8; 8 * 1024]>,
-	pub mapper: Mapper,
+#[derive(Debug, Copy, Clone)]
+pub enum Mapper {
+	MMC3 {
+		prg_banks: [u8; 2],
+		chr_2k_banks: [u8; 2],
+		chr_1k_banks: [u8; 4],
+		prg_roms: [[u8; 8 * 1024]; 32],
+		// chr_roms: [],
+	},
 }
 
-impl TryFrom<Vec<u8>> for NesFile {
+impl TryFrom<u8> for Mapper {
+	type Error = anyhow::Error;
+
+	fn try_from(value: u8) -> Result<Self> {
+		match value {
+			4 | 118 | 119 => Ok(Self::MMC3 {
+				prg_banks: Default::default(),
+				chr_2k_banks: Default::default(),
+				chr_1k_banks: Default::default(),
+				prg_roms: [[0; _]; _]
+			}),
+			_ => bail!("{value}"),
+		}
+	}
+}
+
+impl TryFrom<Vec<u8>> for Mapper {
 	type Error = anyhow::Error;
 
 	fn try_from(buffer: Vec<u8>) -> Result<Self, Self::Error> {
@@ -39,7 +59,12 @@ impl TryFrom<Vec<u8>> for NesFile {
 		let trainer_offset = if trainer_present { 512 } else { 0 };
 		let prg_offset = 16 + trainer_offset;
 		let chr_offset = prg_offset + (*prg_size as usize * 16 * 1024);
-		let mapper = Mapper::try_from((*flags_7 & 0xF0) | *flags_6 >> 4)?;
+		let mapper_type = (*flags_7 & 0xF0) | *flags_6 >> 4;
+
+		match mapper_type {
+			4 | 118 | 119 => {}
+			_ => bail!("Unknown mapper type {mapper_type}"),
+		}
 
 		// Parse PRG ROM banks
 		let prg_roms = buffer[prg_offset..]
@@ -91,51 +116,6 @@ impl TryFrom<Vec<u8>> for NesFile {
 			chr_roms,
 			mapper,
 		})
-	}
-}
-
-impl NesFile {
-	fn parse_bb(
-		prg_roms: &[[u8; 16 * 1024]],
-		stack_ptr: u16,
-		rom_bank: usize,
-	) -> Result<Vec<Inst>> {
-		let mut out = Vec::new();
-		let mut slice = &prg_roms[rom_bank][stack_ptr as usize..];
-		loop {
-			let inst = inst::parse_instruction(&mut slice).unwrap();
-			out.push(inst);
-			if inst.ends_bb() {
-				break;
-			}
-		}
-		Ok(out)
-	}
-}
-
-#[derive(Debug, Copy, Clone)]
-pub enum Mapper {
-	MMC3 {
-		h8000: u16,
-		hA000: u16,
-		hC000: u16,
-		hE000: u16,
-	},
-}
-
-impl TryFrom<u8> for Mapper {
-	type Error = anyhow::Error;
-
-	fn try_from(value: u8) -> Result<Self> {
-		match value {
-			4 => Ok(Self::MMC3 {
-				h8000: 0,
-				hA000: 0,
-				hC000: 0,
-				hE000: 0,
-			}),
-			_ => bail!("{value}"),
-		}
 	}
 }
 
