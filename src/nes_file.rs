@@ -74,7 +74,7 @@ impl TryFrom<Vec<u8>> for NesFile {
 		// Parse CHR ROM banks
 		let chr_roms = buffer[chr_offset..]
 			.chunks(8 * 1024)
-			.take(*prg_size as _)
+			.take(*chr_size as _)
 			.map(|slice| {
 				let mut arr = [0; _];
 				if slice.len() != 8 * 1024 {
