@@ -71,7 +71,18 @@ impl TryFrom<Vec<u8>> for Mapper {
 			4 | 118 | 119 => {}
 			_ => bail!("Unknown mapper type {mapper_type}"),
 		}
+	}
 
+	fn set_cpu(&mut self, adr: u16) -> Option<()> {
+		todo!()
+	}
+
+	fn get_ppu(&self, adr: u16) -> Option<()> {
+		todo!()
+	}
+
+	fn set_ppu(&mut self, adr: u16) -> Option<()> {
+		todo!()
 	}
 }
 
