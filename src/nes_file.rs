@@ -8,7 +8,14 @@ pub enum Mapper {
 		chr_1k_banks: [u8; 4],
 		prg_roms: [[u8; 8 * 1024]; 32],
 		// chr_roms: [],
+		prg_mode: Mmc3PrgMode,
 	},
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum Mmc3PrgMode {
+	Mode0 = 0,
+	Mode1 = 1,
 }
 
 impl TryFrom<u8> for Mapper {
@@ -20,7 +27,8 @@ impl TryFrom<u8> for Mapper {
 				prg_banks: Default::default(),
 				chr_2k_banks: Default::default(),
 				chr_1k_banks: Default::default(),
-				prg_roms: [[0; _]; _]
+				prg_roms: [[0; _]; _],
+				prg_mode: Mmc3PrgMode::Mode0,
 			}),
 			_ => bail!("{value}"),
 		}
