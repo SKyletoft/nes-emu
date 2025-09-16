@@ -68,7 +68,29 @@ impl TryFrom<Vec<u8>> for Mapper {
 		let mapper_type = (*flags_7 & 0xF0) | *flags_6 >> 4;
 
 		match mapper_type {
-			4 | 118 | 119 => {}
+			4 | 118 | 119 => {
+				if *prg_size != 16 {
+					bail!("Wrong amount of prg_roms for an MMC3 mapper");
+				}
+
+				let mut prg_roms = [[0; _]; _];
+				for (src, dst) in buffer[prg_offset..]
+					.chunks(16 * 1024)
+					.take(*prg_size as _)
+					.flat_map(|slice_16| slice_16.chunks(8 * 1024))
+					.zip(prg_roms.iter_mut())
+				{
+					dst.copy_from_slice(src);
+				}
+
+				Ok(Mapper::MMC3 {
+					prg_banks: [0; _],
+					chr_2k_banks: [0; _],
+					chr_1k_banks: [0; _],
+					prg_roms,
+					prg_mode: Mmc3PrgMode::Mode0,
+				})
+			}
 			_ => bail!("Unknown mapper type {mapper_type}"),
 		}
 	}
