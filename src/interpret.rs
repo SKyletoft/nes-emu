@@ -59,13 +59,7 @@ impl State {
 			0x4000..0x4018 => todo!(),
 			0x4018..0x4020 => todo!(),
 			0x4020..=0xFFFF => match &*self.rom {
-				Mapper::MMC3 {
-					h8000,
-					hA000,
-					hC000,
-					hE000,
-					prg_banks,
-				} => {
+				Mapper::MMC3 { .. } => {
 					if adr < 0x8000 {
 						return 0;
 					}
