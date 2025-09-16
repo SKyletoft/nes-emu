@@ -108,26 +108,30 @@ impl Mapper {
 				chr_2k_banks,
 				chr_1k_banks,
 				prg_roms,
-				prg_mode,
-			} => match prg_mode {
-				Mmc3PrgMode::Mode0 => match adr {
-					0x8000..=0x9FFF => todo!("Bank 6"),
-					0xA000..=0xBFFF => todo!("Bank 7"),
-					0xC000..=0xDFFF => todo!("Fixed"),
-					0xE000..=0xFFFF => todo!("Last bank, fixed"),
-					_ => panic!(
-						"Out of bounds read from mapper (should probably be 0? But compare to existing emulators when this happens)"
-					),
-				},
-				Mmc3PrgMode::Mode1 => match adr {
-					0x8000..=0x9FFF => todo!("Fixed"),
-					0xA000..=0xBFFF => todo!("Bank 7"),
-					0xC000..=0xDFFF => todo!("Bank 6"),
-					0xE000..=0xFFFF => todo!("Last bank, fixed"),
-					_ => panic!(
-						"Out of bounds read from mapper (should probably be 0? But compare to existing emulators when this happens)"
-					),
-				},
+				prg_mode: Mmc3PrgMode::Mode0,
+			} => match adr {
+				0x8000..=0x9FFF => todo!("Bank 6"),
+				0xA000..=0xBFFF => todo!("Bank 7"),
+				0xC000..=0xDFFF => todo!("Fixed"),
+				0xE000..=0xFFFF => todo!("Last bank, fixed"),
+				_ => panic!(
+					"Out of bounds read from mapper (should probably be 0? But compare to existing emulators when this happens)"
+				),
+			},
+			Mapper::MMC3 {
+				prg_banks,
+				chr_2k_banks,
+				chr_1k_banks,
+				prg_roms,
+				prg_mode: Mmc3PrgMode::Mode1,
+			} => match adr {
+				0x8000..=0x9FFF => todo!("Fixed"),
+				0xA000..=0xBFFF => todo!("Bank 7"),
+				0xC000..=0xDFFF => todo!("Bank 6"),
+				0xE000..=0xFFFF => todo!("Last bank, fixed"),
+				_ => panic!(
+					"Out of bounds read from mapper (should probably be 0? But compare to existing emulators when this happens)"
+				),
 			},
 		}
 	}
