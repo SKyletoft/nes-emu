@@ -151,24 +151,11 @@ impl Mapper {
 
 #[cfg(test)]
 mod test {
-
 	use super::*;
 
 	#[test]
 	fn load_smb3() {
 		let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
-		NesFile::try_from(buffer).unwrap();
-	}
-
-	#[test]
-	fn all_opcodes_parse() {
-		let mut buf = [0, 0, 0, 0];
-		for byte in u8::MIN..=u8::MAX {
-			buf[0] = byte;
-			let mut code = buf.as_slice();
-
-			let res = inst::parse_instruction(&mut code);
-			assert!(res.is_ok());
-		}
+		Mapper::try_from(buffer).unwrap();
 	}
 }

@@ -2100,3 +2100,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 		x => bail!("Unknown opcode: {:02x?}", &x),
 	}
 }
+
+
+#[cfg(test)]
+mod test {
+	use super::*;
+	#[test]
+	fn all_opcodes_parse() {
+		let mut buf = [0, 0, 0, 0];
+		for byte in u8::MIN..=u8::MAX {
+			buf[0] = byte;
+			let mut code = buf.as_slice();
+
+			let res = parse_instruction(&mut code);
+			assert!(res.is_ok());
+		}
+	}
+}
