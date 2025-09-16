@@ -1,5 +1,5 @@
 use interpret::State;
-use nes_file::NesFile;
+use nes_file::Mapper;
 
 mod cpu;
 mod evaluate_instruction;
@@ -11,7 +11,7 @@ fn main() {
 	let path = std::env::args().nth(1).unwrap_or_else(|| "../non-free/SMB3.nes".into());
 	dbg!(&path);
 	let buffer = std::fs::read(path).unwrap();
-	let game = NesFile::try_from(buffer).unwrap();
+	let game = Mapper::try_from(buffer).unwrap();
 	let mut system_state = State::new(game);
 
 	loop {
