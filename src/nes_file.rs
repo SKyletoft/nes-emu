@@ -1,7 +1,5 @@
 use anyhow::{Result, bail};
 
-use crate::inst::{self, Inst};
-
 #[derive(Debug, Copy, Clone)]
 pub enum Mapper {
 	MMC3 {
@@ -66,56 +64,6 @@ impl TryFrom<Vec<u8>> for Mapper {
 			_ => bail!("Unknown mapper type {mapper_type}"),
 		}
 
-		// Parse PRG ROM banks
-		let prg_roms = buffer[prg_offset..]
-			.chunks(16 * 1024)
-			.take(*prg_size as _)
-			.map(|slice| {
-				let mut arr = [0; _];
-				if slice.len() != 16 * 1024 {
-					bail!("Incorrect length of memory bank {}", slice.len());
-				}
-				arr.copy_from_slice(slice);
-				Ok(arr)
-			})
-			.collect::<Result<Vec<_>>>()?;
-
-		let programs = prg_roms
-			.iter()
-			.map(|txt| {
-				let mut txt = txt.as_slice();
-				let mut out = Vec::new();
-				while !txt.is_empty() {
-					let idx = (16384 - txt.len()) as _;
-					let Ok(inst) = inst::parse_instruction(&mut txt) else {
-						break;
-					};
-					out.push((idx, inst));
-				}
-				Ok(out)
-			})
-			.collect::<Result<Vec<_>>>()?;
-
-		// Parse CHR ROM banks
-		let chr_roms = buffer[chr_offset..]
-			.chunks(8 * 1024)
-			.take(*chr_size as _)
-			.map(|slice| {
-				let mut arr = [0; _];
-				if slice.len() != 8 * 1024 {
-					bail!("Incorrect length of memory bank {}", slice.len());
-				}
-				arr.copy_from_slice(slice);
-				Ok(arr)
-			})
-			.collect::<Result<Vec<_>>>()?;
-
-		Ok(NesFile {
-			prg_roms,
-			programs,
-			chr_roms,
-			mapper,
-		})
 	}
 }
 
