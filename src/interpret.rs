@@ -58,15 +58,7 @@ impl State {
 			0x2008..0x4000 => todo!(),
 			0x4000..0x4018 => todo!(),
 			0x4018..0x4020 => todo!(),
-			0x4020..=0xFFFF => match &*self.rom {
-				Mapper::MMC3 { .. } => {
-					if adr < 0x8000 {
-						return 0;
-					}
-
-					todo!()
-				}
-			},
+			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
 		}
 	}
 }
