@@ -31,19 +31,16 @@ impl State {
 	}
 
 	pub fn interpret(mut self) -> Self {
-		let inst = if self.cpu.pc < END_OF_RAM {
+		let inst = {
 			let arr = [
-				self.ram[(self.cpu.pc as usize + 0) % 2048],
-				self.ram[(self.cpu.pc as usize + 1) % 2048],
-				self.ram[(self.cpu.pc as usize + 2) % 2048],
-				self.ram[(self.cpu.pc as usize + 3) % 2048],
+				self.mem(self.cpu.pc),
+				self.mem(self.cpu.pc + 1),
+				self.mem(self.cpu.pc + 2),
+				self.mem(self.cpu.pc + 3),
 			];
 			let mut slice = arr.as_slice();
 			inst::parse_instruction(&mut slice)
 				.expect("Instruction parse can only fail if there aren't enough operands")
-		} else {
-			// Yes this is stupid, but it's temporary until the ROM-code is recompiled to x86
-			todo!()
 		};
 		inst.evaluate(&mut self.cpu);
 
