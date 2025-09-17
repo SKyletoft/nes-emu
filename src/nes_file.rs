@@ -97,7 +97,7 @@ impl TryFrom<Vec<u8>> for Mapper {
 }
 
 impl Mapper {
-	fn get_cpu(&self, adr: u16) -> Option<u8> {
+	pub fn get_cpu(&self, adr: u16) -> Option<u8> {
 		if !(0x4020..=0xFFFF).contains(&adr) {
 			return None;
 		}
@@ -136,15 +136,15 @@ impl Mapper {
 		}
 	}
 
-	fn set_cpu(&mut self, adr: u16) -> Option<()> {
+	pub fn set_cpu(&mut self, adr: u16) -> Option<()> {
 		todo!()
 	}
 
-	fn get_ppu(&self, adr: u16) -> Option<()> {
+	pub fn get_ppu(&self, adr: u16) -> Option<()> {
 		todo!()
 	}
 
-	fn set_ppu(&mut self, adr: u16) -> Option<()> {
+	pub fn set_ppu(&mut self, adr: u16) -> Option<()> {
 		todo!()
 	}
 }
