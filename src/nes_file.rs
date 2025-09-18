@@ -62,6 +62,7 @@ impl TryFrom<Vec<u8>> for Mapper {
 		};
 
 		let trainer_present = flags_6 & (1 << 2) != 0;
+		assert!(!trainer_present); // Not really, but please error early when I hit a game with one.
 		let trainer_offset = if trainer_present { 512 } else { 0 };
 		let prg_offset = 16 + trainer_offset;
 		let chr_offset = prg_offset + (*prg_size as usize * 16 * 1024);
