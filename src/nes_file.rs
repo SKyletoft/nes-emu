@@ -11,6 +11,8 @@ pub enum Mapper {
 		prg_mode: Mmc3PrgMode,
 		registers: Mmc3Registers,
 	},
+
+	MMC4,
 }
 
 #[derive(Debug, Copy, Clone, Default)]
@@ -48,6 +50,7 @@ impl TryFrom<u8> for Mapper {
 				prg_mode: Default::default(),
 				registers: Default::default(),
 			}),
+			10 => Ok(Self::MMC4),
 			_ => bail!("{value}"),
 		}
 	}
@@ -111,6 +114,7 @@ impl TryFrom<Vec<u8>> for Mapper {
 					registers: Mmc3Registers::default(),
 				})
 			}
+			10 => Ok(Mapper::MMC4),
 			_ => bail!("Unknown mapper type {mapper_type}"),
 		}
 	}
@@ -163,6 +167,7 @@ impl Mapper {
 					"Out of bounds read from mapper (should probably be 0? But compare to existing emulators when this happens)"
 				),
 			},
+			Mapper::MMC4 => todo!(),
 		}
 	}
 
@@ -186,6 +191,12 @@ mod test {
 	#[test]
 	fn load_smb3() {
 		let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
+		Mapper::try_from(buffer).unwrap();
+	}
+
+	#[test]
+	fn load_fe1() {
+		let buffer = std::fs::read("non-free/FE1EN.nes").unwrap();
 		Mapper::try_from(buffer).unwrap();
 	}
 }
