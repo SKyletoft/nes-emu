@@ -1,6 +1,6 @@
 use anyhow::{Result, bail};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum Mapper {
 	MMC3 {
 		prg_banks: [u8; 2],
@@ -9,13 +9,30 @@ pub enum Mapper {
 		prg_roms: [[u8; 8 * 1024]; 32],
 		// chr_roms: [],
 		prg_mode: Mmc3PrgMode,
+		registers: Mmc3Registers,
 	},
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub enum Mmc3PrgMode {
+	#[default]
 	Mode0 = 0,
 	Mode1 = 1,
+}
+
+#[derive(Debug, Clone, Default)]
+#[allow(non_snake_case)]
+pub struct Mmc3Registers {
+	// Mapping
+	h8000: u8,
+	h8001: u8,
+	hA000: u8,
+	hA001: u8,
+	// Scanlines:
+	hC000: u8,
+	hC001: u8,
+	hE000: u8,
+	hE001: u8,
 }
 
 impl TryFrom<u8> for Mapper {
@@ -28,7 +45,8 @@ impl TryFrom<u8> for Mapper {
 				chr_2k_banks: Default::default(),
 				chr_1k_banks: Default::default(),
 				prg_roms: [[0; _]; _],
-				prg_mode: Mmc3PrgMode::Mode0,
+				prg_mode: Default::default(),
+				registers: Default::default(),
 			}),
 			_ => bail!("{value}"),
 		}
@@ -90,6 +108,7 @@ impl TryFrom<Vec<u8>> for Mapper {
 					chr_1k_banks: [0; _],
 					prg_roms,
 					prg_mode: Mmc3PrgMode::Mode0,
+					registers: Mmc3Registers::default(),
 				})
 			}
 			_ => bail!("Unknown mapper type {mapper_type}"),
@@ -110,6 +129,7 @@ impl Mapper {
 				chr_1k_banks,
 				prg_roms,
 				prg_mode: Mmc3PrgMode::Mode0,
+				registers,
 			} => match adr {
 				0x8000..=0x9FFF => todo!("Bank 6"),
 				0xA000..=0xBFFF => todo!("Bank 7"),
@@ -125,6 +145,7 @@ impl Mapper {
 				chr_1k_banks,
 				prg_roms,
 				prg_mode: Mmc3PrgMode::Mode1,
+				registers,
 			} => match adr {
 				0x8000..=0x9FFF => todo!("Fixed"),
 				0xA000..=0xBFFF => todo!("Bank 7"),
