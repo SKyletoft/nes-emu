@@ -44,19 +44,21 @@ impl State {
 		Self { cpu, rom, ram }
 	}
 
+	pub fn next_inst(&self) -> Inst {
+		let arr = [
+			self.mem(self.cpu.pc),
+			self.mem(self.cpu.pc + 1),
+			self.mem(self.cpu.pc + 2),
+			self.mem(self.cpu.pc + 3),
+		];
+		let mut slice = arr.as_slice();
+		inst::parse_instruction(&mut slice)
+			.expect("Instruction parse can only fail if there aren't enough operands")
+	}
+
 	pub fn interpret(mut self) -> Self {
-		let inst = {
-			let arr = [
-				self.mem(self.cpu.pc),
-				self.mem(self.cpu.pc + 1),
-				self.mem(self.cpu.pc + 2),
-				self.mem(self.cpu.pc + 3),
-			];
-			let mut slice = arr.as_slice();
-			inst::parse_instruction(&mut slice)
-				.expect("Instruction parse can only fail if there aren't enough operands")
-		};
-		inst.evaluate(&mut self.cpu);
+		let inst = self.next_inst();
+		inst.evaluate(&mut self);
 
 		self
 	}
