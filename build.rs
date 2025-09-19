@@ -9,6 +9,9 @@ fn main() {
 		.file("src/evaluate_instruction_3.c")
 		.file("src/evaluate_instruction_4.c");
 
+	// Use clang instead of GCC
+	build.compiler("clang");
+
 	// build.flag("-w");
 	build.flag("-Wall").flag("-Wextra").flag("-Wconversion");
 	build.flag("-I.").flag("-Iinc");
