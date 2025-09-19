@@ -214,81 +214,81 @@ void plp(State *state) {
 }
 
 void rol_accumulator(State *state) {
-	uint8_t carry = state->cpu.p.C;
-	state->cpu.p.C      = (state->cpu.a & 0x80) >> 7;
-	state->cpu.a        = ((state->cpu.a << 1) | carry) != 0;
-	state->cpu.p.Z      = 0 == state->cpu.a;
-	state->cpu.p.N      = (state->cpu.a & 0x80) >> 7;
+	uint8_t carry  = state->cpu.p.C;
+	state->cpu.p.C = (state->cpu.a & 0x80) >> 7;
+	state->cpu.a   = ((state->cpu.a << 1) | carry) != 0;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
 void rol_zero_page(State *state, uint8_t val) {
-	uint8_t carry = state->cpu.p.C;
-	state->cpu.p.C      = (val & 0x80) >> 7;
-	val           = ((val << 1) | carry) != 0;
-	state->cpu.p.Z      = 0 == val;
-	state->cpu.p.N      = (val & 0x80) >> 7;
+	uint8_t carry  = state->cpu.p.C;
+	state->cpu.p.C = (val & 0x80) >> 7;
+	val            = ((val << 1) | carry) != 0;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
 void rol_zero_page_x(State *state, uint8_t val) {
-	uint8_t carry = state->cpu.p.C;
-	state->cpu.p.C      = (val & 0x80) >> 7;
-	val           = ((val << 1) | carry) != 0;
-	state->cpu.p.Z      = 0 == val;
-	state->cpu.p.N      = (val & 0x80) >> 7;
+	uint8_t carry  = state->cpu.p.C;
+	state->cpu.p.C = (val & 0x80) >> 7;
+	val            = ((val << 1) | carry) != 0;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
 void rol_absolute(State *state, uint8_t val) {
-	uint8_t carry = state->cpu.p.C;
-	state->cpu.p.C      = (val & 0x80) >> 7;
-	val           = ((val << 1) | carry) != 0;
-	state->cpu.p.Z      = 0 == val;
-	state->cpu.p.N      = (val & 0x80) >> 7;
+	uint8_t carry  = state->cpu.p.C;
+	state->cpu.p.C = (val & 0x80) >> 7;
+	val            = ((val << 1) | carry) != 0;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
 void rol_absolute_x(State *state, uint8_t val) {
-	uint8_t carry = state->cpu.p.C;
-	state->cpu.p.C      = (val & 0x80) >> 7;
-	val           = ((val << 1) | carry) != 0;
-	state->cpu.p.Z      = 0 == val;
-	state->cpu.p.N      = (val & 0x80) >> 7;
+	uint8_t carry  = state->cpu.p.C;
+	state->cpu.p.C = (val & 0x80) >> 7;
+	val            = ((val << 1) | carry) != 0;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
 void ror_accumulator(State *state) {
-	uint8_t carry = state->cpu.p.C;
-	state->cpu.p.C      = state->cpu.a & 0x01;
-	state->cpu.a        = ((carry << 7) | (state->cpu.a >> 1)) != 0;
-	state->cpu.p.Z      = 0 == state->cpu.a;
-	state->cpu.p.N      = (state->cpu.a & 0x80) >> 7;
+	uint8_t carry  = state->cpu.p.C;
+	state->cpu.p.C = state->cpu.a & 0x01;
+	state->cpu.a   = ((carry << 7) | (state->cpu.a >> 1)) != 0;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
 void ror_zero_page(State *state, uint8_t val) {
-	uint8_t carry = state->cpu.p.C;
-	state->cpu.p.C      = val & 0x01;
-	val           = ((carry << 7) | (val >> 1)) != 0;
-	state->cpu.p.Z      = 0 == val;
-	state->cpu.p.N      = (val & 0x80) >> 7;
+	uint8_t carry  = state->cpu.p.C;
+	state->cpu.p.C = val & 0x01;
+	val            = ((carry << 7) | (val >> 1)) != 0;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
 void ror_zero_page_x(State *state, uint8_t val) {
-	uint8_t carry = state->cpu.p.C;
-	state->cpu.p.C      = val & 0x01;
-	val           = ((carry << 7) | (val >> 1)) != 0;
-	state->cpu.p.Z      = 0 == val;
-	state->cpu.p.N      = (val & 0x80) >> 7;
+	uint8_t carry  = state->cpu.p.C;
+	state->cpu.p.C = val & 0x01;
+	val            = ((carry << 7) | (val >> 1)) != 0;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
 void ror_absolute(State *state, uint8_t val) {
-	uint8_t carry = state->cpu.p.C;
-	state->cpu.p.C      = val & 0x01;
-	val           = ((carry << 7) | (val >> 1)) != 0;
-	state->cpu.p.Z      = 0 == val;
-	state->cpu.p.N      = (val & 0x80) >> 7;
+	uint8_t carry  = state->cpu.p.C;
+	state->cpu.p.C = val & 0x01;
+	val            = ((carry << 7) | (val >> 1)) != 0;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
 void ror_absolute_x(State *state, uint8_t val) {
-	uint8_t carry = state->cpu.p.C;
-	state->cpu.p.C      = val & 0x01;
-	val           = ((carry << 7) | (val >> 1)) != 0;
-	state->cpu.p.Z      = 0 == val;
-	state->cpu.p.N      = (val & 0x80) >> 7;
+	uint8_t carry  = state->cpu.p.C;
+	state->cpu.p.C = val & 0x01;
+	val            = ((carry << 7) | (val >> 1)) != 0;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }

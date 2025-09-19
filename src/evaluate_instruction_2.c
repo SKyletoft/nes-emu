@@ -15,101 +15,101 @@ void clv(State *state) {
 }
 
 void cmp_immediate(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void cmp_zero_page(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void cmp_zero_page_x(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void cmp_absolute(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void cmp_absolute_x(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void cmp_absolute_y(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void cmp_indirect_x(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void cmp_indirect_y(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void cpx_immediate(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.x - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.x - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void cpx_zero_page(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.x - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.x - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void cpx_absolute(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.x - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.x - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void cpy_immediate(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.y - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.y - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void cpy_zero_page(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.y - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.y - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void cpy_absolute(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.y - (uint16_t) val;
-	state->cpu.p.C     = res < 256;
-	state->cpu.p.Z     = 0 == (uint8_t) res;
-	state->cpu.p.N     = (res & 0x80) >> 7;
+	uint16_t res   = (uint16_t) state->cpu.y - (uint16_t) val;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
 void dec_zero_page(State *state, uint8_t val) {
@@ -237,10 +237,35 @@ void jmp_absolute(State *state, uint16_t addr) {
 }
 
 void jmp_indirect(State *state, uint16_t addr) {
-	state->cpu.pc = addr;
+	// Read the address from memory at addr
+	uint16_t low_byte  = state_get_mem(state, addr);
+	uint16_t high_byte = state_get_mem(state, addr + 1);
+	state->cpu.pc      = (high_byte << 8) | low_byte;
 }
 
 void jsr(State *state, uint16_t addr) {
-	// Push return address (pc + 2)
+	// Push return address (pc + 2) onto stack
+	uint16_t return_addr = state->cpu.pc + 2;
+
+	// Push high byte first
+	uint8_t high_byte = (return_addr >> 8) & 0xFF;
+	uint8_t low_byte  = return_addr & 0xFF;
+
+	// Stack pointer is at cpu.s, but we need to adjust for the stack behavior
+	// The stack grows downward from 0x1FF to 0x100
+	uint8_t stack_ptr = state->cpu.s;
+
+	// Push high byte
+	state_set_mem(state, 0x100 + stack_ptr, high_byte);
+	stack_ptr--;
+
+	// Push low byte
+	state_set_mem(state, 0x100 + stack_ptr, low_byte);
+	stack_ptr--;
+
+	// Update stack pointer
+	state->cpu.s = stack_ptr;
+
+	// Jump to subroutine
 	state->cpu.pc = addr;
 }

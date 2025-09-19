@@ -7,7 +7,8 @@ void adc_immediate(State *state, uint8_t val) {
 
 	state->cpu.p.C = res > 255;
 	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.V =
+	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
 	state->cpu.p.N = (res & 0x80) >> 7;
 	state->cpu.a   = (uint8_t) res;
 }
@@ -17,7 +18,8 @@ void adc_zero_page(State *state, uint8_t val) {
 
 	state->cpu.p.C = res > 255;
 	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.V =
+	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
 	state->cpu.p.N = (res & 0x80) >> 7;
 	state->cpu.a   = (uint8_t) res;
 }
@@ -27,7 +29,8 @@ void adc_zero_page_x(State *state, uint8_t val) {
 
 	state->cpu.p.C = res > 255;
 	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.V =
+	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
 	state->cpu.p.N = (res & 0x80) >> 7;
 	state->cpu.a   = (uint8_t) res;
 }
@@ -37,7 +40,8 @@ void adc_absolute(State *state, uint8_t val) {
 
 	state->cpu.p.C = res > 255;
 	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.V =
+	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
 	state->cpu.p.N = (res & 0x80) >> 7;
 	state->cpu.a   = (uint8_t) res;
 }
@@ -47,7 +51,8 @@ void adc_absolute_x(State *state, uint8_t val) {
 
 	state->cpu.p.C = res > 255;
 	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.V =
+	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
 	state->cpu.p.N = (res & 0x80) >> 7;
 	state->cpu.a   = (uint8_t) res;
 }
@@ -57,7 +62,8 @@ void adc_absolute_y(State *state, uint8_t val) {
 
 	state->cpu.p.C = res > 255;
 	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.V =
+	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
 	state->cpu.p.N = (res & 0x80) >> 7;
 	state->cpu.a   = (uint8_t) res;
 }
@@ -67,7 +73,8 @@ void adc_indirect_x(State *state, uint8_t val) {
 
 	state->cpu.p.C = res > 255;
 	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.V =
+	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
 	state->cpu.p.N = (res & 0x80) >> 7;
 	state->cpu.a   = (uint8_t) res;
 }
@@ -77,7 +84,8 @@ void adc_indirect_y(State *state, uint8_t val) {
 
 	state->cpu.p.C = res > 255;
 	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.V =
+	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
 	state->cpu.p.N = (res & 0x80) >> 7;
 	state->cpu.a   = (uint8_t) res;
 }
