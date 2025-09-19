@@ -9,7 +9,9 @@ mod interpret;
 mod nes_file;
 
 fn display(state: &State) {
-	let cpu::Cpu {a, x, y, s, p, pc, ..} = state.cpu;
+	let cpu::Cpu {
+		a, x, y, s, p, pc, ..
+	} = state.cpu;
 
 	let c = p.c();
 	let z = p.z();
@@ -29,7 +31,9 @@ fn display(state: &State) {
 }
 
 fn main() {
-	let path = std::env::args().nth(1).unwrap_or_else(|| "../non-free/SMB3.nes".into());
+	let path = std::env::args()
+		.nth(1)
+		.unwrap_or_else(|| "../non-free/SMB3.nes".into());
 	dbg!(&path);
 	let buffer = std::fs::read(path).unwrap();
 	let game = Mapper::try_from(buffer).unwrap();
