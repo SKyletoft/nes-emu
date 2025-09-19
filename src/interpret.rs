@@ -62,11 +62,16 @@ impl State {
 			.expect("Instruction parse can only fail if there aren't enough operands")
 	}
 
-	pub fn interpret(mut self) -> Self {
+	pub fn next_step(mut self) -> Self {
 		let inst = self.next_inst();
 		inst.evaluate(&mut self);
 
 		self
+	}
+
+	pub fn next(&mut self) {
+		let inst = self.next_inst();
+		inst.evaluate(self);
 	}
 
 	pub fn mem(&self, adr: u16) -> u8 {
