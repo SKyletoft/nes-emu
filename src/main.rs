@@ -76,4 +76,23 @@ mod test {
 		assert_eq!(state.cpu.pc, 0xFF49);
 		assert_eq!(state.cpu.s, 0xFD);
 	}
+
+	#[test]
+	fn smb3_first_jsr() {
+		let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
+		let mut state = State::new(Mapper::try_from(buffer).unwrap());
+		for _ in 0..7 {
+			state.next();
+		}
+		// Wait for PPU to init...
+		for _ in 0..(25559/2) {
+			assert_eq!(state.cpu.pc, 0xFF4E);
+			assert_eq!(state.next_inst(), Inst::LDA(LDA::Absolute(0x2002)));
+			state.next();
+			assert_eq!(state.next_inst(), Inst::BPL(0xFF4E));
+			state.next();
+		}
+		assert_eq!(state.cpu.pc, 0xFF53);
+		assert_eq!(state.next_inst(), Inst::DEX);
+	}
 }
