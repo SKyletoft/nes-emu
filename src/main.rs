@@ -74,6 +74,6 @@ mod test {
 		assert_eq!(state.next_inst(), Inst::STA(STA::Absolute(0x2000)));
 		assert_eq!(state.cpu.a, 8);
 		assert_eq!(state.cpu.pc, 0xFF49);
-		assert_eq!(state.cpu.s, 0x01FD);
+		assert_eq!(state.cpu.s, 0xFD);
 	}
 }
