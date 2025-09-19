@@ -10,6 +10,18 @@ pub struct State {
 	pub ram: [u8; 2048],
 }
 
+#[unsafe(no_mangle)]
+pub unsafe fn state_get_mem(ptr: *const State, adr: u16) -> u8 {
+	let state = unsafe { &*ptr };
+	state.mem(adr)
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn state_set_mem(ptr: *mut State, adr: u16, val: u8) {
+	let state = unsafe { &mut *ptr };
+	state.rom.set_cpu(adr, val).unwrap();
+}
+
 impl State {
 	pub fn new(rom: Mapper) -> Self {
 		let cpu = Cpu {
