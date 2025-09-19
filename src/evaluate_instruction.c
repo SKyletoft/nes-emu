@@ -4,10 +4,6 @@
 
 // C-implementations of NES instructions
 
-int test() {
-	return 5;
-}
-
 void adc_immediate(Cpu *cpu, uint8_t val) {
 	uint16_t res = (uint16_t) cpu->a + (uint16_t) cpu->p.C + (uint16_t) val;
 
