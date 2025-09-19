@@ -1,8 +1,9 @@
 #include "interface.h"
+#include <stdint.h>
 
 // C-implementations of NES instructions
 
-void adc_immediate(State *state, uint8_t val) {
+void adc_impl(State *state, uint8_t val) {
 	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
 
 	state->cpu.p.C = res > 255;
@@ -13,82 +14,14 @@ void adc_immediate(State *state, uint8_t val) {
 	state->cpu.a   = (uint8_t) res;
 }
 
-void adc_zero_page(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
-
-	state->cpu.p.C = res > 255;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V =
-	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	state->cpu.p.N = (res & 0x80) >> 7;
-	state->cpu.a   = (uint8_t) res;
-}
-
-void adc_zero_page_x(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
-
-	state->cpu.p.C = res > 255;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V =
-	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	state->cpu.p.N = (res & 0x80) >> 7;
-	state->cpu.a   = (uint8_t) res;
-}
-
-void adc_absolute(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
-
-	state->cpu.p.C = res > 255;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V =
-	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	state->cpu.p.N = (res & 0x80) >> 7;
-	state->cpu.a   = (uint8_t) res;
-}
-
-void adc_absolute_x(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
-
-	state->cpu.p.C = res > 255;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V =
-	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	state->cpu.p.N = (res & 0x80) >> 7;
-	state->cpu.a   = (uint8_t) res;
-}
-
-void adc_absolute_y(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
-
-	state->cpu.p.C = res > 255;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V =
-	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	state->cpu.p.N = (res & 0x80) >> 7;
-	state->cpu.a   = (uint8_t) res;
-}
-
-void adc_indirect_x(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
-
-	state->cpu.p.C = res > 255;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V =
-	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	state->cpu.p.N = (res & 0x80) >> 7;
-	state->cpu.a   = (uint8_t) res;
-}
-
-void adc_indirect_y(State *state, uint8_t val) {
-	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
-
-	state->cpu.p.C = res > 255;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V =
-	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	state->cpu.p.N = (res & 0x80) >> 7;
-	state->cpu.a   = (uint8_t) res;
-}
+IMMEDIATE(adc)
+ZERO_PAGE(adc)
+ZERO_PAGE_X(adc)
+ABSOLUTE(adc)
+ABSOLUTE_X(adc)
+ABSOLUTE_Y(adc)
+INDIRECT_X(adc)
+INDIRECT_Y(adc)
 
 void and_immediate(State *state, uint8_t val) {
 	state->cpu.a &= val;

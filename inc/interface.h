@@ -28,3 +28,62 @@ typedef struct {
 
 uint8_t state_get_mem(State const *state, uint16_t adr);
 void state_set_mem(State const *state, uint16_t adr, uint8_t val);
+
+#define IMMEDIATE(fn) \
+	void fn##_immediate(State *state, uint8_t val) { \
+		fn##_impl(state, val); \
+	}
+
+#define ZERO_PAGE(fn) \
+	void fn##_zero_page(State *state, uint8_t offset) { \
+		uint8_t val = state_get_mem(state, (uint16_t) offset); \
+		fn##_impl(state, val); \
+	}
+
+#define ZERO_PAGE_X(fn) \
+	void fn##_zero_page_x(State *state, uint8_t offset) { \
+		uint8_t val = state_get_mem(state, ((uint16_t) state->cpu.x + (uint16_t) offset) & 0xFF); \
+		fn##_impl(state, val); \
+	}
+
+#define ZERO_PAGE_Y(fn) \
+	void fn##_zero_page_y(State *state, uint8_t offset) { \
+		uint8_t val = state_get_mem(state, ((uint16_t) state->cpu.y + (uint16_t) offset) & 0xFF); \
+		fn##_impl(state, val); \
+	}
+
+#define ABSOLUTE(fn) \
+	void fn##_absolute(State *state, uint16_t adr) { \
+		uint8_t val = state_get_mem(state, adr); \
+		fn##_impl(state, val); \
+	}
+
+#define ABSOLUTE_X(fn) \
+	void fn##_absolute_x(State *state, uint16_t adr) { \
+		uint8_t val = state_get_mem(state, (uint16_t) state->cpu.x + adr); \
+		fn##_impl(state, val); \
+	}
+
+#define ABSOLUTE_Y(fn) \
+	void fn##_absolute_y(State *state, uint16_t adr) { \
+		uint8_t val = state_get_mem(state, (uint16_t) state->cpu.y + adr); \
+		fn##_impl(state, val); \
+	}
+
+#define INDIRECT_X(fn) \
+	void fn##_indirect_x(State *state, uint8_t adr) { \
+		uint8_t tmp   = state_get_mem(state, (uint16_t) (state->cpu.x + adr) & 0xFF); \
+		uint16_t adr2 = (uint16_t) (state_get_mem(state, (uint16_t) tmp) \
+					| state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8); \
+		uint8_t val   = state_get_mem(state, adr2); \
+		fn##_impl(state, val); \
+	}
+
+#define INDIRECT_Y(fn) \
+	void fn##_indirect_y(State *state, uint8_t adr) { \
+		uint8_t tmp   = state_get_mem(state, (uint16_t) (state->cpu.y + adr) & 0xFF); \
+		uint16_t adr2 = (uint16_t) (state_get_mem(state, (uint16_t) tmp) \
+					| state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8); \
+		uint8_t val   = state_get_mem(state, adr2); \
+		fn##_impl(state, val); \
+	}
