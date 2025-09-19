@@ -9,8 +9,8 @@ fn main() {
 		.file("src/evaluate_instruction_3.c")
 		.file("src/evaluate_instruction_4.c");
 
-	build.flag("-w");
-	// build.flag("-Wall").flag("-Wextra");
+	// build.flag("-w");
+	build.flag("-Wall").flag("-Wextra").flag("-Wconversion");
 	build.flag("-I.").flag("-Iinc");
 
 	// Check the optimization level
