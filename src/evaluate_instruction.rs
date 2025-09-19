@@ -136,9 +136,9 @@ unsafe extern "C" {
 	pub safe fn sei(state: &mut State);
 	pub safe fn sta_zero_page(state: &mut State, val: u8);
 	pub safe fn sta_zero_page_x(state: &mut State, val: u8);
-	pub safe fn sta_absolute(state: &mut State, val: u8);
-	pub safe fn sta_absolute_x(state: &mut State, val: u8);
-	pub safe fn sta_absolute_y(state: &mut State, val: u8);
+	pub safe fn sta_absolute(state: &mut State, val: u16);
+	pub safe fn sta_absolute_x(state: &mut State, val: u16);
+	pub safe fn sta_absolute_y(state: &mut State, val: u16);
 	pub safe fn sta_indirect_x(state: &mut State, val: u8);
 	pub safe fn sta_indirect_y(state: &mut State, val: u8);
 	pub safe fn stx_zero_page(state: &mut State, val: u8);

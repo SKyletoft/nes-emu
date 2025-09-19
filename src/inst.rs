@@ -267,9 +267,9 @@ pub enum SBC {
 pub enum STA {
 	ZeroPage(u8),
 	ZeroPageX(u8),
-	Absolute(u8),
-	AbsoluteX(u8),
-	AbsoluteY(u8),
+	Absolute(u16),
+	AbsoluteX(u16),
+	AbsoluteY(u16),
 	IndirectX(u8),
 	IndirectY(u8),
 }
@@ -1549,17 +1549,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::STA(STA::ZeroPageX(*addr)))
 		}
-		[0x8D, x, rest @ ..] => {
+		[0x8D, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::STA(STA::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::STA(STA::Absolute(num)))
 		}
-		[0x9D, x, rest @ ..] => {
+		[0x9D, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::STA(STA::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::STA(STA::AbsoluteX(num)))
 		}
-		[0x99, x, rest @ ..] => {
+		[0x99, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::STA(STA::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::STA(STA::AbsoluteY(num)))
 		}
 		[0x81, addr, rest @ ..] => {
 			*code = rest;
