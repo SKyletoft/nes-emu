@@ -3,11 +3,15 @@ fn main() {
 	println!("cargo:rerun-if-changed=src/evaluate_instruction.c");
 
 	let mut build = cc::Build::new();
-	build.file("src/evaluate_instruction.c");
+	build
+		.file("src/evaluate_instruction_1.c")
+		.file("src/evaluate_instruction_2.c")
+		.file("src/evaluate_instruction_3.c")
+		.file("src/evaluate_instruction_4.c");
 
 	build.flag("-w");
 	// build.flag("-Wall").flag("-Wextra");
-	build.flag("-I.");
+	build.flag("-I.").flag("-Iinc");
 
 	// Check the optimization level
 	let opt_level = std::env::var("OPT_LEVEL").unwrap_or_default();

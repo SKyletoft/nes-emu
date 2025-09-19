@@ -20,3 +20,4 @@
 -Werror=sign-conversion
 -Werror=float-conversion
 -I.
+-Iinc
