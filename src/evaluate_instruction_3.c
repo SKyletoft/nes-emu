@@ -216,7 +216,7 @@ void plp(State *state) {
 void rol_accumulator(State *state) {
 	uint8_t carry  = state->cpu.p.C;
 	state->cpu.p.C = (uint8_t)((state->cpu.a & 0x80) >> 7);
-	state->cpu.a   = ((state->cpu.a << 1) | carry);
+	state->cpu.a   = (uint8_t)((state->cpu.a << 1) | carry);
 	state->cpu.p.Z = (uint8_t)(0 == state->cpu.a);
 	state->cpu.p.N = (uint8_t)((state->cpu.a & 0x80) >> 7);
 }
@@ -224,7 +224,7 @@ void rol_accumulator(State *state) {
 void rol_zero_page(State *state, uint8_t val) {
 	uint8_t carry  = state->cpu.p.C;
 	state->cpu.p.C = (uint8_t)((val & 0x80) >> 7);
-	val            = ((val << 1) | carry);
+	val            = (uint8_t)((val << 1) | carry);
 	state->cpu.p.Z = (uint8_t)(0 == val);
 	state->cpu.p.N = (uint8_t)((val & 0x80) >> 7);
 }
@@ -232,7 +232,7 @@ void rol_zero_page(State *state, uint8_t val) {
 void rol_zero_page_x(State *state, uint8_t val) {
 	uint8_t carry  = state->cpu.p.C;
 	state->cpu.p.C = (uint8_t)((val & 0x80) >> 7);
-	val            = ((val << 1) | carry);
+	val            = (uint8_t)((val << 1) | carry);
 	state->cpu.p.Z = (uint8_t)(0 == val);
 	state->cpu.p.N = (uint8_t)((val & 0x80) >> 7);
 }
@@ -240,7 +240,7 @@ void rol_zero_page_x(State *state, uint8_t val) {
 void rol_absolute(State *state, uint8_t val) {
 	uint8_t carry  = state->cpu.p.C;
 	state->cpu.p.C = (uint8_t)((val & 0x80) >> 7);
-	val            = ((val << 1) | carry);
+	val            = (uint8_t)((val << 1) | carry);
 	state->cpu.p.Z = (uint8_t)(0 == val);
 	state->cpu.p.N = (uint8_t)((val & 0x80) >> 7);
 }
@@ -248,7 +248,7 @@ void rol_absolute(State *state, uint8_t val) {
 void rol_absolute_x(State *state, uint8_t val) {
 	uint8_t carry  = state->cpu.p.C;
 	state->cpu.p.C = (uint8_t)((val & 0x80) >> 7);
-	val            = ((val << 1) | carry);
+	val            = (uint8_t)((val << 1) | carry);
 	state->cpu.p.Z = (uint8_t)(0 == val);
 	state->cpu.p.N = (uint8_t)((val & 0x80) >> 7);
 }
@@ -256,7 +256,7 @@ void rol_absolute_x(State *state, uint8_t val) {
 void ror_accumulator(State *state) {
 	uint8_t carry  = state->cpu.p.C;
 	state->cpu.p.C = (uint8_t)(state->cpu.a & 0x01);
-	state->cpu.a   = ((carry << 7) | (state->cpu.a >> 1));
+	state->cpu.a   = (uint8_t)((carry << 7) | (state->cpu.a >> 1));
 	state->cpu.p.Z = (uint8_t)(0 == state->cpu.a);
 	state->cpu.p.N = (uint8_t)((state->cpu.a & 0x80) >> 7);
 }
@@ -264,7 +264,7 @@ void ror_accumulator(State *state) {
 void ror_zero_page(State *state, uint8_t val) {
 	uint8_t carry  = state->cpu.p.C;
 	state->cpu.p.C = (uint8_t)(val & 0x01);
-	val            = ((carry << 7) | (val >> 1));
+	val            = (uint8_t)((carry << 7) | (val >> 1));
 	state->cpu.p.Z = (uint8_t)(0 == val);
 	state->cpu.p.N = (uint8_t)((val & 0x80) >> 7);
 }
@@ -272,7 +272,7 @@ void ror_zero_page(State *state, uint8_t val) {
 void ror_zero_page_x(State *state, uint8_t val) {
 	uint8_t carry  = state->cpu.p.C;
 	state->cpu.p.C = (uint8_t)(val & 0x01);
-	val            = ((carry << 7) | (val >> 1));
+	val            = (uint8_t)((carry << 7) | (val >> 1));
 	state->cpu.p.Z = (uint8_t)(0 == val);
 	state->cpu.p.N = (uint8_t)((val & 0x80) >> 7);
 }
@@ -280,7 +280,7 @@ void ror_zero_page_x(State *state, uint8_t val) {
 void ror_absolute(State *state, uint8_t val) {
 	uint8_t carry  = state->cpu.p.C;
 	state->cpu.p.C = (uint8_t)(val & 0x01);
-	val            = ((carry << 7) | (val >> 1));
+	val            = (uint8_t)((carry << 7) | (val >> 1));
 	state->cpu.p.Z = (uint8_t)(0 == val);
 	state->cpu.p.N = (uint8_t)((val & 0x80) >> 7);
 }
@@ -288,7 +288,7 @@ void ror_absolute(State *state, uint8_t val) {
 void ror_absolute_x(State *state, uint8_t val) {
 	uint8_t carry  = state->cpu.p.C;
 	state->cpu.p.C = (uint8_t)(val & 0x01);
-	val            = ((carry << 7) | (val >> 1));
+	val            = (uint8_t)((carry << 7) | (val >> 1));
 	state->cpu.p.Z = (uint8_t)(0 == val);
 	state->cpu.p.N = (uint8_t)((val & 0x80) >> 7);
 }
