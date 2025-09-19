@@ -8,5 +8,4 @@ bitflags = "2.9"
 anyhow = "1.0"
 
 [build-dependencies]
-bindgen = "0.72"
 cc = "1.2"
