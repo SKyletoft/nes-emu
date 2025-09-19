@@ -3,3 +3,5 @@
 non-free/
 .envrc
 .aider*
+**.o
+Makefile
