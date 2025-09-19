@@ -17,10 +17,7 @@ impl State {
 			x: 0,
 			y: 0,
 			s: 0xFD,
-			p: crate::cpu::P {
-				_bitfield_align_1: [],
-				_bitfield_1: crate::cpu::P::new_bitfield_1(0, 0, 1, 0, 0, 0, 0, 0),
-			},
+			p: P::new(),
 			pc: 0xFFFC,
 		};
 
