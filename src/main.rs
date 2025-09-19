@@ -48,3 +48,32 @@ fn main() {
 		std::io::stdin().read_line(&mut buf).unwrap();
 	}
 }
+
+#[cfg(test)]
+mod test {
+	use super::*;
+	use crate::inst::{Inst, LDA, STA};
+
+	#[test]
+	fn smb3_first_few() {
+		let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
+		let mut state = State::new(Mapper::try_from(buffer).unwrap());
+		assert_eq!(state.next_inst(), Inst::SEI);
+		assert_eq!(state.cpu.pc, 0xFF40);
+		state.next();
+		assert_eq!(state.next_inst(), Inst::CLD);
+		state.next();
+		assert_eq!(state.next_inst(), Inst::LDA(LDA::Absolute(0)));
+		assert_eq!(state.cpu.a, 0);
+		assert!(!state.cpu.p.contains(P::D)); // A bit late for some reason
+		state.next();
+		assert_eq!(state.next_inst(), Inst::STA(STA::Absolute(0x2001)));
+		state.next();
+		assert_eq!(state.next_inst(), Inst::LDA(LDA::Absolute(8)));
+		state.next();
+		assert_eq!(state.next_inst(), Inst::STA(STA::Absolute(0x2000)));
+		assert_eq!(state.cpu.a, 8);
+		assert_eq!(state.cpu.pc, 0xFF49);
+		assert_eq!(state.cpu.s, 0x01FD);
+	}
+}
