@@ -2100,7 +2100,6 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 	}
 }
 
-
 #[cfg(test)]
 mod test {
 	use super::*;

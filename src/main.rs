@@ -85,7 +85,7 @@ mod test {
 			state.next();
 		}
 		// Wait for PPU to init...
-		for _ in 0..(25559/2) {
+		for _ in 0..(25559 / 2) {
 			assert_eq!(state.cpu.pc, 0xFF4E);
 			assert_eq!(state.next_inst(), Inst::LDA(LDA::Absolute(0x2002)));
 			state.next();

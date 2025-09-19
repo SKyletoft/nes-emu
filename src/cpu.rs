@@ -27,31 +27,31 @@ impl P {
 		p
 	}
 
-	pub fn c (&self) -> u8 {
+	pub fn c(&self) -> u8 {
 		self.contains(P::C) as u8
 	}
 
-	pub fn z (&self) -> u8 {
+	pub fn z(&self) -> u8 {
 		self.contains(P::Z) as u8
 	}
 
-	pub fn i (&self) -> u8 {
+	pub fn i(&self) -> u8 {
 		self.contains(P::I) as u8
 	}
 
-	pub fn d (&self) -> u8 {
+	pub fn d(&self) -> u8 {
 		self.contains(P::D) as u8
 	}
 
-	pub fn b (&self) -> u8 {
+	pub fn b(&self) -> u8 {
 		self.contains(P::B) as u8
 	}
 
-	pub fn v (&self) -> u8 {
+	pub fn v(&self) -> u8 {
 		self.contains(P::V) as u8
 	}
 
-	pub fn n (&self) -> u8 {
+	pub fn n(&self) -> u8 {
 		self.contains(P::N) as u8
 	}
 }
