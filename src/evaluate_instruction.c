@@ -1,1021 +1,1048 @@
-#include "inc/cpu.h"
-
 #include <stdint.h>
+
+typedef struct {
+	uint8_t C       : 1;
+	uint8_t Z       : 1;
+	uint8_t I       : 1;
+	uint8_t D       : 1;
+	uint8_t B       : 1;
+	uint8_t _unused : 1;
+	uint8_t V       : 1;
+	uint8_t N       : 1;
+} P;
+
+typedef struct {
+	uint8_t a;
+	uint8_t x;
+	uint8_t y;
+	uint8_t s;
+	P p;
+	uint16_t pc;
+} Cpu;
+
+typedef struct {
+	Cpu cpu;
+	/* Mapper */ void *rom;
+	uint8_t ram[2048];
+} State;
+
+uint8_t state_get_mem(State const *state, uint16_t adr);
+void state_set_mem(State const *state, uint16_t adr, uint8_t val);
 
 // C-implementations of NES instructions
 
-void adc_immediate(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a + (uint16_t) cpu->p.C + (uint16_t) val;
+void adc_immediate(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
 
-	cpu->p.C = res > 255;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res > 255;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void adc_zero_page(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a + (uint16_t) cpu->p.C + (uint16_t) val;
+void adc_zero_page(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
 
-	cpu->p.C = res > 255;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res > 255;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void adc_zero_page_x(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a + (uint16_t) cpu->p.C + (uint16_t) val;
+void adc_zero_page_x(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
 
-	cpu->p.C = res > 255;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res > 255;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void adc_absolute(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a + (uint16_t) cpu->p.C + (uint16_t) val;
+void adc_absolute(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
 
-	cpu->p.C = res > 255;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res > 255;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void adc_absolute_x(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a + (uint16_t) cpu->p.C + (uint16_t) val;
+void adc_absolute_x(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
 
-	cpu->p.C = res > 255;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res > 255;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void adc_absolute_y(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a + (uint16_t) cpu->p.C + (uint16_t) val;
+void adc_absolute_y(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
 
-	cpu->p.C = res > 255;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res > 255;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void adc_indirect_x(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a + (uint16_t) cpu->p.C + (uint16_t) val;
+void adc_indirect_x(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
 
-	cpu->p.C = res > 255;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res > 255;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void adc_indirect_y(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a + (uint16_t) cpu->p.C + (uint16_t) val;
+void adc_indirect_y(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a + (uint16_t) state->cpu.p.C + (uint16_t) val;
 
-	cpu->p.C = res > 255;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res > 255;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void and_immediate(Cpu *cpu, uint8_t val) {
-	cpu->a &= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void and_immediate(State *state, uint8_t val) {
+	state->cpu.a &= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void and_zero_page(Cpu *cpu, uint8_t val) {
-	cpu->a &= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void and_zero_page(State *state, uint8_t val) {
+	state->cpu.a &= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void and_zero_page_x(Cpu *cpu, uint8_t val) {
-	cpu->a &= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void and_zero_page_x(State *state, uint8_t val) {
+	state->cpu.a &= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void and_absolute(Cpu *cpu, uint8_t val) {
-	cpu->a &= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void and_absolute(State *state, uint8_t val) {
+	state->cpu.a &= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void and_absolute_x(Cpu *cpu, uint8_t val) {
-	cpu->a &= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void and_absolute_x(State *state, uint8_t val) {
+	state->cpu.a &= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void and_absolute_y(Cpu *cpu, uint8_t val) {
-	cpu->a &= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void and_absolute_y(State *state, uint8_t val) {
+	state->cpu.a &= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void and_indirect_x(Cpu *cpu, uint8_t val) {
-	cpu->a &= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void and_indirect_x(State *state, uint8_t val) {
+	state->cpu.a &= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void and_indirect_y(Cpu *cpu, uint8_t val) {
-	cpu->a &= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void and_indirect_y(State *state, uint8_t val) {
+	state->cpu.a &= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void asl_accumulator(Cpu *cpu) {
-	cpu->p.C = (cpu->a & 0x80) >> 7;
-	cpu->a <<= 1;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void asl_accumulator(State *state) {
+	state->cpu.p.C = (state->cpu.a & 0x80) >> 7;
+	state->cpu.a <<= 1;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void asl_zero_page(Cpu *cpu, uint8_t val) {
-	cpu->p.C = (val & 0x80) >> 7;
+void asl_zero_page(State *state, uint8_t val) {
+	state->cpu.p.C = (val & 0x80) >> 7;
 	val <<= 1;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void asl_zero_page_x(Cpu *cpu, uint8_t val) {
-	cpu->p.C = (val & 0x80) >> 7;
+void asl_zero_page_x(State *state, uint8_t val) {
+	state->cpu.p.C = (val & 0x80) >> 7;
 	val <<= 1;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void asl_absolute(Cpu *cpu, uint8_t val) {
-	cpu->p.C = (val & 0x80) >> 7;
+void asl_absolute(State *state, uint8_t val) {
+	state->cpu.p.C = (val & 0x80) >> 7;
 	val <<= 1;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void asl_absolute_x(Cpu *cpu, uint8_t val) {
-	cpu->p.C = (val & 0x80) >> 7;
+void asl_absolute_x(State *state, uint8_t val) {
+	state->cpu.p.C = (val & 0x80) >> 7;
 	val <<= 1;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void bcc(Cpu *cpu, int8_t offset) {
-	if (!cpu->p.C) {
-		cpu->pc += offset;
+void bcc(State *state, int8_t offset) {
+	if (!state->cpu.p.C) {
+		state->cpu.pc += offset;
 	}
 }
 
-void bcs(Cpu *cpu, int8_t offset) {
-	if (cpu->p.C) {
-		cpu->pc += offset;
+void bcs(State *state, int8_t offset) {
+	if (state->cpu.p.C) {
+		state->cpu.pc += offset;
 	}
 }
 
-void beq(Cpu *cpu, int8_t offset) {
-	if (cpu->p.Z) {
-		cpu->pc += offset;
+void beq(State *state, int8_t offset) {
+	if (state->cpu.p.Z) {
+		state->cpu.pc += offset;
 	}
 }
 
-void bit_zero_page(Cpu *cpu, uint8_t val) {
-	cpu->p.Z = 0 == (cpu->a & val);
-	cpu->p.V = (val & 0x40) >> 6;
-	cpu->p.N = (val & 0x80) >> 7;
+void bit_zero_page(State *state, uint8_t val) {
+	state->cpu.p.Z = 0 == (state->cpu.a & val);
+	state->cpu.p.V = (val & 0x40) >> 6;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void bit_absolute(Cpu *cpu, uint8_t val) {
-	cpu->p.Z = 0 == (cpu->a & val);
-	cpu->p.V = (val & 0x40) >> 6;
-	cpu->p.N = (val & 0x80) >> 7;
+void bit_absolute(State *state, uint8_t val) {
+	state->cpu.p.Z = 0 == (state->cpu.a & val);
+	state->cpu.p.V = (val & 0x40) >> 6;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void bmi(Cpu *cpu, int8_t offset) {
-	if (cpu->p.N) {
-		cpu->pc += offset;
+void bmi(State *state, int8_t offset) {
+	if (state->cpu.p.N) {
+		state->cpu.pc += offset;
 	}
 }
 
-void bne(Cpu *cpu, int8_t offset) {
-	if (!cpu->p.Z) {
-		cpu->pc += offset;
+void bne(State *state, int8_t offset) {
+	if (!state->cpu.p.Z) {
+		state->cpu.pc += offset;
 	}
 }
 
-void bpl(Cpu *cpu, int8_t offset) {
-	if (!cpu->p.N) {
-		cpu->pc += offset;
+void bpl(State *state, int8_t offset) {
+	if (!state->cpu.p.N) {
+		state->cpu.pc += offset;
 	}
 }
 
-void brk(Cpu *cpu) {
+void brk(State *state) {
 	// BRK is a complex instruction that pushes PC+2 and status flags
 	// This is a simplified version for demonstration
-	cpu->pc++;
+	state->cpu.pc++;
 }
 
-void bvc(Cpu *cpu, int8_t offset) {
-	if (!cpu->p.V) {
-		cpu->pc += offset;
+void bvc(State *state, int8_t offset) {
+	if (!state->cpu.p.V) {
+		state->cpu.pc += offset;
 	}
 }
 
-void bvs(Cpu *cpu, int8_t offset) {
-	if (cpu->p.V) {
-		cpu->pc += offset;
+void bvs(State *state, int8_t offset) {
+	if (state->cpu.p.V) {
+		state->cpu.pc += offset;
 	}
 }
 
-void clc(Cpu *cpu) {
-	cpu->p.C = 0;
+void clc(State *state) {
+	state->cpu.p.C = 0;
 }
 
-void cld(Cpu *cpu) {
-	cpu->p.D = 0;
+void cld(State *state) {
+	state->cpu.p.D = 0;
 }
 
-void cli(Cpu *cpu) {
-	cpu->p.I = 0;
+void cli(State *state) {
+	state->cpu.p.I = 0;
 }
 
-void clv(Cpu *cpu) {
-	cpu->p.V = 0;
+void clv(State *state) {
+	state->cpu.p.V = 0;
 }
 
-void cmp_immediate(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cmp_immediate(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void cmp_zero_page(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cmp_zero_page(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void cmp_zero_page_x(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cmp_zero_page_x(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void cmp_absolute(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cmp_absolute(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void cmp_absolute_x(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cmp_absolute_x(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void cmp_absolute_y(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cmp_absolute_y(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void cmp_indirect_x(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cmp_indirect_x(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void cmp_indirect_y(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cmp_indirect_y(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void cpx_immediate(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->x - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cpx_immediate(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.x - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void cpx_zero_page(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->x - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cpx_zero_page(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.x - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void cpx_absolute(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->x - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cpx_absolute(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.x - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void cpy_immediate(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->y - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cpy_immediate(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.y - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void cpy_zero_page(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->y - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cpy_zero_page(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.y - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void cpy_absolute(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->y - (uint16_t) val;
-	cpu->p.C     = res < 256;
-	cpu->p.Z     = 0 == (uint8_t) res;
-	cpu->p.N     = (res & 0x80) >> 7;
+void cpy_absolute(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.y - (uint16_t) val;
+	state->cpu.p.C     = res < 256;
+	state->cpu.p.Z     = 0 == (uint8_t) res;
+	state->cpu.p.N     = (res & 0x80) >> 7;
 }
 
-void dec_zero_page(Cpu *cpu, uint8_t val) {
+void dec_zero_page(State *state, uint8_t val) {
 	val--;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void dec_zero_page_x(Cpu *cpu, uint8_t val) {
+void dec_zero_page_x(State *state, uint8_t val) {
 	val--;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void dec_absolute(Cpu *cpu, uint8_t val) {
+void dec_absolute(State *state, uint8_t val) {
 	val--;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void dec_absolute_x(Cpu *cpu, uint8_t val) {
+void dec_absolute_x(State *state, uint8_t val) {
 	val--;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void dex(Cpu *cpu) {
-	cpu->x--;
-	cpu->p.Z = 0 == cpu->x;
-	cpu->p.N = (cpu->x & 0x80) >> 7;
+void dex(State *state) {
+	state->cpu.x--;
+	state->cpu.p.Z = 0 == state->cpu.x;
+	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
 }
 
-void dey(Cpu *cpu) {
-	cpu->y--;
-	cpu->p.Z = 0 == cpu->y;
-	cpu->p.N = (cpu->y & 0x80) >> 7;
+void dey(State *state) {
+	state->cpu.y--;
+	state->cpu.p.Z = 0 == state->cpu.y;
+	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
 }
 
-void eor_immediate(Cpu *cpu, uint8_t val) {
-	cpu->a ^= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void eor_immediate(State *state, uint8_t val) {
+	state->cpu.a ^= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void eor_zero_page(Cpu *cpu, uint8_t val) {
-	cpu->a ^= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void eor_zero_page(State *state, uint8_t val) {
+	state->cpu.a ^= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void eor_zero_page_x(Cpu *cpu, uint8_t val) {
-	cpu->a ^= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void eor_zero_page_x(State *state, uint8_t val) {
+	state->cpu.a ^= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void eor_absolute(Cpu *cpu, uint8_t val) {
-	cpu->a ^= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void eor_absolute(State *state, uint8_t val) {
+	state->cpu.a ^= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void eor_absolute_x(Cpu *cpu, uint8_t val) {
-	cpu->a ^= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void eor_absolute_x(State *state, uint8_t val) {
+	state->cpu.a ^= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void eor_absolute_y(Cpu *cpu, uint8_t val) {
-	cpu->a ^= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void eor_absolute_y(State *state, uint8_t val) {
+	state->cpu.a ^= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void eor_indirect_x(Cpu *cpu, uint8_t val) {
-	cpu->a ^= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void eor_indirect_x(State *state, uint8_t val) {
+	state->cpu.a ^= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void eor_indirect_y(Cpu *cpu, uint8_t val) {
-	cpu->a ^= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void eor_indirect_y(State *state, uint8_t val) {
+	state->cpu.a ^= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void inc_zero_page(Cpu *cpu, uint8_t val) {
+void inc_zero_page(State *state, uint8_t val) {
 	val++;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void inc_zero_page_x(Cpu *cpu, uint8_t val) {
+void inc_zero_page_x(State *state, uint8_t val) {
 	val++;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void inc_absolute(Cpu *cpu, uint8_t val) {
+void inc_absolute(State *state, uint8_t val) {
 	val++;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void inc_absolute_x(Cpu *cpu, uint8_t val) {
+void inc_absolute_x(State *state, uint8_t val) {
 	val++;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void inx(Cpu *cpu) {
-	cpu->x++;
-	cpu->p.Z = 0 == cpu->x;
-	cpu->p.N = (cpu->x & 0x80) >> 7;
+void inx(State *state) {
+	state->cpu.x++;
+	state->cpu.p.Z = 0 == state->cpu.x;
+	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
 }
 
-void iny(Cpu *cpu) {
-	cpu->y++;
-	cpu->p.Z = 0 == cpu->y;
-	cpu->p.N = (cpu->y & 0x80) >> 7;
+void iny(State *state) {
+	state->cpu.y++;
+	state->cpu.p.Z = 0 == state->cpu.y;
+	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
 }
 
-void jmp_absolute(Cpu *cpu, uint16_t addr) {
-	cpu->pc = addr;
+void jmp_absolute(State *state, uint16_t addr) {
+	state->cpu.pc = addr;
 }
 
-void jmp_indirect(Cpu *cpu, uint16_t addr) {
-	cpu->pc = addr;
+void jmp_indirect(State *state, uint16_t addr) {
+	state->cpu.pc = addr;
 }
 
-void jsr(Cpu *cpu, uint16_t addr) {
+void jsr(State *state, uint16_t addr) {
 	// Push return address (pc + 2)
-	cpu->pc = addr;
+	state->cpu.pc = addr;
 }
 
-void lda_immediate(Cpu *cpu, uint8_t val) {
-	cpu->a   = val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void lda_immediate(State *state, uint8_t val) {
+	state->cpu.a   = val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void lda_zero_page(Cpu *cpu, uint8_t val) {
-	cpu->a   = val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void lda_zero_page(State *state, uint8_t val) {
+	state->cpu.a   = val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void lda_zero_page_x(Cpu *cpu, uint8_t val) {
-	cpu->a   = val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void lda_zero_page_x(State *state, uint8_t val) {
+	state->cpu.a   = val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void lda_absolute(Cpu *cpu, uint8_t val) {
-	cpu->a   = val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void lda_absolute(State *state, uint8_t val) {
+	state->cpu.a   = val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void lda_absolute_x(Cpu *cpu, uint8_t val) {
-	cpu->a   = val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void lda_absolute_x(State *state, uint8_t val) {
+	state->cpu.a   = val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void lda_absolute_y(Cpu *cpu, uint8_t val) {
-	cpu->a   = val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void lda_absolute_y(State *state, uint8_t val) {
+	state->cpu.a   = val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void lda_indirect_x(Cpu *cpu, uint8_t val) {
-	cpu->a   = val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void lda_indirect_x(State *state, uint8_t val) {
+	state->cpu.a   = val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void lda_indirect_y(Cpu *cpu, uint8_t val) {
-	cpu->a   = val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void lda_indirect_y(State *state, uint8_t val) {
+	state->cpu.a   = val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void ldx_immediate(Cpu *cpu, uint8_t val) {
-	cpu->x   = val;
-	cpu->p.Z = 0 == cpu->x;
-	cpu->p.N = (cpu->x & 0x80) >> 7;
+void ldx_immediate(State *state, uint8_t val) {
+	state->cpu.x   = val;
+	state->cpu.p.Z = 0 == state->cpu.x;
+	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
 }
 
-void ldx_zero_page(Cpu *cpu, uint8_t val) {
-	cpu->x   = val;
-	cpu->p.Z = 0 == cpu->x;
-	cpu->p.N = (cpu->x & 0x80) >> 7;
+void ldx_zero_page(State *state, uint8_t val) {
+	state->cpu.x   = val;
+	state->cpu.p.Z = 0 == state->cpu.x;
+	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
 }
 
-void ldx_zero_page_y(Cpu *cpu, uint8_t val) {
-	cpu->x   = val;
-	cpu->p.Z = 0 == cpu->x;
-	cpu->p.N = (cpu->x & 0x80) >> 7;
+void ldx_zero_page_y(State *state, uint8_t val) {
+	state->cpu.x   = val;
+	state->cpu.p.Z = 0 == state->cpu.x;
+	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
 }
 
-void ldx_absolute(Cpu *cpu, uint8_t val) {
-	cpu->x   = val;
-	cpu->p.Z = 0 == cpu->x;
-	cpu->p.N = (cpu->x & 0x80) >> 7;
+void ldx_absolute(State *state, uint8_t val) {
+	state->cpu.x   = val;
+	state->cpu.p.Z = 0 == state->cpu.x;
+	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
 }
 
-void ldx_absolute_y(Cpu *cpu, uint8_t val) {
-	cpu->x   = val;
-	cpu->p.Z = 0 == cpu->x;
-	cpu->p.N = (cpu->x & 0x80) >> 7;
+void ldx_absolute_y(State *state, uint8_t val) {
+	state->cpu.x   = val;
+	state->cpu.p.Z = 0 == state->cpu.x;
+	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
 }
 
-void ldy_immediate(Cpu *cpu, uint8_t val) {
-	cpu->y   = val;
-	cpu->p.Z = 0 == cpu->y;
-	cpu->p.N = (cpu->y & 0x80) >> 7;
+void ldy_immediate(State *state, uint8_t val) {
+	state->cpu.y   = val;
+	state->cpu.p.Z = 0 == state->cpu.y;
+	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
 }
 
-void ldy_zero_page(Cpu *cpu, uint8_t val) {
-	cpu->y   = val;
-	cpu->p.Z = 0 == cpu->y;
-	cpu->p.N = (cpu->y & 0x80) >> 7;
+void ldy_zero_page(State *state, uint8_t val) {
+	state->cpu.y   = val;
+	state->cpu.p.Z = 0 == state->cpu.y;
+	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
 }
 
-void ldy_zero_page_x(Cpu *cpu, uint8_t val) {
-	cpu->y   = val;
-	cpu->p.Z = 0 == cpu->y;
-	cpu->p.N = (cpu->y & 0x80) >> 7;
+void ldy_zero_page_x(State *state, uint8_t val) {
+	state->cpu.y   = val;
+	state->cpu.p.Z = 0 == state->cpu.y;
+	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
 }
 
-void ldy_absolute(Cpu *cpu, uint8_t val) {
-	cpu->y   = val;
-	cpu->p.Z = 0 == cpu->y;
-	cpu->p.N = (cpu->y & 0x80) >> 7;
+void ldy_absolute(State *state, uint8_t val) {
+	state->cpu.y   = val;
+	state->cpu.p.Z = 0 == state->cpu.y;
+	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
 }
 
-void ldy_absolute_x(Cpu *cpu, uint8_t val) {
-	cpu->y   = val;
-	cpu->p.Z = 0 == cpu->y;
-	cpu->p.N = (cpu->y & 0x80) >> 7;
+void ldy_absolute_x(State *state, uint8_t val) {
+	state->cpu.y   = val;
+	state->cpu.p.Z = 0 == state->cpu.y;
+	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
 }
 
-void lsr_accumulator(Cpu *cpu) {
-	cpu->p.C = cpu->a & 0x01;
-	cpu->a >>= 1;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void lsr_accumulator(State *state) {
+	state->cpu.p.C = state->cpu.a & 0x01;
+	state->cpu.a >>= 1;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void lsr_zero_page(Cpu *cpu, uint8_t val) {
-	cpu->p.C = val & 0x01;
+void lsr_zero_page(State *state, uint8_t val) {
+	state->cpu.p.C = val & 0x01;
 	val >>= 1;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void lsr_zero_page_x(Cpu *cpu, uint8_t val) {
-	cpu->p.C = val & 0x01;
+void lsr_zero_page_x(State *state, uint8_t val) {
+	state->cpu.p.C = val & 0x01;
 	val >>= 1;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void lsr_absolute(Cpu *cpu, uint8_t val) {
-	cpu->p.C = val & 0x01;
+void lsr_absolute(State *state, uint8_t val) {
+	state->cpu.p.C = val & 0x01;
 	val >>= 1;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void lsr_absolute_x(Cpu *cpu, uint8_t val) {
-	cpu->p.C = val & 0x01;
+void lsr_absolute_x(State *state, uint8_t val) {
+	state->cpu.p.C = val & 0x01;
 	val >>= 1;
-	cpu->p.Z = 0 == val;
-	cpu->p.N = (val & 0x80) >> 7;
+	state->cpu.p.Z = 0 == val;
+	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void nop(Cpu *cpu) {
+void nop(State *state) {
 	// No operation
 }
 
-void ora_immediate(Cpu *cpu, uint8_t val) {
-	cpu->a |= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void ora_immediate(State *state, uint8_t val) {
+	state->cpu.a |= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void ora_zero_page(Cpu *cpu, uint8_t val) {
-	cpu->a |= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void ora_zero_page(State *state, uint8_t val) {
+	state->cpu.a |= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void ora_zero_page_x(Cpu *cpu, uint8_t val) {
-	cpu->a |= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void ora_zero_page_x(State *state, uint8_t val) {
+	state->cpu.a |= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void ora_absolute(Cpu *cpu, uint8_t val) {
-	cpu->a |= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void ora_absolute(State *state, uint8_t val) {
+	state->cpu.a |= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void ora_absolute_x(Cpu *cpu, uint8_t val) {
-	cpu->a |= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void ora_absolute_x(State *state, uint8_t val) {
+	state->cpu.a |= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void ora_absolute_y(Cpu *cpu, uint8_t val) {
-	cpu->a |= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void ora_absolute_y(State *state, uint8_t val) {
+	state->cpu.a |= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void ora_indirect_x(Cpu *cpu, uint8_t val) {
-	cpu->a |= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void ora_indirect_x(State *state, uint8_t val) {
+	state->cpu.a |= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void ora_indirect_y(Cpu *cpu, uint8_t val) {
-	cpu->a |= val;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void ora_indirect_y(State *state, uint8_t val) {
+	state->cpu.a |= val;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void pha(Cpu *cpu) {
+void pha(State *state) {
 	// Push accumulator onto stack
 }
 
-void php(Cpu *cpu) {
+void php(State *state) {
 	// Push processor status onto stack
 }
 
-void pla(Cpu *cpu) {
+void pla(State *state) {
 	// Pull accumulator from stack
 }
 
-void plp(Cpu *cpu) {
+void plp(State *state) {
 	// Pull processor status from stack
 }
 
-void rol_accumulator(Cpu *cpu) {
-	uint8_t carry = cpu->p.C;
-	cpu->p.C      = (cpu->a & 0x80) >> 7;
-	cpu->a        = ((cpu->a << 1) | carry) != 0;
-	cpu->p.Z      = 0 == cpu->a;
-	cpu->p.N      = (cpu->a & 0x80) >> 7;
+void rol_accumulator(State *state) {
+	uint8_t carry = state->cpu.p.C;
+	state->cpu.p.C      = (state->cpu.a & 0x80) >> 7;
+	state->cpu.a        = ((state->cpu.a << 1) | carry) != 0;
+	state->cpu.p.Z      = 0 == state->cpu.a;
+	state->cpu.p.N      = (state->cpu.a & 0x80) >> 7;
 }
 
-void rol_zero_page(Cpu *cpu, uint8_t val) {
-	uint8_t carry = cpu->p.C;
-	cpu->p.C      = (val & 0x80) >> 7;
+void rol_zero_page(State *state, uint8_t val) {
+	uint8_t carry = state->cpu.p.C;
+	state->cpu.p.C      = (val & 0x80) >> 7;
 	val           = ((val << 1) | carry) != 0;
-	cpu->p.Z      = 0 == val;
-	cpu->p.N      = (val & 0x80) >> 7;
+	state->cpu.p.Z      = 0 == val;
+	state->cpu.p.N      = (val & 0x80) >> 7;
 }
 
-void rol_zero_page_x(Cpu *cpu, uint8_t val) {
-	uint8_t carry = cpu->p.C;
-	cpu->p.C      = (val & 0x80) >> 7;
+void rol_zero_page_x(State *state, uint8_t val) {
+	uint8_t carry = state->cpu.p.C;
+	state->cpu.p.C      = (val & 0x80) >> 7;
 	val           = ((val << 1) | carry) != 0;
-	cpu->p.Z      = 0 == val;
-	cpu->p.N      = (val & 0x80) >> 7;
+	state->cpu.p.Z      = 0 == val;
+	state->cpu.p.N      = (val & 0x80) >> 7;
 }
 
-void rol_absolute(Cpu *cpu, uint8_t val) {
-	uint8_t carry = cpu->p.C;
-	cpu->p.C      = (val & 0x80) >> 7;
+void rol_absolute(State *state, uint8_t val) {
+	uint8_t carry = state->cpu.p.C;
+	state->cpu.p.C      = (val & 0x80) >> 7;
 	val           = ((val << 1) | carry) != 0;
-	cpu->p.Z      = 0 == val;
-	cpu->p.N      = (val & 0x80) >> 7;
+	state->cpu.p.Z      = 0 == val;
+	state->cpu.p.N      = (val & 0x80) >> 7;
 }
 
-void rol_absolute_x(Cpu *cpu, uint8_t val) {
-	uint8_t carry = cpu->p.C;
-	cpu->p.C      = (val & 0x80) >> 7;
+void rol_absolute_x(State *state, uint8_t val) {
+	uint8_t carry = state->cpu.p.C;
+	state->cpu.p.C      = (val & 0x80) >> 7;
 	val           = ((val << 1) | carry) != 0;
-	cpu->p.Z      = 0 == val;
-	cpu->p.N      = (val & 0x80) >> 7;
+	state->cpu.p.Z      = 0 == val;
+	state->cpu.p.N      = (val & 0x80) >> 7;
 }
 
-void ror_accumulator(Cpu *cpu) {
-	uint8_t carry = cpu->p.C;
-	cpu->p.C      = cpu->a & 0x01;
-	cpu->a        = ((carry << 7) | (cpu->a >> 1)) != 0;
-	cpu->p.Z      = 0 == cpu->a;
-	cpu->p.N      = (cpu->a & 0x80) >> 7;
+void ror_accumulator(State *state) {
+	uint8_t carry = state->cpu.p.C;
+	state->cpu.p.C      = state->cpu.a & 0x01;
+	state->cpu.a        = ((carry << 7) | (state->cpu.a >> 1)) != 0;
+	state->cpu.p.Z      = 0 == state->cpu.a;
+	state->cpu.p.N      = (state->cpu.a & 0x80) >> 7;
 }
 
-void ror_zero_page(Cpu *cpu, uint8_t val) {
-	uint8_t carry = cpu->p.C;
-	cpu->p.C      = val & 0x01;
+void ror_zero_page(State *state, uint8_t val) {
+	uint8_t carry = state->cpu.p.C;
+	state->cpu.p.C      = val & 0x01;
 	val           = ((carry << 7) | (val >> 1)) != 0;
-	cpu->p.Z      = 0 == val;
-	cpu->p.N      = (val & 0x80) >> 7;
+	state->cpu.p.Z      = 0 == val;
+	state->cpu.p.N      = (val & 0x80) >> 7;
 }
 
-void ror_zero_page_x(Cpu *cpu, uint8_t val) {
-	uint8_t carry = cpu->p.C;
-	cpu->p.C      = val & 0x01;
+void ror_zero_page_x(State *state, uint8_t val) {
+	uint8_t carry = state->cpu.p.C;
+	state->cpu.p.C      = val & 0x01;
 	val           = ((carry << 7) | (val >> 1)) != 0;
-	cpu->p.Z      = 0 == val;
-	cpu->p.N      = (val & 0x80) >> 7;
+	state->cpu.p.Z      = 0 == val;
+	state->cpu.p.N      = (val & 0x80) >> 7;
 }
 
-void ror_absolute(Cpu *cpu, uint8_t val) {
-	uint8_t carry = cpu->p.C;
-	cpu->p.C      = val & 0x01;
+void ror_absolute(State *state, uint8_t val) {
+	uint8_t carry = state->cpu.p.C;
+	state->cpu.p.C      = val & 0x01;
 	val           = ((carry << 7) | (val >> 1)) != 0;
-	cpu->p.Z      = 0 == val;
-	cpu->p.N      = (val & 0x80) >> 7;
+	state->cpu.p.Z      = 0 == val;
+	state->cpu.p.N      = (val & 0x80) >> 7;
 }
 
-void ror_absolute_x(Cpu *cpu, uint8_t val) {
-	uint8_t carry = cpu->p.C;
-	cpu->p.C      = val & 0x01;
+void ror_absolute_x(State *state, uint8_t val) {
+	uint8_t carry = state->cpu.p.C;
+	state->cpu.p.C      = val & 0x01;
 	val           = ((carry << 7) | (val >> 1)) != 0;
-	cpu->p.Z      = 0 == val;
-	cpu->p.N      = (val & 0x80) >> 7;
+	state->cpu.p.Z      = 0 == val;
+	state->cpu.p.N      = (val & 0x80) >> 7;
 }
 
-void rti(Cpu *cpu) {
+void rti(State *state) {
 	// Return from interrupt
 }
 
-void rts(Cpu *cpu) {
+void rts(State *state) {
 	// Return from subroutine
 }
 
-void sbc_immediate(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val - (uint16_t) (1 - cpu->p.C);
+void sbc_immediate(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val - (uint16_t) (1 - state->cpu.p.C);
 
-	cpu->p.C = res < 256;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void sbc_zero_page(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val - (uint16_t) (1 - cpu->p.C);
+void sbc_zero_page(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val - (uint16_t) (1 - state->cpu.p.C);
 
-	cpu->p.C = res < 256;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void sbc_zero_page_x(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val - (uint16_t) (1 - cpu->p.C);
+void sbc_zero_page_x(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val - (uint16_t) (1 - state->cpu.p.C);
 
-	cpu->p.C = res < 256;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void sbc_absolute(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val - (uint16_t) (1 - cpu->p.C);
+void sbc_absolute(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val - (uint16_t) (1 - state->cpu.p.C);
 
-	cpu->p.C = res < 256;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void sbc_absolute_x(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val - (uint16_t) (1 - cpu->p.C);
+void sbc_absolute_x(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val - (uint16_t) (1 - state->cpu.p.C);
 
-	cpu->p.C = res < 256;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void sbc_absolute_y(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val - (uint16_t) (1 - cpu->p.C);
+void sbc_absolute_y(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val - (uint16_t) (1 - state->cpu.p.C);
 
-	cpu->p.C = res < 256;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void sbc_indirect_x(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val - (uint16_t) (1 - cpu->p.C);
+void sbc_indirect_x(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val - (uint16_t) (1 - state->cpu.p.C);
 
-	cpu->p.C = res < 256;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void sbc_indirect_y(Cpu *cpu, uint8_t val) {
-	uint16_t res = (uint16_t) cpu->a - (uint16_t) val - (uint16_t) (1 - cpu->p.C);
+void sbc_indirect_y(State *state, uint8_t val) {
+	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val - (uint16_t) (1 - state->cpu.p.C);
 
-	cpu->p.C = res < 256;
-	cpu->p.Z = 0 == (uint8_t) res;
-	cpu->p.V = ((res ^ (uint16_t) cpu->a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
-	cpu->p.N = (res & 0x80) >> 7;
-	cpu->a   = (uint8_t) res;
+	state->cpu.p.C = res < 256;
+	state->cpu.p.Z = 0 == (uint8_t) res;
+	state->cpu.p.V = ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.N = (res & 0x80) >> 7;
+	state->cpu.a   = (uint8_t) res;
 }
 
-void sec(Cpu *cpu) {
-	cpu->p.C = 1;
+void sec(State *state) {
+	state->cpu.p.C = 1;
 }
 
-void sed(Cpu *cpu) {
-	cpu->p.D = 1;
+void sed(State *state) {
+	state->cpu.p.D = 1;
 }
 
-void sei(Cpu *cpu) {
-	cpu->p.I = 1;
+void sei(State *state) {
+	state->cpu.p.I = 1;
 }
 
-void sta_zero_page(Cpu *cpu, uint8_t val) {
+void sta_zero_page(State *state, uint8_t val) {
 	// Store accumulator in memory
 }
 
-void sta_zero_page_x(Cpu *cpu, uint8_t val) {
+void sta_zero_page_x(State *state, uint8_t val) {
 	// Store accumulator in memory
 }
 
-void sta_absolute(Cpu *cpu, uint8_t val) {
+void sta_absolute(State *state, uint8_t val) {
 	// Store accumulator in memory
 }
 
-void sta_absolute_x(Cpu *cpu, uint8_t val) {
+void sta_absolute_x(State *state, uint8_t val) {
 	// Store accumulator in memory
 }
 
-void sta_absolute_y(Cpu *cpu, uint8_t val) {
+void sta_absolute_y(State *state, uint8_t val) {
 	// Store accumulator in memory
 }
 
-void sta_indirect_x(Cpu *cpu, uint8_t val) {
+void sta_indirect_x(State *state, uint8_t val) {
 	// Store accumulator in memory
 }
 
-void sta_indirect_y(Cpu *cpu, uint8_t val) {
+void sta_indirect_y(State *state, uint8_t val) {
 	// Store accumulator in memory
 }
 
-void stx_zero_page(Cpu *cpu, uint8_t val) {
+void stx_zero_page(State *state, uint8_t val) {
 	// Store X register in memory
 }
 
-void stx_zero_page_y(Cpu *cpu, uint8_t val) {
+void stx_zero_page_y(State *state, uint8_t val) {
 	// Store X register in memory
 }
 
-void stx_absolute(Cpu *cpu, uint8_t val) {
+void stx_absolute(State *state, uint8_t val) {
 	// Store X register in memory
 }
 
-void sty_zero_page(Cpu *cpu, uint8_t val) {
+void sty_zero_page(State *state, uint8_t val) {
 	// Store Y register in memory
 }
 
-void sty_zero_page_x(Cpu *cpu, uint8_t val) {
+void sty_zero_page_x(State *state, uint8_t val) {
 	// Store Y register in memory
 }
 
-void sty_absolute(Cpu *cpu, uint8_t val) {
+void sty_absolute(State *state, uint8_t val) {
 	// Store Y register in memory
 }
 
-void tax(Cpu *cpu) {
-	cpu->x   = cpu->a;
-	cpu->p.Z = 0 == cpu->x;
-	cpu->p.N = (cpu->x & 0x80) >> 7;
+void tax(State *state) {
+	state->cpu.x   = state->cpu.a;
+	state->cpu.p.Z = 0 == state->cpu.x;
+	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
 }
 
-void tay(Cpu *cpu) {
-	cpu->y   = cpu->a;
-	cpu->p.Z = 0 == cpu->y;
-	cpu->p.N = (cpu->y & 0x80) >> 7;
+void tay(State *state) {
+	state->cpu.y   = state->cpu.a;
+	state->cpu.p.Z = 0 == state->cpu.y;
+	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
 }
 
-void tsx(Cpu *cpu) {
-	cpu->x   = cpu->s;
-	cpu->p.Z = 0 == cpu->x;
-	cpu->p.N = (cpu->x & 0x80) >> 7;
+void tsx(State *state) {
+	state->cpu.x   = state->cpu.s;
+	state->cpu.p.Z = 0 == state->cpu.x;
+	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
 }
 
-void txa(Cpu *cpu) {
-	cpu->a   = cpu->x;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void txa(State *state) {
+	state->cpu.a   = state->cpu.x;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void txs(Cpu *cpu) {
-	cpu->s = cpu->x;
+void txs(State *state) {
+	state->cpu.s = state->cpu.x;
 }
 
-void tya(Cpu *cpu) {
-	cpu->a   = cpu->y;
-	cpu->p.Z = 0 == cpu->a;
-	cpu->p.N = (cpu->a & 0x80) >> 7;
+void tya(State *state) {
+	state->cpu.a   = state->cpu.y;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void lax_zero_page(Cpu *cpu, uint8_t val) {}
-void lax_zero_page_y(Cpu *cpu, uint8_t val) {}
-void lax_absolute(Cpu *cpu, uint8_t val) {}
-void lax_absolute_y(Cpu *cpu, uint8_t val) {}
-void lax_indirect_x(Cpu *cpu, uint8_t val) {}
-void lax_indirect_y(Cpu *cpu, uint8_t val) {}
-void sax_zero_page(Cpu *cpu, uint8_t val) {}
-void sax_zero_page_y(Cpu *cpu, uint8_t val) {}
-void sax_absolute(Cpu *cpu, uint8_t val) {}
-void sax_indirect_x(Cpu *cpu, uint8_t val) {}
-void dcp_zero_page(Cpu *cpu, uint8_t val) {}
-void dcp_zero_page_x(Cpu *cpu, uint8_t val) {}
-void dcp_absolute(Cpu *cpu, uint8_t val) {}
-void dcp_absolute_x(Cpu *cpu, uint8_t val) {}
-void dcp_absolute_y(Cpu *cpu, uint8_t val) {}
-void dcp_indirect_x(Cpu *cpu, uint8_t val) {}
-void dcp_indirect_y(Cpu *cpu, uint8_t val) {}
-void isc_zero_page(Cpu *cpu, uint8_t val) {}
-void isc_zero_page_x(Cpu *cpu, uint8_t val) {}
-void isc_absolute(Cpu *cpu, uint8_t val) {}
-void isc_absolute_x(Cpu *cpu, uint8_t val) {}
-void isc_absolute_y(Cpu *cpu, uint8_t val) {}
-void isc_indirect_x(Cpu *cpu, uint8_t val) {}
-void isc_indirect_y(Cpu *cpu, uint8_t val) {}
-void rla_zero_page(Cpu *cpu, uint8_t val) {}
-void rla_zero_page_x(Cpu *cpu, uint8_t val) {}
-void rla_absolute(Cpu *cpu, uint8_t val) {}
-void rla_absolute_x(Cpu *cpu, uint8_t val) {}
-void rla_absolute_y(Cpu *cpu, uint8_t val) {}
-void rla_indirect_x(Cpu *cpu, uint8_t val) {}
-void rla_indirect_y(Cpu *cpu, uint8_t val) {}
-void rra_zero_page(Cpu *cpu, uint8_t val) {}
-void rra_zero_page_x(Cpu *cpu, uint8_t val) {}
-void rra_absolute(Cpu *cpu, uint8_t val) {}
-void rra_absolute_x(Cpu *cpu, uint8_t val) {}
-void rra_absolute_y(Cpu *cpu, uint8_t val) {}
-void rra_indirect_x(Cpu *cpu, uint8_t val) {}
-void rra_indirect_y(Cpu *cpu, uint8_t val) {}
-void slo_zero_page(Cpu *cpu, uint8_t val) {}
-void slo_zero_page_x(Cpu *cpu, uint8_t val) {}
-void slo_absolute(Cpu *cpu, uint8_t val) {}
-void slo_absolute_x(Cpu *cpu, uint8_t val) {}
-void slo_absolute_y(Cpu *cpu, uint8_t val) {}
-void slo_indirect_x(Cpu *cpu, uint8_t val) {}
-void slo_indirect_y(Cpu *cpu, uint8_t val) {}
-void sre_zero_page(Cpu *cpu, uint8_t val) {}
-void sre_zero_page_x(Cpu *cpu, uint8_t val) {}
-void sre_absolute(Cpu *cpu, uint8_t val) {}
-void sre_absolute_x(Cpu *cpu, uint8_t val) {}
-void sre_absolute_y(Cpu *cpu, uint8_t val) {}
-void sre_indirect_x(Cpu *cpu, uint8_t val) {}
-void sre_indirect_y(Cpu *cpu, uint8_t val) {}
-void anc(Cpu *cpu, uint8_t val) {}
-void alr(Cpu *cpu, uint8_t val) {}
-void arr(Cpu *cpu, uint8_t val) {}
-void axs(Cpu *cpu, uint8_t val) {}
-void las(Cpu *cpu, uint8_t val) {}
-void tas(Cpu *cpu, uint8_t val) {}
-void shy(Cpu *cpu, uint8_t val) {}
-void shx(Cpu *cpu, uint8_t val) {}
-void ahx_absolute_y(Cpu *cpu, uint8_t val) {}
-void ahx_indirect_y(Cpu *cpu, uint8_t val) {}
+void lax_zero_page(State *state, uint8_t val) {}
+void lax_zero_page_y(State *state, uint8_t val) {}
+void lax_absolute(State *state, uint8_t val) {}
+void lax_absolute_y(State *state, uint8_t val) {}
+void lax_indirect_x(State *state, uint8_t val) {}
+void lax_indirect_y(State *state, uint8_t val) {}
+void sax_zero_page(State *state, uint8_t val) {}
+void sax_zero_page_y(State *state, uint8_t val) {}
+void sax_absolute(State *state, uint8_t val) {}
+void sax_indirect_x(State *state, uint8_t val) {}
+void dcp_zero_page(State *state, uint8_t val) {}
+void dcp_zero_page_x(State *state, uint8_t val) {}
+void dcp_absolute(State *state, uint8_t val) {}
+void dcp_absolute_x(State *state, uint8_t val) {}
+void dcp_absolute_y(State *state, uint8_t val) {}
+void dcp_indirect_x(State *state, uint8_t val) {}
+void dcp_indirect_y(State *state, uint8_t val) {}
+void isc_zero_page(State *state, uint8_t val) {}
+void isc_zero_page_x(State *state, uint8_t val) {}
+void isc_absolute(State *state, uint8_t val) {}
+void isc_absolute_x(State *state, uint8_t val) {}
+void isc_absolute_y(State *state, uint8_t val) {}
+void isc_indirect_x(State *state, uint8_t val) {}
+void isc_indirect_y(State *state, uint8_t val) {}
+void rla_zero_page(State *state, uint8_t val) {}
+void rla_zero_page_x(State *state, uint8_t val) {}
+void rla_absolute(State *state, uint8_t val) {}
+void rla_absolute_x(State *state, uint8_t val) {}
+void rla_absolute_y(State *state, uint8_t val) {}
+void rla_indirect_x(State *state, uint8_t val) {}
+void rla_indirect_y(State *state, uint8_t val) {}
+void rra_zero_page(State *state, uint8_t val) {}
+void rra_zero_page_x(State *state, uint8_t val) {}
+void rra_absolute(State *state, uint8_t val) {}
+void rra_absolute_x(State *state, uint8_t val) {}
+void rra_absolute_y(State *state, uint8_t val) {}
+void rra_indirect_x(State *state, uint8_t val) {}
+void rra_indirect_y(State *state, uint8_t val) {}
+void slo_zero_page(State *state, uint8_t val) {}
+void slo_zero_page_x(State *state, uint8_t val) {}
+void slo_absolute(State *state, uint8_t val) {}
+void slo_absolute_x(State *state, uint8_t val) {}
+void slo_absolute_y(State *state, uint8_t val) {}
+void slo_indirect_x(State *state, uint8_t val) {}
+void slo_indirect_y(State *state, uint8_t val) {}
+void sre_zero_page(State *state, uint8_t val) {}
+void sre_zero_page_x(State *state, uint8_t val) {}
+void sre_absolute(State *state, uint8_t val) {}
+void sre_absolute_x(State *state, uint8_t val) {}
+void sre_absolute_y(State *state, uint8_t val) {}
+void sre_indirect_x(State *state, uint8_t val) {}
+void sre_indirect_y(State *state, uint8_t val) {}
+void anc(State *state, uint8_t val) {}
+void alr(State *state, uint8_t val) {}
+void arr(State *state, uint8_t val) {}
+void axs(State *state, uint8_t val) {}
+void las(State *state, uint8_t val) {}
+void tas(State *state, uint8_t val) {}
+void shy(State *state, uint8_t val) {}
+void shx(State *state, uint8_t val) {}
+void ahx_absolute_y(State *state, uint8_t val) {}
+void ahx_indirect_y(State *state, uint8_t val) {}
