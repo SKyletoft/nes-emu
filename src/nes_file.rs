@@ -175,7 +175,7 @@ impl Mapper {
 		todo!()
 	}
 
-	pub fn set_ppu(&mut self, adr: u16) -> Option<()> {
+	pub fn set_ppu(&mut self, adr: u16, val: u8) -> Option<()> {
 		todo!()
 	}
 }
