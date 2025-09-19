@@ -167,8 +167,37 @@ impl Mapper {
 		}
 	}
 
-	pub fn set_cpu(&mut self, adr: u16) -> Option<()> {
-		todo!()
+	pub fn set_cpu(&mut self, adr: u16, val: u8) -> Option<()> {
+		match self {
+			Mapper::MMC3 { registers, .. } => {
+				match adr {
+					0x8000..=0x9FFF if adr % 2 == 0 => registers.h8000 = val,
+					0x8000..=0x9FFF if adr % 2 == 1 => {
+						registers.h8001 = val;
+						todo!("Update banks");
+					}
+					0xA000..=0xBFFF if adr % 2 == 0 => registers.hA000 = val,
+					0xA000..=0xBFFF if adr % 2 == 1 => {
+						registers.hA001 = val;
+						todo!("Update banks");
+					}
+					0xC000..=0xDFFF if adr % 2 == 0 => registers.hC000 = val,
+					0xC000..=0xDFFF if adr % 2 == 1 => {
+						registers.hC001 = val;
+						todo!("Update banks");
+					}
+					0xE000..=0xFFFF if adr % 2 == 0 => registers.hE000 = val,
+					0xE000..=0xFFFF if adr % 2 == 1 => {
+						registers.hE001 = val;
+						todo!("Update banks");
+					}
+					_ => panic!("Out of bounds write to mapper, check against actual emulators"),
+				}
+
+				Some(())
+			}
+			Mapper::MMC4 => todo!(),
+		}
 	}
 
 	pub fn get_ppu(&self, adr: u16) -> Option<()> {
