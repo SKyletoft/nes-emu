@@ -141,12 +141,8 @@ impl Mapper {
 				0xA000..=0xBFFF => prg_roms[prg_banks[1] as usize]
 					.get((adr - 0xA000) as usize)
 					.copied(),
-				0xC000..=0xDFFF =>  prg_roms[30]
-					.get((adr - 0xC000) as usize)
-					.copied(),
-				0xE000..=0xFFFF =>  prg_roms[31]
-					.get((adr - 0xE000) as usize)
-					.copied(),
+				0xC000..=0xDFFF => prg_roms[30].get((adr - 0xC000) as usize).copied(),
+				0xE000..=0xFFFF => prg_roms[31].get((adr - 0xE000) as usize).copied(),
 				_ => panic!(
 					"Out of bounds read from mapper (should probably be 0? But compare to existing emulators when this happens)"
 				),
