@@ -30,7 +30,7 @@ uint8_t state_get_mem(State const *state, uint16_t adr);
 void state_set_mem(State const *state, uint16_t adr, uint8_t val);
 
 #define ACCUMULATOR(fn)                                                                          \
-	void fn(State *state) {                                                                  \
+	void fn##_accumulator(State *state) {                                                    \
 		fn##_impl(state, &state->cpu.a);                                                 \
 	}
 
