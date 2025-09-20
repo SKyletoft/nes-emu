@@ -49,16 +49,7 @@ impl State {
 
 		let ram = [0; 2048];
 
-		let ppu = Ppu {
-			ctrl: todo!(),
-			mask: todo!(),
-			status: todo!(),
-			oam_addr: todo!(),
-			oam_data: todo!(),
-			scroll: todo!(),
-			addr: todo!(),
-			data: todo!(),
-		};
+		let ppu = Ppu::default();
 
 		Self { cpu, ppu, rom, ram }
 	}
