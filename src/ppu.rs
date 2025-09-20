@@ -6,10 +6,10 @@ pub struct Ppu {
 	pub ctrl: Ctrl,
 	pub mask: Mask,
 	pub status: Status,
-	pub oam_addr: OamAddr,
+	pub oam_adr: OamAdr,
 	pub oam_data: OamData,
 	pub scroll: Scroll,
-	pub addr: Addr,
+	pub adr: Adr,
 	pub data: Data,
 }
 
@@ -61,7 +61,7 @@ bitflags! {
 
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
-pub struct OamAddr(u8);
+pub struct OamAdr(u8);
 
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
@@ -76,7 +76,7 @@ pub struct Scroll {
 
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
-pub struct Addr {
+pub struct Adr {
 	high: u8,
 	low: u8,
 }
