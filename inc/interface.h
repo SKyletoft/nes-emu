@@ -1,14 +1,17 @@
 #include <stdint.h>
 
-typedef struct {
-	uint8_t C       : 1;
-	uint8_t Z       : 1;
-	uint8_t I       : 1;
-	uint8_t D       : 1;
-	uint8_t B       : 1;
-	uint8_t _unused : 1;
-	uint8_t V       : 1;
-	uint8_t N       : 1;
+typedef union {
+	struct {
+		uint8_t C       : 1;
+		uint8_t Z       : 1;
+		uint8_t I       : 1;
+		uint8_t D       : 1;
+		uint8_t B       : 1;
+		uint8_t _unused : 1;
+		uint8_t V       : 1;
+		uint8_t N       : 1;
+	};
+	uint8_t raw;
 } P;
 
 typedef struct {
