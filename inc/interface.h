@@ -24,7 +24,25 @@ typedef struct {
 } Cpu;
 
 typedef struct {
+	uint8_t ctrl;
+	uint8_t mask;
+	uint8_t status;
+	uint8_t oam_adr;
+	uint8_t oam_data;
+	struct {
+		uint8_t x;
+		uint8_t y;
+	} scroll;
+	struct {
+		uint8_t high;
+		uint8_t low;
+	} adr;
+	uint8_t data;
+} Ppu;
+
+typedef struct {
 	Cpu cpu;
+	Ppu ppu;
 	/* Mapper */ void *rom;
 	uint8_t ram[2048];
 } State;

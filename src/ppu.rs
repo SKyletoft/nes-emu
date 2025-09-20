@@ -67,12 +67,14 @@ pub struct OamAddr(u8);
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
 pub struct OamData(u8);
 
+#[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct Scroll {
 	pub x: u8,
 	pub y: u8,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct Addr {
 	high: u8,
