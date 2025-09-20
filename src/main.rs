@@ -50,8 +50,12 @@ fn main() {
 
 #[cfg(test)]
 mod test {
-	use super::*;
-	use crate::inst::{Inst, LDA, STA};
+	use crate::{
+		cpu::P,
+		inst::{Inst, LDA, STA},
+		interpret::State,
+		nes_file::Mapper,
+	};
 
 	#[test]
 	fn smb3_first_few() {
