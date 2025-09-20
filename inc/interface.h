@@ -120,7 +120,7 @@ void state_set_mem(State const *state, uint16_t adr, uint8_t val);
 		uint8_t tmp = state_get_mem(state, (uint16_t) (state->cpu.x + adr) & 0xFF);      \
 		uint16_t adr2 =                                                                  \
 		    (uint16_t) (state_get_mem(state, (uint16_t) tmp)                             \
-		                | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);       \
+				| state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);       \
 		uint8_t val = state_get_mem(state, adr2);                                        \
 		fn##_impl(state, val);                                                           \
 	}
@@ -130,7 +130,7 @@ void state_set_mem(State const *state, uint16_t adr, uint8_t val);
 		uint8_t tmp = state_get_mem(state, (uint16_t) (state->cpu.y + adr) & 0xFF);      \
 		uint16_t adr2 =                                                                  \
 		    (uint16_t) (state_get_mem(state, (uint16_t) tmp)                             \
-		                | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);       \
+				| state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);       \
 		uint8_t val = state_get_mem(state, adr2);                                        \
 		fn##_impl(state, val);                                                           \
 	}
