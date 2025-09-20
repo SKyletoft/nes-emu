@@ -41,7 +41,7 @@ fn main() {
 
 	let mut buf = String::new();
 	loop {
-		system_state = system_state.next_step();
+		system_state.next();
 
 		display(&system_state);
 		buf.clear();
