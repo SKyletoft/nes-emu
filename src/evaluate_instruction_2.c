@@ -14,127 +14,54 @@ void clv(State *state) {
 	state->cpu.p.V = 0;
 }
 
-void cmp_immediate(State *state, uint8_t val) {
+void cmp_impl(State *state, uint8_t val) {
 	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
 	state->cpu.p.C = res < 256;
 	state->cpu.p.Z = 0 == (uint8_t) res;
 	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
-void cmp_zero_page(State *state, uint8_t val) {
-	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C = res < 256;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.N = (res & 0x80) >> 7;
-}
+IMMEDIATE(cmp)
+ZERO_PAGE(cmp)
+ZERO_PAGE_X(cmp)
+ABSOLUTE(cmp)
+ABSOLUTE_X(cmp)
+ABSOLUTE_Y(cmp)
+INDIRECT_X(cmp)
+INDIRECT_Y(cmp)
 
-void cmp_zero_page_x(State *state, uint8_t val) {
-	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C = res < 256;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.N = (res & 0x80) >> 7;
-}
-
-void cmp_absolute(State *state, uint8_t val) {
-	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C = res < 256;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.N = (res & 0x80) >> 7;
-}
-
-void cmp_absolute_x(State *state, uint8_t val) {
-	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C = res < 256;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.N = (res & 0x80) >> 7;
-}
-
-void cmp_absolute_y(State *state, uint8_t val) {
-	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C = res < 256;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.N = (res & 0x80) >> 7;
-}
-
-void cmp_indirect_x(State *state, uint8_t val) {
-	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C = res < 256;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.N = (res & 0x80) >> 7;
-}
-
-void cmp_indirect_y(State *state, uint8_t val) {
-	uint16_t res   = (uint16_t) state->cpu.a - (uint16_t) val;
-	state->cpu.p.C = res < 256;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.N = (res & 0x80) >> 7;
-}
-
-void cpx_immediate(State *state, uint8_t val) {
+void cpx_impl(State *state, uint8_t val) {
 	uint16_t res   = (uint16_t) state->cpu.x - (uint16_t) val;
 	state->cpu.p.C = res < 256;
 	state->cpu.p.Z = 0 == (uint8_t) res;
 	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
-void cpx_zero_page(State *state, uint8_t val) {
-	uint16_t res   = (uint16_t) state->cpu.x - (uint16_t) val;
-	state->cpu.p.C = res < 256;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.N = (res & 0x80) >> 7;
-}
+IMMEDIATE(cpx)
+ZERO_PAGE(cpx)
+ABSOLUTE(cpx)
 
-void cpx_absolute(State *state, uint8_t val) {
-	uint16_t res   = (uint16_t) state->cpu.x - (uint16_t) val;
-	state->cpu.p.C = res < 256;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.N = (res & 0x80) >> 7;
-}
-
-void cpy_immediate(State *state, uint8_t val) {
+void cpy_impl(State *state, uint8_t val) {
 	uint16_t res   = (uint16_t) state->cpu.y - (uint16_t) val;
 	state->cpu.p.C = res < 256;
 	state->cpu.p.Z = 0 == (uint8_t) res;
 	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
-void cpy_zero_page(State *state, uint8_t val) {
-	uint16_t res   = (uint16_t) state->cpu.y - (uint16_t) val;
-	state->cpu.p.C = res < 256;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.N = (res & 0x80) >> 7;
-}
+IMMEDIATE(cpy)
+ZERO_PAGE(cpy)
+ABSOLUTE(cpy)
 
-void cpy_absolute(State *state, uint8_t val) {
-	uint16_t res   = (uint16_t) state->cpu.y - (uint16_t) val;
-	state->cpu.p.C = res < 256;
-	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.N = (res & 0x80) >> 7;
-}
-
-void dec_zero_page(State *state, uint8_t val) {
+void dec_impl(State *state, uint8_t val) {
 	val--;
 	state->cpu.p.Z = 0 == val;
 	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void dec_zero_page_x(State *state, uint8_t val) {
-	val--;
-	state->cpu.p.Z = 0 == val;
-	state->cpu.p.N = (val & 0x80) >> 7;
-}
-
-void dec_absolute(State *state, uint8_t val) {
-	val--;
-	state->cpu.p.Z = 0 == val;
-	state->cpu.p.N = (val & 0x80) >> 7;
-}
-
-void dec_absolute_x(State *state, uint8_t val) {
-	val--;
-	state->cpu.p.Z = 0 == val;
-	state->cpu.p.N = (val & 0x80) >> 7;
-}
+ZERO_PAGE(dec)
+ZERO_PAGE_X(dec)
+ABSOLUTE(dec)
+ABSOLUTE_X(dec)
 
 void dex(State *state) {
 	state->cpu.x--;
@@ -148,77 +75,31 @@ void dey(State *state) {
 	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
 }
 
-void eor_immediate(State *state, uint8_t val) {
+void eor_impl(State *state, uint8_t val) {
 	state->cpu.a ^= val;
 	state->cpu.p.Z = 0 == state->cpu.a;
 	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-void eor_zero_page(State *state, uint8_t val) {
-	state->cpu.a ^= val;
-	state->cpu.p.Z = 0 == state->cpu.a;
-	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
-}
+IMMEDIATE(eor)
+ZERO_PAGE(eor)
+ZERO_PAGE_X(eor)
+ABSOLUTE(eor)
+ABSOLUTE_X(eor)
+ABSOLUTE_Y(eor)
+INDIRECT_X(eor)
+INDIRECT_Y(eor)
 
-void eor_zero_page_x(State *state, uint8_t val) {
-	state->cpu.a ^= val;
-	state->cpu.p.Z = 0 == state->cpu.a;
-	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
-}
-
-void eor_absolute(State *state, uint8_t val) {
-	state->cpu.a ^= val;
-	state->cpu.p.Z = 0 == state->cpu.a;
-	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
-}
-
-void eor_absolute_x(State *state, uint8_t val) {
-	state->cpu.a ^= val;
-	state->cpu.p.Z = 0 == state->cpu.a;
-	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
-}
-
-void eor_absolute_y(State *state, uint8_t val) {
-	state->cpu.a ^= val;
-	state->cpu.p.Z = 0 == state->cpu.a;
-	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
-}
-
-void eor_indirect_x(State *state, uint8_t val) {
-	state->cpu.a ^= val;
-	state->cpu.p.Z = 0 == state->cpu.a;
-	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
-}
-
-void eor_indirect_y(State *state, uint8_t val) {
-	state->cpu.a ^= val;
-	state->cpu.p.Z = 0 == state->cpu.a;
-	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
-}
-
-void inc_zero_page(State *state, uint8_t val) {
+void inc_impl(State *state, uint8_t val) {
 	val++;
 	state->cpu.p.Z = 0 == val;
 	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-void inc_zero_page_x(State *state, uint8_t val) {
-	val++;
-	state->cpu.p.Z = 0 == val;
-	state->cpu.p.N = (val & 0x80) >> 7;
-}
-
-void inc_absolute(State *state, uint8_t val) {
-	val++;
-	state->cpu.p.Z = 0 == val;
-	state->cpu.p.N = (val & 0x80) >> 7;
-}
-
-void inc_absolute_x(State *state, uint8_t val) {
-	val++;
-	state->cpu.p.Z = 0 == val;
-	state->cpu.p.N = (val & 0x80) >> 7;
-}
+ZERO_PAGE(inc)
+ZERO_PAGE_X(inc)
+ABSOLUTE(inc)
+ABSOLUTE_X(inc)
 
 void inx(State *state) {
 	state->cpu.x++;
