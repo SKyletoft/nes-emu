@@ -191,7 +191,7 @@ pub enum LDA {
 	AbsoluteX(u16),
 	AbsoluteY(u16),
 	IndirectX(u8),
-	IndirectY(u16),
+	IndirectY(u8),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -908,7 +908,7 @@ impl Inst {
 			// Inst::AHX(AHX::AbsoluteY(a)) => ahx_absolute_y(cpu, *a),
 			// Inst::AHX(AHX::IndirectY(x)) => ahx_indirect_y(cpu, *x),
 			// Inst::NOPU(..) => {}
-			_ => todo!("No support for unofficial instructions yet")
+			_ => todo!("No support for unofficial instructions yet"),
 		}
 	}
 }
@@ -928,17 +928,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::ADC(ADC::ZeroPageX(*addr)))
 		}
-		[0x6D, x, rest @ ..] => {
+		[0x6D, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ADC(ADC::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ADC(ADC::Absolute(num)))
 		}
-		[0x7D, x, rest @ ..] => {
+		[0x7D, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ADC(ADC::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ADC(ADC::AbsoluteX(num)))
 		}
-		[0x79, x, rest @ ..] => {
+		[0x79, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ADC(ADC::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ADC(ADC::AbsoluteY(num)))
 		}
 		[0x61, addr, rest @ ..] => {
 			*code = rest;
@@ -962,17 +965,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::AND(AND::ZeroPageX(*addr)))
 		}
-		[0x2D, x, rest @ ..] => {
+		[0x2D, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::AND(AND::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::AND(AND::Absolute(num)))
 		}
-		[0x3D, x, rest @ ..] => {
+		[0x3D, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::AND(AND::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::AND(AND::AbsoluteX(num)))
 		}
-		[0x39, x, rest @ ..] => {
+		[0x39, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::AND(AND::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::AND(AND::AbsoluteY(num)))
 		}
 		[0x21, addr, rest @ ..] => {
 			*code = rest;
@@ -996,13 +1002,15 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::ASL(ASL::ZeroPageX(*addr)))
 		}
-		[0x0E, x, rest @ ..] => {
+		[0x0E, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ASL(ASL::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ASL(ASL::Absolute(num)))
 		}
-		[0x1E, x, rest @ ..] => {
+		[0x1E, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ASL(ASL::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ASL(ASL::AbsoluteX(num)))
 		}
 
 		// BCC instruction
@@ -1028,9 +1036,10 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::BIT(BIT::ZeroPage(*addr)))
 		}
-		[0x2C, x, rest @ ..] => {
+		[0x2C, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::BIT(BIT::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::BIT(BIT::Absolute(num)))
 		}
 
 		// BMI instruction
@@ -1106,17 +1115,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::CMP(CMP::ZeroPageX(*addr)))
 		}
-		[0xCD, x, rest @ ..] => {
+		[0xCD, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::CMP(CMP::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::CMP(CMP::Absolute(num)))
 		}
-		[0xDD, x, rest @ ..] => {
+		[0xDD, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::CMP(CMP::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::CMP(CMP::AbsoluteX(num)))
 		}
-		[0xD9, x, rest @ ..] => {
+		[0xD9, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::CMP(CMP::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::CMP(CMP::AbsoluteY(num)))
 		}
 		[0xC1, addr, rest @ ..] => {
 			*code = rest;
@@ -1136,9 +1148,10 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::CPX(CPX::ZeroPage(*addr)))
 		}
-		[0xEC, x, rest @ ..] => {
+		[0xEC, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::CPX(CPX::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::CPX(CPX::Absolute(num)))
 		}
 
 		// CPY instructions
@@ -1150,9 +1163,10 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::CPY(CPY::ZeroPage(*addr)))
 		}
-		[0xCC, x, rest @ ..] => {
+		[0xCC, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::CPY(CPY::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::CPY(CPY::Absolute(num)))
 		}
 
 		// DEC instructions
@@ -1164,13 +1178,15 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::DEC(DEC::ZeroPageX(*addr)))
 		}
-		[0xCE, x, rest @ ..] => {
+		[0xCE, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::DEC(DEC::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::DEC(DEC::Absolute(num)))
 		}
-		[0xDE, x, rest @ ..] => {
+		[0xDE, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::DEC(DEC::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::DEC(DEC::AbsoluteX(num)))
 		}
 
 		// DEX instruction
@@ -1198,17 +1214,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::EOR(EOR::ZeroPageX(*addr)))
 		}
-		[0x4D, x, rest @ ..] => {
+		[0x4D, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::EOR(EOR::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::EOR(EOR::Absolute(num)))
 		}
-		[0x5D, x, rest @ ..] => {
+		[0x5D, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::EOR(EOR::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::EOR(EOR::AbsoluteX(num )))
 		}
-		[0x59, x, rest @ ..] => {
+		[0x59, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::EOR(EOR::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::EOR(EOR::AbsoluteY(num)))
 		}
 		[0x41, addr, rest @ ..] => {
 			*code = rest;
@@ -1228,13 +1247,15 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::INC(INC::ZeroPageX(*addr)))
 		}
-		[0xEE, x, rest @ ..] => {
+		[0xEE, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::INC(INC::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::INC(INC::Absolute(num)))
 		}
-		[0xFE, x, rest @ ..] => {
+		[0xFE, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::INC(INC::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::INC(INC::AbsoluteX(num)))
 		}
 
 		// INX instruction
@@ -1281,17 +1302,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::LDA(LDA::ZeroPageX(*addr)))
 		}
-		[0xAD, x, rest @ ..] => {
+		[0xAD, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::LDA(LDA::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::LDA(LDA::Absolute(num)))
 		}
-		[0xBD, x, rest @ ..] => {
+		[0xBD, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::LDA(LDA::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::LDA(LDA::AbsoluteX(num)))
 		}
-		[0xB9, x, rest @ ..] => {
+		[0xB9, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::LDA(LDA::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::LDA(LDA::AbsoluteY(num)))
 		}
 		[0xA1, addr, rest @ ..] => {
 			*code = rest;
@@ -1315,13 +1339,15 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::LDX(LDX::ZeroPageY(*addr)))
 		}
-		[0xAE, x, rest @ ..] => {
+		[0xAE, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::LDX(LDX::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::LDX(LDX::Absolute(num)))
 		}
-		[0xBE, x, rest @ ..] => {
+		[0xBE, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::LDX(LDX::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::LDX(LDX::AbsoluteY(num)))
 		}
 
 		// LDY instructions
@@ -1337,13 +1363,15 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::LDY(LDY::ZeroPageX(*addr)))
 		}
-		[0xAC, x, rest @ ..] => {
+		[0xAC, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::LDY(LDY::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::LDY(LDY::Absolute(num)))
 		}
-		[0xBC, x, rest @ ..] => {
+		[0xBC, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::LDY(LDY::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::LDY(LDY::AbsoluteX(num)))
 		}
 
 		// LSR instructions
@@ -1359,13 +1387,15 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::LSR(LSR::ZeroPageX(*addr)))
 		}
-		[0x4E, x, rest @ ..] => {
+		[0x4E, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::LSR(LSR::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::LSR(LSR::Absolute(num)))
 		}
-		[0x5E, x, rest @ ..] => {
+		[0x5E, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::LSR(LSR::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::LSR(LSR::AbsoluteX(num)))
 		}
 
 		// NOP instruction
@@ -1387,17 +1417,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::ORA(ORA::ZeroPageX(*addr)))
 		}
-		[0x0D, x, rest @ ..] => {
+		[0x0D, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ORA(ORA::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ORA(ORA::Absolute(num)))
 		}
-		[0x1D, x, rest @ ..] => {
+		[0x1D, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ORA(ORA::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ORA(ORA::AbsoluteX(num)))
 		}
-		[0x19, x, rest @ ..] => {
+		[0x19, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ORA(ORA::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ORA(ORA::AbsoluteY(num)))
 		}
 		[0x01, addr, rest @ ..] => {
 			*code = rest;
@@ -1445,13 +1478,15 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::ROL(ROL::ZeroPageX(*addr)))
 		}
-		[0x2E, x, rest @ ..] => {
+		[0x2E, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ROL(ROL::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ROL(ROL::Absolute(num)))
 		}
-		[0x3E, x, rest @ ..] => {
+		[0x3E, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ROL(ROL::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ROL(ROL::AbsoluteX(num)))
 		}
 
 		// ROR instructions
@@ -1467,13 +1502,15 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::ROR(ROR::ZeroPageX(*addr)))
 		}
-		[0x6E, x, rest @ ..] => {
+		[0x6E, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ROR(ROR::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ROR(ROR::Absolute(num)))
 		}
-		[0x7E, x, rest @ ..] => {
+		[0x7E, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ROR(ROR::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ROR(ROR::AbsoluteX(num)))
 		}
 
 		// RTI instruction
@@ -1501,17 +1538,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::SBC(SBC::ZeroPageX(*addr)))
 		}
-		[0xED, x, rest @ ..] => {
+		[0xED, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::SBC(SBC::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::SBC(SBC::Absolute(num)))
 		}
-		[0xFD, x, rest @ ..] => {
+		[0xFD, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::SBC(SBC::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::SBC(SBC::AbsoluteX(num)))
 		}
-		[0xF9, x, rest @ ..] => {
+		[0xF9, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::SBC(SBC::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::SBC(SBC::AbsoluteY(num)))
 		}
 		[0xE1, addr, rest @ ..] => {
 			*code = rest;
@@ -1582,9 +1622,10 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::STX(STX::ZeroPageY(*addr)))
 		}
-		[0x8E, x, rest @ ..] => {
+		[0x8E, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::STX(STX::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::STX(STX::Absolute(num)))
 		}
 
 		// STY instructions
@@ -1596,9 +1637,10 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::STY(STY::ZeroPageX(*addr)))
 		}
-		[0x8C, x, rest @ ..] => {
+		[0x8C, y, x, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::STY(STY::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::STY(STY::Absolute(num)))
 		}
 
 		// TAX instruction
@@ -1646,13 +1688,15 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::LAX(LAX::ZeroPageY(*addr)))
 		}
-		[0xAF, x, rest @ ..] => {
+		[0xAF, y, x, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::LAX(LAX::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::LAX(LAX::Absolute(num)))
 		}
-		[0xBF, x, rest @ ..] => {
+		[0xBF, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::LAX(LAX::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::LAX(LAX::AbsoluteY(num)))
 		}
 		[0xA3, addr, rest @ ..] => {
 			*code = rest;
@@ -1672,9 +1716,10 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::SAX(SAX::ZeroPageY(*addr)))
 		}
-		[0x8F, x, rest @ ..] => {
+		[0x8F, y, x, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::SAX(SAX::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::SAX(SAX::Absolute(num)))
 		}
 		[0x83, addr, rest @ ..] => {
 			*code = rest;
@@ -1690,17 +1735,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::DCP(DCP::ZeroPageX(*addr)))
 		}
-		[0xCF, x, rest @ ..] => {
+		[0xCF, y, x, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::DCP(DCP::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::DCP(DCP::Absolute(num)))
 		}
-		[0xDF, x, rest @ ..] => {
+		[0xDF, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::DCP(DCP::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::DCP(DCP::AbsoluteX(num)))
 		}
-		[0xDB, x, rest @ ..] => {
+		[0xDB, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::DCP(DCP::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::DCP(DCP::AbsoluteY(num)))
 		}
 		[0xC3, addr, rest @ ..] => {
 			*code = rest;
@@ -1720,17 +1768,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::ISC(ISC::ZeroPageX(*addr)))
 		}
-		[0xEF, x, rest @ ..] => {
+		[0xEF, y, x, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ISC(ISC::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ISC(ISC::Absolute(num)))
 		}
-		[0xFF, x, rest @ ..] => {
+		[0xFF, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ISC(ISC::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ISC(ISC::AbsoluteX(num)))
 		}
-		[0xFB, x, rest @ ..] => {
+		[0xFB, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::ISC(ISC::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::ISC(ISC::AbsoluteY(num)))
 		}
 		[0xE3, addr, rest @ ..] => {
 			*code = rest;
@@ -1750,17 +1801,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::RLA(RLA::ZeroPageX(*addr)))
 		}
-		[0x2F, x, rest @ ..] => {
+		[0x2F, y, x, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::RLA(RLA::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::RLA(RLA::Absolute(num)))
 		}
-		[0x3F, x, rest @ ..] => {
+		[0x3F, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::RLA(RLA::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::RLA(RLA::AbsoluteX(num)))
 		}
-		[0x3B, x, rest @ ..] => {
+		[0x3B, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::RLA(RLA::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::RLA(RLA::AbsoluteY(num)))
 		}
 		[0x23, addr, rest @ ..] => {
 			*code = rest;
@@ -1780,17 +1834,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::RRA(RRA::ZeroPageX(*addr)))
 		}
-		[0x6F, x, rest @ ..] => {
+		[0x6F, y, x, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::RRA(RRA::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::RRA(RRA::Absolute(num)))
 		}
-		[0x7F, x, rest @ ..] => {
+		[0x7F, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::RRA(RRA::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::RRA(RRA::AbsoluteX(num)))
 		}
-		[0x7B, x, rest @ ..] => {
+		[0x7B, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::RRA(RRA::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::RRA(RRA::AbsoluteY(num)))
 		}
 		[0x63, addr, rest @ ..] => {
 			*code = rest;
@@ -1810,17 +1867,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::SLO(SLO::ZeroPageX(*addr)))
 		}
-		[0x0F, x, rest @ ..] => {
+		[0x0F, y, x, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::SLO(SLO::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::SLO(SLO::Absolute(num)))
 		}
-		[0x1F, x, rest @ ..] => {
+		[0x1F, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::SLO(SLO::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::SLO(SLO::AbsoluteX(num)))
 		}
-		[0x1B, x, rest @ ..] => {
+		[0x1B, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::SLO(SLO::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::SLO(SLO::AbsoluteY(num)))
 		}
 		[0x03, addr, rest @ ..] => {
 			*code = rest;
@@ -1840,17 +1900,20 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 			*code = rest;
 			Ok(Inst::SRE(SRE::ZeroPageX(*addr)))
 		}
-		[0x4F, x, rest @ ..] => {
+		[0x4F, y, x, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::SRE(SRE::Absolute(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::SRE(SRE::Absolute(num)))
 		}
-		[0x5F, x, rest @ ..] => {
+		[0x5F, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::SRE(SRE::AbsoluteX(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::SRE(SRE::AbsoluteX(num)))
 		}
-		[0x5B, x, rest @ ..] => {
+		[0x5B, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::SRE(SRE::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::SRE(SRE::AbsoluteY(num)))
 		}
 		[0x43, addr, rest @ ..] => {
 			*code = rest;
@@ -1914,9 +1977,10 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 		}
 
 		// AHX instructions (unofficial)
-		[0x9F, x, rest @ ..] => {
+		[0x9F, x, y, rest @ ..] => {
 			*code = rest;
-			Ok(Inst::AHX(AHX::AbsoluteY(*x)))
+			let num = u16::from_le_bytes([*x, *y]);
+			Ok(Inst::AHX(AHX::AbsoluteY(num)))
 		}
 		[0x93, addr, rest @ ..] => {
 			*code = rest;
