@@ -193,11 +193,14 @@ impl Mapper {
 			},
 			Mapper::MMC4 => todo!(),
 			Mapper::NROM128 { ram, rom } => match adr {
-				_ => todo!(),
+				0x6000..=0x7FFF => ram.get(adr as usize % ram.len()).copied(),
+				0x8000..=0xFFFF => rom.get((adr % 0x4000) as usize).copied(),
+				_ => panic!("Out of bounds read from mapper, check against actual emulators"),
 			},
 			Mapper::NROM256 { ram, rom } => match adr {
+				0x6000..=0x7FFF => ram.get(adr as usize % ram.len()).copied(),
 				0x8000..=0xFFFF => rom.get((adr - 0x8000) as usize).copied(),
-				_ => panic!("Out of bounds write to mapper, check against actual emulators"),
+				_ => panic!("Out of bounds read from mapper, check against actual emulators"),
 			},
 		}
 	}
