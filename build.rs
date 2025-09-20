@@ -4,13 +4,15 @@ fn main() {
 	println!("cargo:rerun-if-changed=src/evaluate_instruction_2.c");
 	println!("cargo:rerun-if-changed=src/evaluate_instruction_3.c");
 	println!("cargo:rerun-if-changed=src/evaluate_instruction_4.c");
+	println!("cargo:rerun-if-changed=src/evaluate_instruction_5.c");
 
 	let mut build = cc::Build::new();
 	build
 		.file("src/evaluate_instruction_1.c")
 		.file("src/evaluate_instruction_2.c")
 		.file("src/evaluate_instruction_3.c")
-		.file("src/evaluate_instruction_4.c");
+		.file("src/evaluate_instruction_4.c")
+		.file("src/evaluate_instruction_5.c");
 
 	build.compiler("clang");
 
