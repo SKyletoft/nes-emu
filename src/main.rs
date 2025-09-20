@@ -92,7 +92,7 @@ mod test {
 			assert_eq!(state.cpu.pc, 0xFF4E);
 			assert_eq!(state.next_inst(), Inst::LDA(LDA::Absolute(0x2002)));
 			state.next();
-			assert_eq!(state.next_inst(), Inst::BPL(0xFF4E));
+			assert_eq!(state.next_inst(), Inst::BPL(0x4E));
 			state.next();
 		}
 		assert_eq!(state.cpu.pc, 0xFF53);
