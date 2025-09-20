@@ -2,6 +2,7 @@ use crate::{
 	cpu::{Cpu, P},
 	inst::{self, Inst},
 	nes_file::Mapper,
+	ppu::Ppu,
 };
 
 // Actually RAM ends at 0x07FF, but it's then repeated four times for some reason.
@@ -11,6 +12,7 @@ const END_OF_RAM: u16 = 0x1FFF;
 #[repr(C)]
 pub struct State {
 	pub cpu: Cpu,
+	pub ppu: Ppu,
 	pub rom: Box<Mapper>,
 	pub ram: [u8; 2048],
 }
@@ -47,7 +49,18 @@ impl State {
 
 		let ram = [0; 2048];
 
-		Self { cpu, rom, ram }
+		let ppu = Ppu {
+			ctrl: todo!(),
+			mask: todo!(),
+			status: todo!(),
+			oam_addr: todo!(),
+			oam_data: todo!(),
+			scroll: todo!(),
+			addr: todo!(),
+			data: todo!(),
+		};
+
+		Self { cpu, ppu, rom, ram }
 	}
 
 	pub fn next_inst(&self) -> Inst {

@@ -1,4 +1,5 @@
 mod cpu;
+mod ppu;
 mod evaluate_instruction;
 mod inst;
 mod interpret;
