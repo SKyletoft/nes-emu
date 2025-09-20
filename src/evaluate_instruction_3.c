@@ -91,44 +91,30 @@ void plp(State *state) {
 	// Pull processor status from stack
 }
 
-void rol_accumulator(State *state) {
+void rol_impl(State *state, uint8_t *val) {
 	uint8_t carry  = state->cpu.p.C;
-	state->cpu.p.C = (uint8_t)((state->cpu.a & 0x80) >> 7);
-	state->cpu.a   = (uint8_t)((state->cpu.a << 1) | carry);
-	state->cpu.p.Z = (uint8_t)(0 == state->cpu.a);
-	state->cpu.p.N = (uint8_t)((state->cpu.a & 0x80) >> 7);
+	state->cpu.p.C = (uint8_t) ((*val & 0x80) >> 7);
+	*val           = (uint8_t) ((*val << 1) | carry);
+	state->cpu.p.Z = (uint8_t) (0 == *val);
+	state->cpu.p.N = (uint8_t) ((*val & 0x80) >> 7);
 }
 
-void rol_impl(State *state, uint8_t val) {
+ACCUMULATOR(rol)
+ZERO_PAGE_RMW(rol)
+ZERO_PAGE_X_RMW(rol)
+ABSOLUTE_RMW(rol)
+ABSOLUTE_X_RMW(rol)
+
+void ror_impl(State *state, uint8_t *val) {
 	uint8_t carry  = state->cpu.p.C;
-	state->cpu.p.C = (uint8_t)((val & 0x80) >> 7);
-	val            = (uint8_t)((val << 1) | carry);
-	state->cpu.p.Z = (uint8_t)(0 == val);
-	state->cpu.p.N = (uint8_t)((val & 0x80) >> 7);
+	state->cpu.p.C = (uint8_t) (*val & 0x01);
+	*val           = (uint8_t) ((carry << 7) | (*val >> 1));
+	state->cpu.p.Z = (uint8_t) (0 == *val);
+	state->cpu.p.N = (uint8_t) ((*val & 0x80) >> 7);
 }
 
-ZERO_PAGE(rol)
-ZERO_PAGE_X(rol)
-ABSOLUTE(rol)
-ABSOLUTE_X(rol)
-
-void ror_accumulator(State *state) {
-	uint8_t carry  = state->cpu.p.C;
-	state->cpu.p.C = (uint8_t)(state->cpu.a & 0x01);
-	state->cpu.a   = (uint8_t)((carry << 7) | (state->cpu.a >> 1));
-	state->cpu.p.Z = (uint8_t)(0 == state->cpu.a);
-	state->cpu.p.N = (uint8_t)((state->cpu.a & 0x80) >> 7);
-}
-
-void ror_impl(State *state, uint8_t val) {
-	uint8_t carry  = state->cpu.p.C;
-	state->cpu.p.C = (uint8_t)(val & 0x01);
-	val            = (uint8_t)((carry << 7) | (val >> 1));
-	state->cpu.p.Z = (uint8_t)(0 == val);
-	state->cpu.p.N = (uint8_t)((val & 0x80) >> 7);
-}
-
-ZERO_PAGE(ror)
-ZERO_PAGE_X(ror)
-ABSOLUTE(ror)
-ABSOLUTE_X(ror)
+ACCUMULATOR(ror)
+ZERO_PAGE_RMW(ror)
+ZERO_PAGE_X_RMW(ror)
+ABSOLUTE_RMW(ror)
+ABSOLUTE_X_RMW(ror)
