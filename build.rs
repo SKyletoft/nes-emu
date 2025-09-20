@@ -1,5 +1,6 @@
 fn main() {
 	// Tell cargo to invalidate the built crate whenever the header changes
+	println!("cargo:rerun-if-changed=inc/interface.h");
 	println!("cargo:rerun-if-changed=src/evaluate_instruction_1.c");
 	println!("cargo:rerun-if-changed=src/evaluate_instruction_2.c");
 	println!("cargo:rerun-if-changed=src/evaluate_instruction_3.c");
