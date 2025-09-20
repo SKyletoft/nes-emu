@@ -55,18 +55,21 @@ void bcc(State *state, int8_t offset) {
 	if (!state->cpu.p.C) {
 		state->cpu.pc += offset;
 	}
+	state->cpu.pc += 2;
 }
 
 void bcs(State *state, int8_t offset) {
 	if (state->cpu.p.C) {
 		state->cpu.pc += offset;
 	}
+	state->cpu.pc += 2;
 }
 
 void beq(State *state, int8_t offset) {
 	if (state->cpu.p.Z) {
 		state->cpu.pc += offset;
 	}
+	state->cpu.pc += 2;
 }
 
 void bit_impl(State *state, uint8_t val) {
@@ -82,18 +85,21 @@ void bmi(State *state, int8_t offset) {
 	if (state->cpu.p.N) {
 		state->cpu.pc += offset;
 	}
+	state->cpu.pc += 2;
 }
 
 void bne(State *state, int8_t offset) {
 	if (!state->cpu.p.Z) {
 		state->cpu.pc += offset;
 	}
+	state->cpu.pc += 2;
 }
 
 void bpl(State *state, int8_t offset) {
 	if (!state->cpu.p.N) {
 		state->cpu.pc += offset;
 	}
+	state->cpu.pc += 2;
 }
 
 void brk(State *state) {
@@ -106,14 +112,17 @@ void bvc(State *state, int8_t offset) {
 	if (!state->cpu.p.V) {
 		state->cpu.pc += offset;
 	}
+	state->cpu.pc += 2;
 }
 
 void bvs(State *state, int8_t offset) {
 	if (state->cpu.p.V) {
 		state->cpu.pc += offset;
 	}
+	state->cpu.pc += 2;
 }
 
 void clc(State *state) {
 	state->cpu.p.C = 0;
+	state->cpu.pc += 1;
 }

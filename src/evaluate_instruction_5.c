@@ -8,6 +8,7 @@ void lax_zero_page(State *state, uint8_t val) {
 	// Update flags
 	state->cpu.p.Z = (val == 0);
 	state->cpu.p.N = ((val & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void lax_zero_page_y(State *state, uint8_t val) {
@@ -16,6 +17,7 @@ void lax_zero_page_y(State *state, uint8_t val) {
 	// Update flags
 	state->cpu.p.Z = (val == 0);
 	state->cpu.p.N = ((val & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void lax_absolute(State *state, uint8_t val) {
@@ -24,6 +26,7 @@ void lax_absolute(State *state, uint8_t val) {
 	// Update flags
 	state->cpu.p.Z = (val == 0);
 	state->cpu.p.N = ((val & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void lax_absolute_y(State *state, uint8_t val) {
@@ -32,6 +35,7 @@ void lax_absolute_y(State *state, uint8_t val) {
 	// Update flags
 	state->cpu.p.Z = (val == 0);
 	state->cpu.p.N = ((val & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void lax_indirect_x(State *state, uint8_t val) {
@@ -40,6 +44,7 @@ void lax_indirect_x(State *state, uint8_t val) {
 	// Update flags
 	state->cpu.p.Z = (val == 0);
 	state->cpu.p.N = ((val & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void lax_indirect_y(State *state, uint8_t val) {
@@ -48,26 +53,31 @@ void lax_indirect_y(State *state, uint8_t val) {
 	// Update flags
 	state->cpu.p.Z = (val == 0);
 	state->cpu.p.N = ((val & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void sax_zero_page(State *state, uint8_t val) {
 	uint8_t result = state->cpu.a & state->cpu.x;
 	state_set_mem(state, val, result);
+	state->cpu.pc += 2;
 }
 
 void sax_zero_page_y(State *state, uint8_t val) {
 	uint8_t result = state->cpu.a & state->cpu.x;
 	state_set_mem(state, val, result);
+	state->cpu.pc += 2;
 }
 
 void sax_absolute(State *state, uint8_t val) {
 	uint8_t result = state->cpu.a & state->cpu.x;
 	state_set_mem(state, val, result);
+	state->cpu.pc += 2;
 }
 
 void sax_indirect_x(State *state, uint8_t val) {
 	uint8_t result = state->cpu.a & state->cpu.x;
 	state_set_mem(state, val, result);
+	state->cpu.pc += 2;
 }
 
 void dcp_zero_page(State *state, uint8_t val) {
@@ -79,6 +89,7 @@ void dcp_zero_page(State *state, uint8_t val) {
 	state->cpu.p.C = (temp < state->cpu.a);
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void dcp_zero_page_x(State *state, uint8_t val) {
@@ -90,6 +101,7 @@ void dcp_zero_page_x(State *state, uint8_t val) {
 	state->cpu.p.C = (temp < state->cpu.a);
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void dcp_absolute(State *state, uint8_t val) {
@@ -101,6 +113,7 @@ void dcp_absolute(State *state, uint8_t val) {
 	state->cpu.p.C = (temp < state->cpu.a);
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void dcp_absolute_x(State *state, uint8_t val) {
@@ -112,6 +125,7 @@ void dcp_absolute_x(State *state, uint8_t val) {
 	state->cpu.p.C = (temp < state->cpu.a);
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void dcp_absolute_y(State *state, uint8_t val) {
@@ -123,6 +137,7 @@ void dcp_absolute_y(State *state, uint8_t val) {
 	state->cpu.p.C = (temp < state->cpu.a);
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void dcp_indirect_x(State *state, uint8_t val) {
@@ -134,6 +149,7 @@ void dcp_indirect_x(State *state, uint8_t val) {
 	state->cpu.p.C = (temp < state->cpu.a);
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void dcp_indirect_y(State *state, uint8_t val) {
@@ -145,6 +161,7 @@ void dcp_indirect_y(State *state, uint8_t val) {
 	state->cpu.p.C = (temp < state->cpu.a);
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void isc_zero_page(State *state, uint8_t val) {
@@ -157,6 +174,7 @@ void isc_zero_page(State *state, uint8_t val) {
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
 	state->cpu.a   = temp;
+	state->cpu.pc += 2;
 }
 
 void isc_zero_page_x(State *state, uint8_t val) {
@@ -169,6 +187,7 @@ void isc_zero_page_x(State *state, uint8_t val) {
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
 	state->cpu.a   = temp;
+	state->cpu.pc += 2;
 }
 
 void isc_absolute(State *state, uint8_t val) {
@@ -181,6 +200,7 @@ void isc_absolute(State *state, uint8_t val) {
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
 	state->cpu.a   = temp;
+	state->cpu.pc += 2;
 }
 
 void isc_absolute_x(State *state, uint8_t val) {
@@ -193,6 +213,7 @@ void isc_absolute_x(State *state, uint8_t val) {
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
 	state->cpu.a   = temp;
+	state->cpu.pc += 2;
 }
 
 void isc_absolute_y(State *state, uint8_t val) {
@@ -205,6 +226,7 @@ void isc_absolute_y(State *state, uint8_t val) {
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
 	state->cpu.a   = temp;
+	state->cpu.pc += 2;
 }
 
 void isc_indirect_x(State *state, uint8_t val) {
@@ -217,6 +239,7 @@ void isc_indirect_x(State *state, uint8_t val) {
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
 	state->cpu.a   = temp;
+	state->cpu.pc += 2;
 }
 
 void isc_indirect_y(State *state, uint8_t val) {
@@ -229,6 +252,7 @@ void isc_indirect_y(State *state, uint8_t val) {
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
 	state->cpu.a   = temp;
+	state->cpu.pc += 2;
 }
 
 void rla_zero_page(State *state, uint8_t val) {
@@ -246,6 +270,7 @@ void rla_zero_page(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void rla_zero_page_x(State *state, uint8_t val) {
@@ -263,6 +288,7 @@ void rla_zero_page_x(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void rla_absolute(State *state, uint8_t val) {
@@ -280,6 +306,7 @@ void rla_absolute(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void rla_absolute_x(State *state, uint8_t val) {
@@ -297,6 +324,7 @@ void rla_absolute_x(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void rla_absolute_y(State *state, uint8_t val) {
@@ -314,6 +342,7 @@ void rla_absolute_y(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void rla_indirect_x(State *state, uint8_t val) {
@@ -331,6 +360,7 @@ void rla_indirect_x(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void rla_indirect_y(State *state, uint8_t val) {
@@ -348,6 +378,7 @@ void rla_indirect_y(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void rra_zero_page(State *state, uint8_t val) {
@@ -364,6 +395,7 @@ void rra_zero_page(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = temp;
+	state->cpu.pc += 2;
 }
 
 void rra_zero_page_x(State *state, uint8_t val) {
@@ -380,6 +412,7 @@ void rra_zero_page_x(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = temp;
+	state->cpu.pc += 2;
 }
 
 void rra_absolute(State *state, uint8_t val) {
@@ -396,6 +429,7 @@ void rra_absolute(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = temp;
+	state->cpu.pc += 2;
 }
 
 void rra_absolute_x(State *state, uint8_t val) {
@@ -412,6 +446,7 @@ void rra_absolute_x(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = temp;
+	state->cpu.pc += 2;
 }
 
 void rra_absolute_y(State *state, uint8_t val) {
@@ -428,6 +463,7 @@ void rra_absolute_y(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = temp;
+	state->cpu.pc += 2;
 }
 
 void rra_indirect_x(State *state, uint8_t val) {
@@ -444,6 +480,7 @@ void rra_indirect_x(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = temp;
+	state->cpu.pc += 2;
 }
 
 void rra_indirect_y(State *state, uint8_t val) {
@@ -460,6 +497,7 @@ void rra_indirect_y(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = temp;
+	state->cpu.pc += 2;
 }
 
 void slo_zero_page(State *state, uint8_t val) {
@@ -477,6 +515,7 @@ void slo_zero_page(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void slo_zero_page_x(State *state, uint8_t val) {
@@ -494,6 +533,7 @@ void slo_zero_page_x(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void slo_absolute(State *state, uint8_t val) {
@@ -511,6 +551,7 @@ void slo_absolute(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void slo_absolute_x(State *state, uint8_t val) {
@@ -528,6 +569,7 @@ void slo_absolute_x(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void slo_absolute_y(State *state, uint8_t val) {
@@ -545,6 +587,7 @@ void slo_absolute_y(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void slo_indirect_x(State *state, uint8_t val) {
@@ -562,6 +605,7 @@ void slo_indirect_x(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void slo_indirect_y(State *state, uint8_t val) {
@@ -579,6 +623,7 @@ void slo_indirect_y(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void sre_zero_page(State *state, uint8_t val) {
@@ -596,6 +641,7 @@ void sre_zero_page(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void sre_zero_page_x(State *state, uint8_t val) {
@@ -613,6 +659,7 @@ void sre_zero_page_x(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void sre_absolute(State *state, uint8_t val) {
@@ -630,6 +677,7 @@ void sre_absolute(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void sre_absolute_x(State *state, uint8_t val) {
@@ -647,6 +695,7 @@ void sre_absolute_x(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void sre_absolute_y(State *state, uint8_t val) {
@@ -664,6 +713,7 @@ void sre_absolute_y(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void sre_indirect_x(State *state, uint8_t val) {
@@ -681,6 +731,7 @@ void sre_indirect_x(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void sre_indirect_y(State *state, uint8_t val) {
@@ -698,6 +749,7 @@ void sre_indirect_y(State *state, uint8_t val) {
 
 	state_set_mem(state, val, result);
 	state->cpu.a = result;
+	state->cpu.pc += 2;
 }
 
 void anc(State *state, uint8_t val) {
@@ -710,6 +762,7 @@ void anc(State *state, uint8_t val) {
 
 	// Set carry flag to bit 7 of accumulator
 	state->cpu.p.C = ((state->cpu.a & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void alr(State *state, uint8_t val) {
@@ -724,6 +777,7 @@ void alr(State *state, uint8_t val) {
 	// Update flags
 	state->cpu.p.Z = (state->cpu.a == 0);
 	state->cpu.p.N = ((state->cpu.a & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void arr(State *state, uint8_t val) {
@@ -739,6 +793,7 @@ void arr(State *state, uint8_t val) {
 	// Update flags
 	state->cpu.p.Z = (state->cpu.a == 0);
 	state->cpu.p.N = ((state->cpu.a & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void axs(State *state, uint8_t val) {
@@ -753,6 +808,7 @@ void axs(State *state, uint8_t val) {
 
 	// Store result in X register
 	state->cpu.x = result;
+	state->cpu.pc += 2;
 }
 
 void las(State *state, uint8_t val) {
@@ -764,6 +820,7 @@ void las(State *state, uint8_t val) {
 	// Update flags
 	state->cpu.p.Z = (state->cpu.a == 0);
 	state->cpu.p.N = ((state->cpu.a & 0x80) != 0);
+	state->cpu.pc += 2;
 }
 
 void tas(State *state, uint8_t val) {
@@ -773,6 +830,7 @@ void tas(State *state, uint8_t val) {
 
 	// Store S in memory
 	state_set_mem(state, val, temp);
+	state->cpu.pc += 2;
 }
 
 void shy(State *state, uint8_t val) {
@@ -782,6 +840,7 @@ void shy(State *state, uint8_t val) {
 
 	// Store Y register in memory
 	state_set_mem(state, (uint16_t)(addr_low | (addr_high << 8)), state->cpu.y);
+	state->cpu.pc += 2;
 }
 
 void shx(State *state, uint8_t val) {
@@ -791,6 +850,7 @@ void shx(State *state, uint8_t val) {
 
 	// Store X register in memory
 	state_set_mem(state, (uint16_t)(addr_low | (addr_high << 8)), state->cpu.x);
+	state->cpu.pc += 2;
 }
 
 void ahx_absolute_y(State *state, uint8_t val) {
@@ -800,6 +860,7 @@ void ahx_absolute_y(State *state, uint8_t val) {
 
 	// Store (A & X) in memory
 	state_set_mem(state, (uint16_t)(addr_low | (addr_high << 8)), state->cpu.a & state->cpu.x);
+	state->cpu.pc += 2;
 }
 
 void ahx_indirect_y(State *state, uint8_t val) {
@@ -809,4 +870,5 @@ void ahx_indirect_y(State *state, uint8_t val) {
 
 	// Store (A & X) in memory
 	state_set_mem(state, (uint16_t)(addr_low | (addr_high << 8)), state->cpu.a & state->cpu.x);
+	state->cpu.pc += 2;
 }

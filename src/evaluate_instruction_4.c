@@ -25,14 +25,17 @@ INDIRECT_Y(sbc)
 
 void sec(State *state) {
 	state->cpu.p.C = 1;
+	state->cpu.pc += 1;
 }
 
 void sed(State *state) {
 	state->cpu.p.D = 1;
+	state->cpu.pc += 1;
 }
 
 void sei(State *state) {
 	state->cpu.p.I = 1;
+	state->cpu.pc += 1;
 }
 
 void sta_impl(State *state, uint8_t val) {
@@ -70,34 +73,40 @@ void tax(State *state) {
 	state->cpu.x   = state->cpu.a;
 	state->cpu.p.Z = 0 == state->cpu.x;
 	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
+	state->cpu.pc += 1;
 }
 
 void tay(State *state) {
 	state->cpu.y   = state->cpu.a;
 	state->cpu.p.Z = 0 == state->cpu.y;
 	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
+	state->cpu.pc += 1;
 }
 
 void tsx(State *state) {
 	state->cpu.x   = state->cpu.s;
 	state->cpu.p.Z = 0 == state->cpu.x;
 	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
+	state->cpu.pc += 1;
 }
 
 void txa(State *state) {
 	state->cpu.a   = state->cpu.x;
 	state->cpu.p.Z = 0 == state->cpu.a;
 	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
+	state->cpu.pc += 1;
 }
 
 void txs(State *state) {
 	state->cpu.s = state->cpu.x;
+	state->cpu.pc += 1;
 }
 
 void tya(State *state) {
 	state->cpu.a   = state->cpu.y;
 	state->cpu.p.Z = 0 == state->cpu.a;
 	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
+	state->cpu.pc += 1;
 }
 
 void rti(State *state) {
@@ -113,4 +122,5 @@ void rts(State *state) {
 }
 
 void nop([[maybe_unused]] State *state) {
+	state->cpu.pc += 1;
 }

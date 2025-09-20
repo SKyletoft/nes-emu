@@ -42,24 +42,18 @@ ZERO_PAGE_X(ldy)
 ABSOLUTE(ldy)
 ABSOLUTE_X(ldy)
 
-void lsr_accumulator(State *state) {
-	state->cpu.p.C = (uint8_t) (state->cpu.a & 0x01);
-	state->cpu.a >>= 1;
-	state->cpu.p.Z = (uint8_t) (0 == state->cpu.a);
-	state->cpu.p.N = (uint8_t) ((state->cpu.a & 0x80) >> 7);
+void lsr_impl(State *state, uint8_t* val) {
+	state->cpu.p.C = (uint8_t) (*val & 0x01);
+	*val >>= 1;
+	state->cpu.p.Z = (uint8_t) (0 == *val);
+	state->cpu.p.N = (uint8_t) ((*val & 0x80) >> 7);
 }
 
-void lsr_impl(State *state, uint8_t val) {
-	state->cpu.p.C = (uint8_t) (val & 0x01);
-	val >>= 1;
-	state->cpu.p.Z = (uint8_t) (0 == val);
-	state->cpu.p.N = (uint8_t) ((val & 0x80) >> 7);
-}
-
-ZERO_PAGE(lsr)
-ZERO_PAGE_X(lsr)
-ABSOLUTE(lsr)
-ABSOLUTE_X(lsr)
+ACCUMULATOR(lsr)
+ZERO_PAGE_RMW(lsr)
+ZERO_PAGE_X_RMW(lsr)
+ABSOLUTE_RMW(lsr)
+ABSOLUTE_X_RMW(lsr)
 
 void ora_impl(State *state, uint8_t val) {
 	state->cpu.a |= val;
@@ -85,16 +79,19 @@ void php(State *state) {
 	uint8_t val = state->cpu.p.raw | 0b00110000;
 	state_set_mem(state, (uint16_t) (state->cpu.s + 0x100), val);
 	state->cpu.s -= 1;
+	state->cpu.pc += 1;
 }
 
 void pla(State *state) {
 	state->cpu.s += 1;
 	state->cpu.a = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
+	state->cpu.pc += 1;
 }
 
 void plp(State *state) {
 	state->cpu.s += 1;
 	state->cpu.p.raw = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
+	state->cpu.pc += 1;
 }
 
 void rol_impl(State *state, uint8_t *val) {

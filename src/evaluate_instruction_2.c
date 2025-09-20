@@ -4,14 +4,17 @@
 
 void cld(State *state) {
 	state->cpu.p.D = 0;
+	state->cpu.pc += 1;
 }
 
 void cli(State *state) {
 	state->cpu.p.I = 0;
+	state->cpu.pc += 1;
 }
 
 void clv(State *state) {
 	state->cpu.p.V = 0;
+	state->cpu.pc += 1;
 }
 
 void cmp_impl(State *state, uint8_t val) {
@@ -67,12 +70,14 @@ void dex(State *state) {
 	state->cpu.x--;
 	state->cpu.p.Z = 0 == state->cpu.x;
 	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
+	state->cpu.pc += 1;
 }
 
 void dey(State *state) {
 	state->cpu.y--;
 	state->cpu.p.Z = 0 == state->cpu.y;
 	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
+	state->cpu.pc += 1;
 }
 
 void eor_impl(State *state, uint8_t val) {
@@ -105,12 +110,14 @@ void inx(State *state) {
 	state->cpu.x++;
 	state->cpu.p.Z = 0 == state->cpu.x;
 	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
+	state->cpu.pc += 1;
 }
 
 void iny(State *state) {
 	state->cpu.y++;
 	state->cpu.p.Z = 0 == state->cpu.y;
 	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
+	state->cpu.pc += 1;
 }
 
 void jmp_absolute(State *state, uint16_t addr) {
