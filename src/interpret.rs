@@ -27,9 +27,7 @@ pub unsafe fn state_set_mem(ptr: *mut State, adr: u16, val: u8) {
 }
 
 impl State {
-	pub fn new(rom: Mapper) -> Self {
-		let rom = Box::new(rom);
-
+	pub fn new(rom: Box<Mapper>) -> Self {
 		let pc = u16::from_le_bytes([
 			rom.get_cpu(0xFFFC).expect("Cannot read reset vector"),
 			rom.get_cpu(0xFFFD).expect("Cannot read reset vector (2)"),

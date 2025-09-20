@@ -36,7 +36,7 @@ fn main() {
 		.unwrap_or_else(|| "../non-free/SMB3.nes".into());
 	dbg!(&path);
 	let buffer = std::fs::read(path).unwrap();
-	let game = Mapper::try_from(buffer).unwrap();
+	let game = Mapper::parse_ines(buffer).unwrap();
 	let mut system_state = State::new(game);
 
 	let mut buf = String::new();
@@ -61,7 +61,8 @@ mod test {
 	#[test]
 	fn smb3_first_few() {
 		let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
-		let mut state = State::new(Mapper::try_from(buffer).unwrap());
+		let game = Mapper::parse_ines(buffer).unwrap();
+		let mut state = State::new(game);
 		assert_eq!(state.next_inst(), Inst::SEI);
 		assert_eq!(state.cpu.pc, 0xFF40);
 		state.next();
@@ -84,7 +85,8 @@ mod test {
 	#[test]
 	fn smb3_first_jsr() {
 		let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
-		let mut state = State::new(Mapper::try_from(buffer).unwrap());
+		let game = Mapper::parse_ines(buffer).unwrap();
+		let mut state = State::new(game);
 		for _ in 0..7 {
 			state.next();
 		}

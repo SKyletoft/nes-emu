@@ -72,10 +72,8 @@ impl TryFrom<u8> for Mapper {
 	}
 }
 
-impl TryFrom<Vec<u8>> for Mapper {
-	type Error = anyhow::Error;
-
-	fn try_from(buffer: Vec<u8>) -> Result<Self, Self::Error> {
+impl Mapper {
+	pub fn parse_ines(buffer: Vec<u8>) -> Result<Box<Self>> {
 		let [
 			b'N',
 			b'E',
@@ -111,7 +109,18 @@ impl TryFrom<Vec<u8>> for Mapper {
 					bail!("Wrong amount of prg_roms for an MMC3 mapper");
 				}
 
-				let mut prg_roms = [[0; _]; _];
+				let mut mapper = Box::new(Mapper::MMC3 {
+					prg_banks: [0; _],
+					chr_2k_banks: [0; _],
+					chr_1k_banks: [0; _],
+					prg_roms: [[0; _]; _],
+					prg_mode: Mmc3PrgMode::Mode0,
+					registers: Mmc3Registers::default(),
+				});
+
+				let Mapper::MMC3 { prg_roms, .. } = &mut *mapper else {
+					unreachable!()
+				};
 				for (src, dst) in buffer[prg_offset..]
 					.chunks(16 * 1024)
 					.take(*prg_size as _)
@@ -121,27 +130,30 @@ impl TryFrom<Vec<u8>> for Mapper {
 					dst.copy_from_slice(src);
 				}
 
-				Ok(Mapper::MMC3 {
-					prg_banks: [0; _],
-					chr_2k_banks: [0; _],
-					chr_1k_banks: [0; _],
-					prg_roms,
-					prg_mode: Mmc3PrgMode::Mode0,
-					registers: Mmc3Registers::default(),
-				})
+				Ok(mapper)
 			}
-			10 => Ok(Mapper::MMC4),
+			10 => Ok(Box::new(Mapper::MMC4)),
 			0 if *prg_size == 1 => {
-				let ram = [0; _];
-				let mut rom = [0; _];
+				let mut mapper = Box::new(Mapper::NROM128 {
+					ram: [0; _],
+					rom: [0; _],
+				});
+				let Mapper::NROM128 { rom, .. } = &mut *mapper else {
+					unreachable!()
+				};
 				rom.copy_from_slice(&buffer[prg_offset..prg_offset + 16 * 1024]);
-				Ok(Mapper::NROM128 { ram, rom })
+				Ok(mapper)
 			}
 			0 if *prg_size == 2 => {
-				let ram = [0; _];
-				let mut rom = [0; _];
+				let mut mapper = Box::new(Mapper::NROM128 {
+					ram: [0; _],
+					rom: [0; _],
+				});
+				let Mapper::NROM128 { rom, .. } = &mut *mapper else {
+					unreachable!()
+				};
 				rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
-				Ok(Mapper::NROM256 { ram, rom })
+				Ok(mapper)
 			}
 			_ => bail!("Unknown mapper type {mapper_type}"),
 		}
@@ -254,18 +266,18 @@ mod test {
 	#[test]
 	fn load_smb3() {
 		let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
-		Mapper::try_from(buffer).unwrap();
+		Mapper::parse_ines(buffer).unwrap();
 	}
 
 	#[test]
 	fn load_smb1() {
 		let buffer = std::fs::read("non-free/SMB1.nes").unwrap();
-		Mapper::try_from(buffer).unwrap();
+		Mapper::parse_ines(buffer).unwrap();
 	}
 
 	#[test]
 	fn load_fe1() {
 		let buffer = std::fs::read("non-free/FE1EN.nes").unwrap();
-		Mapper::try_from(buffer).unwrap();
+		Mapper::parse_ines(buffer).unwrap();
 	}
 }
