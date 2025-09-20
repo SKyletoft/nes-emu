@@ -18,7 +18,7 @@ fn main() {
 
 	// build.flag("-w");
 	build.flag("-Wall").flag("-Wextra").flag("-Wconversion");
-	build.flag("-I.").flag("-Iinc");
+	build.flag("-I.").flag("-Iinc").flag("-std=c23");
 
 	// Check the optimization level
 	let opt_level = std::env::var("OPT_LEVEL").unwrap_or_default();
