@@ -101,11 +101,16 @@ void tya(State *state) {
 }
 
 void rti(State *state) {
-	// Return from interrupt
+	state->cpu.s += 1;
+	state->cpu.p.raw = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
+	state->cpu.s += 1;
+	state->cpu.pc = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
 }
 
 void rts(State *state) {
-	// Return from subroutine
+	state->cpu.s += 1;
+	state->cpu.pc = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
 }
 
-void nop(State *state) {}
+void nop([[maybe_unused]] State *state) {
+}

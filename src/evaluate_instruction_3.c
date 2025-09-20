@@ -1,4 +1,5 @@
 #include "interface.h"
+#include <stdint.h>
 
 // C-implementations of NES instructions
 
@@ -76,19 +77,24 @@ INDIRECT_X(ora)
 INDIRECT_Y(ora)
 
 void pha(State *state) {
-	// Push accumulator onto stack
+	state_set_mem(state, (uint16_t) (state->cpu.s + 0x100), state->cpu.a);
+	state->cpu.s -= 1;
 }
 
 void php(State *state) {
-	// Push processor status onto stack
+	uint8_t val = state->cpu.p.raw | 0b00110000;
+	state_set_mem(state, (uint16_t) (state->cpu.s + 0x100), val);
+	state->cpu.s -= 1;
 }
 
 void pla(State *state) {
-	// Pull accumulator from stack
+	state->cpu.s += 1;
+	state->cpu.a = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
 }
 
 void plp(State *state) {
-	// Pull processor status from stack
+	state->cpu.s += 1;
+	state->cpu.p.raw = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
 }
 
 void rol_impl(State *state, uint8_t *val) {
