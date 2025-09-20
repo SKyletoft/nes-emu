@@ -1,5 +1,7 @@
 use anyhow::{Result, bail};
 
+// Yeah, yeah, it's huge, but this entire thing is expected to be boxed, so it's fine.
+// #[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone)]
 pub enum Mapper {
 	MMC3 {
@@ -13,6 +15,16 @@ pub enum Mapper {
 	},
 
 	MMC4,
+
+	NROM256 {
+		ram: [u8; 8 * 1024],
+		rom: [u8; 32 * 1024],
+	},
+
+	NROM128 {
+		ram: [u8; 8 * 1024],
+		rom: [u8; 16 * 1024],
+	},
 }
 
 #[derive(Debug, Copy, Clone, Default)]
@@ -51,6 +63,10 @@ impl TryFrom<u8> for Mapper {
 				registers: Default::default(),
 			}),
 			10 => Ok(Self::MMC4),
+			0 => Ok(Self::NROM256 {
+				ram: [0; _],
+				rom: [0; _],
+			}),
 			_ => bail!("{value}"),
 		}
 	}
@@ -115,6 +131,18 @@ impl TryFrom<Vec<u8>> for Mapper {
 				})
 			}
 			10 => Ok(Mapper::MMC4),
+			0 if *prg_size == 1 => {
+				let ram = [0; _];
+				let mut rom = [0; _];
+				rom.copy_from_slice(&buffer[prg_offset..prg_offset + 16 * 1024]);
+				Ok(Mapper::NROM128 { ram, rom })
+			}
+			0 if *prg_size == 2 => {
+				let ram = [0; _];
+				let mut rom = [0; _];
+				rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
+				Ok(Mapper::NROM256 { ram, rom })
+			}
 			_ => bail!("Unknown mapper type {mapper_type}"),
 		}
 	}
@@ -164,6 +192,13 @@ impl Mapper {
 				),
 			},
 			Mapper::MMC4 => todo!(),
+			Mapper::NROM128 { ram, rom } => match adr {
+				_ => todo!(),
+			},
+			Mapper::NROM256 { ram, rom } => match adr {
+				0x8000..=0xFFFF => rom.get((adr - 0x8000) as usize).copied(),
+				_ => panic!("Out of bounds write to mapper, check against actual emulators"),
+			},
 		}
 	}
 
@@ -197,6 +232,12 @@ impl Mapper {
 				Some(())
 			}
 			Mapper::MMC4 => todo!(),
+			Mapper::NROM128 { ram, rom } => match adr {
+				_ => todo!(),
+			},
+			Mapper::NROM256 { ram, rom } => match adr {
+				_ => panic!("Out of bounds write to mapper, check against actual emulators"),
+			},
 		}
 	}
 
@@ -216,6 +257,12 @@ mod test {
 	#[test]
 	fn load_smb3() {
 		let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
+		Mapper::try_from(buffer).unwrap();
+	}
+
+	#[test]
+	fn load_smb1() {
+		let buffer = std::fs::read("non-free/SMB1.nes").unwrap();
 		Mapper::try_from(buffer).unwrap();
 	}
 
