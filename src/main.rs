@@ -66,7 +66,7 @@ mod test {
 		state.next();
 		assert_eq!(state.next_inst(), Inst::CLD);
 		state.next();
-		assert_eq!(state.next_inst(), Inst::LDA(LDA::Absolute(0)));
+		assert_eq!(state.next_inst(), Inst::LDA(LDA::Immediate(0)));
 		assert_eq!(state.cpu.a, 0);
 		assert!(!state.cpu.p.contains(P::D)); // A bit late for some reason
 		state.next();
