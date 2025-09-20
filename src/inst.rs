@@ -1222,7 +1222,7 @@ pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
 		[0x5D, x, y, rest @ ..] => {
 			*code = rest;
 			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::EOR(EOR::AbsoluteX(num )))
+			Ok(Inst::EOR(EOR::AbsoluteX(num)))
 		}
 		[0x59, x, y, rest @ ..] => {
 			*code = rest;

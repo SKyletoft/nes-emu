@@ -1,12 +1,11 @@
-use cpu::P;
-use interpret::State;
-use nes_file::Mapper;
-
 mod cpu;
 mod evaluate_instruction;
 mod inst;
 mod interpret;
 mod nes_file;
+
+use interpret::State;
+use nes_file::Mapper;
 
 fn display(state: &State) {
 	let cpu::Cpu {
