@@ -65,6 +65,7 @@ impl State {
 	pub fn next_step(mut self) -> Self {
 		let inst = self.next_inst();
 		inst.evaluate(&mut self);
+		self.cpu.pc += inst.len() as u16;
 
 		self
 	}
@@ -72,6 +73,7 @@ impl State {
 	pub fn next(&mut self) {
 		let inst = self.next_inst();
 		inst.evaluate(self);
+		self.cpu.pc += inst.len() as u16;
 	}
 
 	pub fn mem(&self, adr: u16) -> u8 {
