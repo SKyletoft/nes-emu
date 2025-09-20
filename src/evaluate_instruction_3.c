@@ -4,8 +4,8 @@
 
 void lda_impl(State *state, uint8_t val) {
 	state->cpu.a   = val;
-	state->cpu.p.Z = (uint8_t)(0 == state->cpu.a);
-	state->cpu.p.N = (uint8_t)((state->cpu.a & 0x80) >> 7);
+	state->cpu.p.Z = (uint8_t) (0 == state->cpu.a);
+	state->cpu.p.N = (uint8_t) ((state->cpu.a & 0x80) >> 7);
 }
 
 IMMEDIATE(lda)
@@ -19,8 +19,8 @@ INDIRECT_Y(lda)
 
 void ldx_impl(State *state, uint8_t val) {
 	state->cpu.x   = val;
-	state->cpu.p.Z = (uint8_t)(0 == state->cpu.x);
-	state->cpu.p.N = (uint8_t)((state->cpu.x & 0x80) >> 7);
+	state->cpu.p.Z = (uint8_t) (0 == state->cpu.x);
+	state->cpu.p.N = (uint8_t) ((state->cpu.x & 0x80) >> 7);
 }
 
 IMMEDIATE(ldx)
@@ -31,8 +31,8 @@ ABSOLUTE_Y(ldx)
 
 void ldy_impl(State *state, uint8_t val) {
 	state->cpu.y   = val;
-	state->cpu.p.Z = (uint8_t)(0 == state->cpu.y);
-	state->cpu.p.N = (uint8_t)((state->cpu.y & 0x80) >> 7);
+	state->cpu.p.Z = (uint8_t) (0 == state->cpu.y);
+	state->cpu.p.N = (uint8_t) ((state->cpu.y & 0x80) >> 7);
 }
 
 IMMEDIATE(ldy)
@@ -42,17 +42,17 @@ ABSOLUTE(ldy)
 ABSOLUTE_X(ldy)
 
 void lsr_accumulator(State *state) {
-	state->cpu.p.C = (uint8_t)(state->cpu.a & 0x01);
+	state->cpu.p.C = (uint8_t) (state->cpu.a & 0x01);
 	state->cpu.a >>= 1;
-	state->cpu.p.Z = (uint8_t)(0 == state->cpu.a);
-	state->cpu.p.N = (uint8_t)((state->cpu.a & 0x80) >> 7);
+	state->cpu.p.Z = (uint8_t) (0 == state->cpu.a);
+	state->cpu.p.N = (uint8_t) ((state->cpu.a & 0x80) >> 7);
 }
 
 void lsr_impl(State *state, uint8_t val) {
-	state->cpu.p.C = (uint8_t)(val & 0x01);
+	state->cpu.p.C = (uint8_t) (val & 0x01);
 	val >>= 1;
-	state->cpu.p.Z = (uint8_t)(0 == val);
-	state->cpu.p.N = (uint8_t)((val & 0x80) >> 7);
+	state->cpu.p.Z = (uint8_t) (0 == val);
+	state->cpu.p.N = (uint8_t) ((val & 0x80) >> 7);
 }
 
 ZERO_PAGE(lsr)
@@ -62,8 +62,8 @@ ABSOLUTE_X(lsr)
 
 void ora_impl(State *state, uint8_t val) {
 	state->cpu.a |= val;
-	state->cpu.p.Z = (uint8_t)(0 == state->cpu.a);
-	state->cpu.p.N = (uint8_t)((state->cpu.a & 0x80) >> 7);
+	state->cpu.p.Z = (uint8_t) (0 == state->cpu.a);
+	state->cpu.p.N = (uint8_t) ((state->cpu.a & 0x80) >> 7);
 }
 
 IMMEDIATE(ora)
