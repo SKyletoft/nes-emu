@@ -107,3 +107,5 @@ void rti(State *state) {
 void rts(State *state) {
 	// Return from subroutine
 }
+
+void nop(State *state) {}
