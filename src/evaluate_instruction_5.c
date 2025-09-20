@@ -834,41 +834,41 @@ void tas(State *state, uint8_t val) {
 }
 
 void shy(State *state, uint8_t val) {
-	// Store Y register with high byte of address
-	uint8_t addr_low  = val;
-	uint8_t addr_high = (val + 1) & 0xFF;
+	// Store Y register with high byte of adress
+	uint8_t adr_low  = val;
+	uint8_t adr_high = (val + 1) & 0xFF;
 
 	// Store Y register in memory
-	state_set_mem(state, (uint16_t)(addr_low | (addr_high << 8)), state->cpu.y);
+	state_set_mem(state, (uint16_t)(adr_low | (adr_high << 8)), state->cpu.y);
 	state->cpu.pc += 2;
 }
 
 void shx(State *state, uint8_t val) {
-	// Store X register with high byte of address
-	uint8_t addr_low  = val;
-	uint8_t addr_high = (val + 1) & 0xFF;
+	// Store X register with high byte of adress
+	uint8_t adr_low  = val;
+	uint8_t adr_high = (val + 1) & 0xFF;
 
 	// Store X register in memory
-	state_set_mem(state, (uint16_t)(addr_low | (addr_high << 8)), state->cpu.x);
+	state_set_mem(state, (uint16_t)(adr_low | (adr_high << 8)), state->cpu.x);
 	state->cpu.pc += 2;
 }
 
 void ahx_absolute_y(State *state, uint8_t val) {
-	// Store A and X registers with high byte of address
-	uint8_t addr_low  = val;
-	uint8_t addr_high = (val + 1) & 0xFF;
+	// Store A and X registers with high byte of adress
+	uint8_t adr_low  = val;
+	uint8_t adr_high = (val + 1) & 0xFF;
 
 	// Store (A & X) in memory
-	state_set_mem(state, (uint16_t)(addr_low | (addr_high << 8)), state->cpu.a & state->cpu.x);
+	state_set_mem(state, (uint16_t)(adr_low | (adr_high << 8)), state->cpu.a & state->cpu.x);
 	state->cpu.pc += 2;
 }
 
 void ahx_indirect_y(State *state, uint8_t val) {
-	// Store A and X registers with high byte of address
-	uint8_t addr_low  = val;
-	uint8_t addr_high = (val + 1) & 0xFF;
+	// Store A and X registers with high byte of adress
+	uint8_t adr_low  = val;
+	uint8_t adr_high = (val + 1) & 0xFF;
 
 	// Store (A & X) in memory
-	state_set_mem(state, (uint16_t)(addr_low | (addr_high << 8)), state->cpu.a & state->cpu.x);
+	state_set_mem(state, (uint16_t)(adr_low | (adr_high << 8)), state->cpu.a & state->cpu.x);
 	state->cpu.pc += 2;
 }

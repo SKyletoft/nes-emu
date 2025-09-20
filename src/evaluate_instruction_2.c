@@ -120,32 +120,32 @@ void iny(State *state) {
 	state->cpu.pc += 1;
 }
 
-void jmp_absolute(State *state, uint16_t addr) {
-	state->cpu.pc = addr;
+void jmp_absolute(State *state, uint16_t adr) {
+	state->cpu.pc = adr;
 }
 
-void jmp_indirect(State *state, uint16_t addr) {
-	// Read the address from memory at addr
-	uint16_t low_byte  = state_get_mem(state, addr);
-	uint16_t high_byte = state_get_mem(state, addr + 1);
+void jmp_indirect(State *state, uint16_t adr) {
+	// Read the adress from memory at adr
+	uint16_t low_byte  = state_get_mem(state, adr);
+	uint16_t high_byte = state_get_mem(state, adr + 1);
 	state->cpu.pc      = (uint16_t)((high_byte << 8) | low_byte);
 }
 
-void jsr(State *state, uint16_t addr) {
-	// Push return address (pc + 2) onto stack
-	uint16_t return_addr = state->cpu.pc + 2;
+void jsr(State *state, uint16_t adr) {
+	// Push return adress (pc + 2) onto stack
+	uint16_t return_adr = state->cpu.pc + 2;
 
-	// Stack pointer is at cpu.s, but we need to adjust for the stack behavior
-	// The stack grows downward from 0x1FF to 0x100
+	// Stack pointer is at cpu.s, but we need to adjust for the stack behaviour
+	// The stack grows downwards from 0x1FF to 0x100
 	uint8_t stack_ptr = state->cpu.s;
 
 	// Push high byte first (stack grows downward)
-	uint8_t high_byte = (return_addr >> 8) & 0xFF;
+	uint8_t high_byte = (return_adr >> 8) & 0xFF;
 	state_set_mem(state, 0x100 + stack_ptr, high_byte);
 	stack_ptr--;
 
 	// Push low byte
-	uint8_t low_byte  = return_addr & 0xFF;
+	uint8_t low_byte  = return_adr & 0xFF;
 	state_set_mem(state, 0x100 + stack_ptr, low_byte);
 	stack_ptr--;
 
@@ -153,5 +153,5 @@ void jsr(State *state, uint16_t addr) {
 	state->cpu.s = stack_ptr;
 
 	// Jump to subroutine
-	state->cpu.pc = addr;
+	state->cpu.pc = adr;
 }
