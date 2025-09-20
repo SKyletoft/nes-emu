@@ -82,7 +82,7 @@ impl TryFrom<Vec<u8>> for Mapper {
 			b'S',
 			0x1A,
 			prg_size,
-			chr_size,
+			_chr_size,
 			flags_6,
 			flags_7,
 			_,
@@ -102,7 +102,7 @@ impl TryFrom<Vec<u8>> for Mapper {
 		assert!(!trainer_present); // Not really, but please error early when I hit a game with one.
 		let trainer_offset = if trainer_present { 512 } else { 0 };
 		let prg_offset = 16 + trainer_offset;
-		let chr_offset = prg_offset + (*prg_size as usize * 16 * 1024);
+		let _chr_offset = prg_offset + (*prg_size as usize * 16 * 1024);
 		let mapper_type = (*flags_7 & 0xF0) | *flags_6 >> 4;
 
 		match mapper_type {
@@ -157,11 +157,9 @@ impl Mapper {
 		match self {
 			Mapper::MMC3 {
 				prg_banks,
-				chr_2k_banks,
-				chr_1k_banks,
 				prg_roms,
 				prg_mode: Mmc3PrgMode::Mode0,
-				registers,
+				..
 			} => match adr {
 				0x8000..=0x9FFF => prg_roms[prg_banks[0] as usize]
 					.get((adr - 0x8000) as usize)
@@ -176,12 +174,8 @@ impl Mapper {
 				),
 			},
 			Mapper::MMC3 {
-				prg_banks,
-				chr_2k_banks,
-				chr_1k_banks,
-				prg_roms,
 				prg_mode: Mmc3PrgMode::Mode1,
-				registers,
+				..
 			} => match adr {
 				0x8000..=0x9FFF => todo!("Fixed"),
 				0xA000..=0xBFFF => todo!("Bank 7"),
@@ -235,20 +229,20 @@ impl Mapper {
 				Some(())
 			}
 			Mapper::MMC4 => todo!(),
-			Mapper::NROM128 { ram, rom } => match adr {
+			Mapper::NROM128 { .. } => match adr {
 				_ => todo!(),
 			},
-			Mapper::NROM256 { ram, rom } => match adr {
+			Mapper::NROM256 { .. } => match adr {
 				_ => panic!("Out of bounds write to mapper, check against actual emulators"),
 			},
 		}
 	}
 
-	pub fn get_ppu(&self, adr: u16) -> Option<()> {
+	pub fn get_ppu(&self, _adr: u16) -> Option<()> {
 		todo!()
 	}
 
-	pub fn set_ppu(&mut self, adr: u16, val: u8) -> Option<()> {
+	pub fn set_ppu(&mut self, _adr: u16, _val: u8) -> Option<()> {
 		todo!()
 	}
 }

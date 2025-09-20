@@ -1,9 +1,9 @@
 mod cpu;
-mod ppu;
 mod evaluate_instruction;
 mod inst;
 mod interpret;
 mod nes_file;
+mod ppu;
 
 use interpret::State;
 use nes_file::Mapper;

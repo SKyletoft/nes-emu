@@ -5,9 +5,6 @@ use crate::{
 	ppu::Ppu,
 };
 
-// Actually RAM ends at 0x07FF, but it's then repeated four times for some reason.
-const END_OF_RAM: u16 = 0x1FFF;
-
 // REMEMBER TO REFLECT ANY CHANGES IN `cpu.h`
 #[repr(C)]
 pub struct State {
