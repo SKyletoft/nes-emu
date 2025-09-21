@@ -49,29 +49,6 @@ pub struct Mmc3Registers {
 	hE001: u8,
 }
 
-impl TryFrom<u8> for Mapper {
-	type Error = anyhow::Error;
-
-	fn try_from(value: u8) -> Result<Self> {
-		match value {
-			4 | 118 | 119 => Ok(Self::MMC3 {
-				prg_banks: Default::default(),
-				chr_2k_banks: Default::default(),
-				chr_1k_banks: Default::default(),
-				prg_roms: [[0; _]; _],
-				prg_mode: Default::default(),
-				registers: Default::default(),
-			}),
-			10 => Ok(Self::MMC4),
-			0 => Ok(Self::NROM256 {
-				ram: [0; _],
-				rom: [0; _],
-			}),
-			_ => bail!("{value}"),
-		}
-	}
-}
-
 impl Mapper {
 	pub fn parse_ines(buffer: Vec<u8>) -> Result<Box<Self>> {
 		let [
