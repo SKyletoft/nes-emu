@@ -27,7 +27,7 @@ fn display(state: &State) {
 	println!("│ A:{a:02X} X:{x:02X} Y:{y:02X} SP:{s:02X} pc:{pc:04X} │");
 	println!("│ C:{c} Z:{z} I:{i} D:{d} B:{b} V:{v} N:{n}  │");
 	println!("└──────────────────────────────┘");
-	println!("Next: {inst:?}");
+	println!("Next: {inst:X?}");
 }
 
 fn main() {
