@@ -16,6 +16,7 @@
 					rust-analyzer
 
 					python3
+					pkg-config
 
 					llvmPackages_21.clang-tools
 
@@ -23,6 +24,7 @@
 				];
 				buildInputs = with pkgs; [
 					clang
+					SDL2
 				];
 			in {
 				devShells.default = pkgs.mkShell {
