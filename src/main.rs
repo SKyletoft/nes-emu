@@ -74,7 +74,7 @@ mod test {
 		state.next();
 		assert_eq!(state.next_inst(), Inst::STA(STA::Absolute(0x2001)));
 		state.next();
-		assert_eq!(state.next_inst(), Inst::LDA(LDA::Absolute(8)));
+		assert_eq!(state.next_inst(), Inst::LDA(LDA::Immediate(8)));
 		state.next();
 		assert_eq!(state.next_inst(), Inst::STA(STA::Absolute(0x2000)));
 		assert_eq!(state.cpu.a, 8);
@@ -91,11 +91,12 @@ mod test {
 			state.next();
 		}
 		// Wait for PPU to init...
-		for _ in 0..(25559 / 2) {
+		for i in 0..(25559 / 2) {
 			assert_eq!(state.cpu.pc, 0xFF4E);
 			assert_eq!(state.next_inst(), Inst::LDA(LDA::Absolute(0x2002)));
 			state.next();
-			assert_eq!(state.next_inst(), Inst::BPL(0x4E));
+			assert_eq!(state.cpu.pc, 0xFF51);
+			assert_eq!(state.next_inst(), Inst::BPL(-5), "Loop: {i}");
 			state.next();
 		}
 		assert_eq!(state.cpu.pc, 0xFF53);
