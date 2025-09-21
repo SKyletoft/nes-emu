@@ -58,10 +58,10 @@ impl State {
 
 	pub fn next_inst(&self) -> Inst {
 		let arr = [
-			self.mem(self.cpu.pc),
-			self.mem(self.cpu.pc + 1),
-			self.mem(self.cpu.pc + 2),
-			self.mem(self.cpu.pc + 3),
+			self.mem_pure(self.cpu.pc),
+			self.mem_pure(self.cpu.pc + 1),
+			self.mem_pure(self.cpu.pc + 2),
+			self.mem_pure(self.cpu.pc + 3),
 		];
 		let mut slice = arr.as_slice();
 		inst::parse_instruction(&mut slice)
@@ -80,7 +80,7 @@ impl State {
 		inst.evaluate(self);
 	}
 
-	pub fn mem(&self, adr: u16) -> u8 {
+	fn mem_pure(&self, adr: u16) -> u8 {
 		match adr {
 			0x0000..0x0800 => self.ram[adr as usize],
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize],
@@ -90,5 +90,11 @@ impl State {
 			0x4018..0x4020 => todo!(),
 			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
 		}
+	}
+
+	pub fn mem(&mut self, adr: u16) -> u8 {
+		let res = self.mem_pure(adr);
+		self.bus = res;
+		res
 	}
 }
