@@ -16,8 +16,8 @@ pub struct State {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe fn state_get_mem(ptr: *const State, adr: u16) -> u8 {
-	let state = unsafe { &*ptr };
+pub unsafe fn state_get_mem(ptr: *mut State, adr: u16) -> u8 {
+	let state = unsafe { &mut *ptr };
 	state.mem(adr)
 }
 
