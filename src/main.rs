@@ -4,6 +4,7 @@ mod inst;
 mod interpret;
 mod nes_file;
 mod ppu;
+mod drawing;
 
 use interpret::State;
 use nes_file::Mapper;
@@ -31,22 +32,24 @@ fn display(state: &State) {
 }
 
 fn main() {
-	let path = std::env::args()
-		.nth(1)
-		.unwrap_or_else(|| "../non-free/SMB3.nes".into());
-	dbg!(&path);
-	let buffer = std::fs::read(path).unwrap();
-	let game = Mapper::parse_ines(buffer).unwrap();
-	let mut system_state = State::new(game);
+	// let path = std::env::args()
+	//	.nth(1)
+	//	.unwrap_or_else(|| "../non-free/SMB3.nes".into());
+	// dbg!(&path);
+	// let buffer = std::fs::read(path).unwrap();
+	// let game = Mapper::parse_ines(buffer).unwrap();
+	// let mut system_state = State::new(game);
 
-	let mut buf = String::new();
-	loop {
-		system_state.next();
+	// let mut buf = String::new();
+	// loop {
+	//	system_state.next();
 
-		display(&system_state);
-		buf.clear();
-		std::io::stdin().read_line(&mut buf).unwrap();
-	}
+	//	display(&system_state);
+	//	buf.clear();
+	//	std::io::stdin().read_line(&mut buf).unwrap();
+	// }
+
+	drawing::main();
 }
 
 #[cfg(test)]
