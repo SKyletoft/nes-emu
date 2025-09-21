@@ -1,7 +1,6 @@
 /target
 /result
 non-free/
-.envrc
 .aider*
 **.o
 Makefile
