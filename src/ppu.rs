@@ -1,4 +1,5 @@
 use bitflags::bitflags;
+use derive_more::derive::Into;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 #[repr(C)]
@@ -48,7 +49,7 @@ bitflags! {
 }
 
 #[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Into)]
 pub struct Status(u8);
 
 bitflags! {
@@ -60,11 +61,11 @@ bitflags! {
 }
 
 #[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Into)]
 pub struct OamAdr(u8);
 
 #[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Into)]
 pub struct OamData(u8);
 
 #[repr(C)]
@@ -82,5 +83,5 @@ pub struct Adr {
 }
 
 #[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Into)]
 pub struct Data(u8);
