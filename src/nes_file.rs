@@ -155,6 +155,7 @@ impl Mapper {
 				rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
 				Ok(mapper)
 			}
+			0 => bail!("Wrong amount of prg_roms for an NROM"),
 			_ => bail!("Unknown mapper type {mapper_type}"),
 		}
 	}
