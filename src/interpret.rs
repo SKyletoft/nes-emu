@@ -12,6 +12,7 @@ pub struct State {
 	pub ppu: Ppu,
 	pub rom: Box<Mapper>,
 	pub ram: [u8; 2048],
+	pub bus: u8,
 }
 
 #[unsafe(no_mangle)]
@@ -43,10 +44,16 @@ impl State {
 		};
 
 		let ram = [0; 2048];
-
 		let ppu = Ppu::default();
+		let bus = 0;
 
-		Self { cpu, ppu, rom, ram }
+		Self {
+			cpu,
+			ppu,
+			rom,
+			ram,
+			bus,
+		}
 	}
 
 	pub fn next_inst(&self) -> Inst {
