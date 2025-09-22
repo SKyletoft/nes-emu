@@ -72,20 +72,20 @@ mod test {
 		let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
 		let game = Mapper::parse_ines(buffer).unwrap();
 		let mut state = State::new(game, drawing::new_bitmap());
-		assert_eq!(state.next_inst(), Inst::SEI);
+		assert_eq!(state.next_inst(), Inst::Sei);
 		assert_eq!(state.cpu.pc, 0xFF40);
 		state.next();
-		assert_eq!(state.next_inst(), Inst::CLD);
+		assert_eq!(state.next_inst(), Inst::Cld);
 		state.next();
-		assert_eq!(state.next_inst(), Inst::LDAImmediate(0));
+		assert_eq!(state.next_inst(), Inst::LdaImmediate(0));
 		assert_eq!(state.cpu.a, 0);
 		assert!(!state.cpu.p.contains(P::D)); // A bit late for some reason
 		state.next();
-		assert_eq!(state.next_inst(), Inst::STAAbsolute(0x2001u16.into()));
+		assert_eq!(state.next_inst(), Inst::StaAbsolute(0x2001u16.into()));
 		state.next();
-		assert_eq!(state.next_inst(), Inst::LDAImmediate(8));
+		assert_eq!(state.next_inst(), Inst::LdaImmediate(8));
 		state.next();
-		assert_eq!(state.next_inst(), Inst::STAAbsolute(0x2000u16.into()));
+		assert_eq!(state.next_inst(), Inst::StaAbsolute(0x2000u16.into()));
 		assert_eq!(state.cpu.a, 8);
 		assert_eq!(state.cpu.pc, 0xFF49);
 		assert_eq!(state.cpu.s, 0xFD);
@@ -102,13 +102,13 @@ mod test {
 		// Wait for PPU to init...
 		for i in 0..(25559 / 2) {
 			assert_eq!(state.cpu.pc, 0xFF4E);
-			assert_eq!(state.next_inst(), Inst::LDAAbsolute(0x2002u16.into()));
+			assert_eq!(state.next_inst(), Inst::LdaAbsolute(0x2002u16.into()));
 			state.next();
 			assert_eq!(state.cpu.pc, 0xFF51);
-			assert_eq!(state.next_inst(), Inst::BPL(-5), "Loop: {i}");
+			assert_eq!(state.next_inst(), Inst::Bpl(-5), "Loop: {i}");
 			state.next();
 		}
 		assert_eq!(state.cpu.pc, 0xFF53);
-		assert_eq!(state.next_inst(), Inst::DEX);
+		assert_eq!(state.next_inst(), Inst::Dex);
 	}
 }
