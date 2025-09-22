@@ -4,722 +4,616 @@ use crate::{cpu::Cpu, evaluate_instruction::*, interpret::State};
 
 use anyhow::{Result, bail};
 
+#[repr(C)]
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub struct UnalignedU16 {
+	lo: u8,
+	hi: u8,
+}
+
+impl std::fmt::Debug for UnalignedU16 {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let x: u16 = (*self).into();
+		write!(f, "{}", x)
+	}
+}
+
+impl From<u16> for UnalignedU16 {
+	fn from(val: u16) -> Self {
+		let [lo, hi] = val.to_le_bytes();
+		Self { lo, hi }
+	}
+}
+
+impl From<UnalignedU16> for u16 {
+	fn from(val: UnalignedU16) -> Self {
+		u16::from_le_bytes([val.lo, val.hi])
+	}
+}
+
+impl From<&UnalignedU16> for u16 {
+	fn from(val: &UnalignedU16) -> Self {
+		(*val).into()
+	}
+}
+
 // Auto-generated NES CPU instruction set
+#[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Inst {
-	ADC(ADC),
-	AND(AND),
-	ASL(ASL),
-	BCC(i8),
-	BCS(i8),
-	BEQ(i8),
-	BIT(BIT),
-	BMI(i8),
-	BNE(i8),
-	BPL(i8),
-	BRK,
-	BVC(i8),
-	BVS(i8),
-	CLC,
-	CLD,
-	CLI,
-	CLV,
-	CMP(CMP),
-	CPX(CPX),
-	CPY(CPY),
-	DEC(DEC),
-	DEX,
-	DEY,
-	EOR(EOR),
-	INC(INC),
-	INX,
-	INY,
-	JMP(JMP),
-	JSR(u16),
-	LDA(LDA),
-	LDX(LDX),
-	LDY(LDY),
-	LSR(LSR),
-	NOP,
-	ORA(ORA),
-	PHA,
-	PHP,
-	PLA,
-	PLP,
-	ROL(ROL),
-	ROR(ROR),
-	RTI,
-	RTS,
-	SBC(SBC),
-	SEC,
-	SED,
-	SEI,
-	STA(STA),
-	STX(STX),
-	STY(STY),
-	TAX,
-	TAY,
-	TSX,
-	TXA,
-	TXS,
-	TYA,
-	LAX(LAX),
-	SAX(SAX),
-	DCP(DCP),
-	ISC(ISC),
-	RLA(RLA),
-	RRA(RRA),
-	SLO(SLO),
-	SRE(SRE),
-	ANC(u8),
-	ALR(u8),
-	ARR(u8),
-	AXS(u8),
-	LAS(u8),
-	TAS(u8),
-	SHY(u8),
-	SHX(u8),
-	AHX(AHX),
-	NOPU(NOPU),
+	ADCAbsolute(UnalignedU16) = 0x6D,
+	ADCAbsoluteX(UnalignedU16) = 0x7D,
+	ADCAbsoluteY(UnalignedU16) = 0x79,
+	ADCImmediate(u8) = 0x69,
+	ADCIndirectX(u8) = 0x61,
+	ADCIndirectY(u8) = 0x71,
+	ADCZeroPage(u8) = 0x65,
+	ADCZeroPageX(u8) = 0x75,
+	AHXAbsoluteY(UnalignedU16) = 0x9F,
+	AHXIndirectY(u8) = 0x93,
+	ALRImmediate(u8) = 0x4B,
+	ANC2Immediate(u8) = 0x2B,
+	ANCImmediate(u8) = 0x0B,
+	ANDAbsolute(UnalignedU16) = 0x2D,
+	ANDAbsoluteX(UnalignedU16) = 0x3D,
+	ANDAbsoluteY(UnalignedU16) = 0x39,
+	ANDImmediate(u8) = 0x29,
+	ANDIndirectX(u8) = 0x21,
+	ANDIndirectY(u8) = 0x31,
+	ANDZeroPage(u8) = 0x25,
+	ANDZeroPageX(u8) = 0x35,
+	ARRImmediate(u8) = 0x6B,
+	ASLAbsolute(UnalignedU16) = 0x0E,
+	ASLAbsoluteX(UnalignedU16) = 0x1E,
+	ASLAccumulator = 0x0A,
+	ASLZeroPage(u8) = 0x06,
+	ASLZeroPageX(u8) = 0x16,
+	AXSImmediate(u8) = 0xCB,
+	BCC(i8) = 0x90,
+	BCS(i8) = 0xB0,
+	BEQ(i8) = 0xF0,
+	BITAbsolute(UnalignedU16) = 0x2C,
+	BITZeroPage(u8) = 0x24,
+	BMI(i8) = 0x30,
+	BNE(i8) = 0xD0,
+	BPL(i8) = 0x10,
+	BRK = 0x00,
+	BVC(i8) = 0x50,
+	BVS(i8) = 0x70,
+	CLC = 0x18,
+	CLD = 0xD8,
+	CLI = 0x58,
+	CLV = 0xB8,
+	CMPAbsolute(UnalignedU16) = 0xCD,
+	CMPAbsoluteX(UnalignedU16) = 0xDD,
+	CMPAbsoluteY(UnalignedU16) = 0xD9,
+	CMPImmediate(u8) = 0xC9,
+	CMPIndirectX(u8) = 0xC1,
+	CMPIndirectY(u8) = 0xD1,
+	CMPZeroPage(u8) = 0xC5,
+	CMPZeroPageX(u8) = 0xD5,
+	CPXAbsolute(UnalignedU16) = 0xEC,
+	CPXImmediate(u8) = 0xE0,
+	CPXZeroPage(u8) = 0xE4,
+	CPYAbsolute(UnalignedU16) = 0xCC,
+	CPYImmediate(u8) = 0xC0,
+	CPYZeroPage(u8) = 0xC4,
+	DCPAbsolute(UnalignedU16) = 0xCF,
+	DCPAbsoluteX(UnalignedU16) = 0xDF,
+	DCPAbsoluteY(UnalignedU16) = 0xDB,
+	DCPIndirectX(u8) = 0xC3,
+	DCPIndirectY(u8) = 0xD3,
+	DCPZeroPage(u8) = 0xC7,
+	DCPZeroPageX(u8) = 0xD7,
+	DECAbsolute(UnalignedU16) = 0xCE,
+	DECAbsoluteX(UnalignedU16) = 0xDE,
+	DECZeroPage(u8) = 0xC6,
+	DECZeroPageX(u8) = 0xD6,
+	DEX = 0xCA,
+	DEY = 0x88,
+	EORAbsolute(UnalignedU16) = 0x4D,
+	EORAbsoluteX(UnalignedU16) = 0x5D,
+	EORAbsoluteY(UnalignedU16) = 0x59,
+	EORImmediate(u8) = 0x49,
+	EORIndirectX(u8) = 0x41,
+	EORIndirectY(u8) = 0x51,
+	EORZeroPage(u8) = 0x45,
+	EORZeroPageX(u8) = 0x55,
+	INCAbsolute(UnalignedU16) = 0xEE,
+	INCAbsoluteX(UnalignedU16) = 0xFE,
+	INCZeroPage(u8) = 0xE6,
+	INCZeroPageX(u8) = 0xF6,
+	INX = 0xE8,
+	INY = 0xC8,
+	ISCAbsolute(UnalignedU16) = 0xEF,
+	ISCAbsoluteX(UnalignedU16) = 0xFF,
+	ISCAbsoluteY(UnalignedU16) = 0xFB,
+	ISCIndirectX(u8) = 0xE3,
+	ISCIndirectY(u8) = 0xF3,
+	ISCZeroPage(u8) = 0xE7,
+	ISCZeroPageX(u8) = 0xF7,
+	JMPAbsolute(UnalignedU16) = 0x4C,
+	JMPIndirect(UnalignedU16) = 0x6C,
+	JSR(UnalignedU16) = 0x20,
+	LASAbsoluteY(UnalignedU16) = 0xBB,
+	LAXAbsolute(UnalignedU16) = 0xAF,
+	LAXAbsoluteY(UnalignedU16) = 0xBF,
+	LAXImmediate(u8) = 0xAB,
+	LAXIndirectX(u8) = 0xA3,
+	LAXIndirectY(u8) = 0xB3,
+	LAXZeroPage(u8) = 0xA7,
+	LAXZeroPageY(u8) = 0xB7,
+	LDAAbsolute(UnalignedU16) = 0xAD,
+	LDAAbsoluteX(UnalignedU16) = 0xBD,
+	LDAAbsoluteY(UnalignedU16) = 0xB9,
+	LDAImmediate(u8) = 0xA9,
+	LDAIndirectX(u8) = 0xA1,
+	LDAIndirectY(u8) = 0xB1,
+	LDAZeroPage(u8) = 0xA5,
+	LDAZeroPageX(u8) = 0xB5,
+	LDXAbsolute(UnalignedU16) = 0xAE,
+	LDXAbsoluteY(UnalignedU16) = 0xBE,
+	LDXImmediate(u8) = 0xA2,
+	LDXZeroPage(u8) = 0xA6,
+	LDXZeroPageY(u8) = 0xB6,
+	LDYAbsolute(UnalignedU16) = 0xAC,
+	LDYAbsoluteX(UnalignedU16) = 0xBC,
+	LDYImmediate(u8) = 0xA0,
+	LDYZeroPage(u8) = 0xA4,
+	LDYZeroPageX(u8) = 0xB4,
+	LSRAbsolute(UnalignedU16) = 0x4E,
+	LSRAbsoluteX(UnalignedU16) = 0x5E,
+	LSRAccumulator = 0x4A,
+	LSRZeroPage(u8) = 0x46,
+	LSRZeroPageX(u8) = 0x56,
+	NOP10 = 0x5A,
+	NOP11 = 0x62,
+	NOP12 = 0x72,
+	NOP13 = 0x7A,
+	NOP14 = 0x82,
+	NOP15 = 0x92,
+	NOP16 = 0xB2,
+	NOP17 = 0xC2,
+	NOP18 = 0xD2,
+	NOP19 = 0xDA,
+	NOP2 = 0x02,
+	NOP20 = 0xE2,
+	NOP21 = 0xF2,
+	NOP22 = 0xFA,
+	NOP3 = 0x12,
+	NOP4 = 0x1A,
+	NOP5 = 0x22,
+	NOP6 = 0x32,
+	NOP7 = 0x3A,
+	NOP8 = 0x42,
+	NOP9 = 0x52,
+	NOPAbsolute(UnalignedU16) = 0x0C,
+	NOPAbsoluteX(UnalignedU16) = 0x1C,
+	NOPAbsoluteX2(UnalignedU16) = 0x3C,
+	NOPAbsoluteX3(UnalignedU16) = 0x5C,
+	NOPAbsoluteX4(UnalignedU16) = 0x7C,
+	NOPAbsoluteX5(UnalignedU16) = 0xDC,
+	NOPAbsoluteX6(UnalignedU16) = 0xFC,
+	NOPImmediate(u8) = 0x80,
+	NOPImmediate2(u8) = 0x89,
+	NOPImmediate3(u8) = 0xEA,
+	NOPZeroPage(u8) = 0x04,
+	NOPZeroPage3(u8) = 0x44,
+	NOPZeroPage4(u8) = 0x64,
+	NOPZeroPageX(u8) = 0x14,
+	NOPZeroPageX2(u8) = 0x34,
+	NOPZeroPageX3(u8) = 0x54,
+	NOPZeroPageX4(u8) = 0x74,
+	NOPZeroPageX5(u8) = 0xD4,
+	NOPZeroPageX6(u8) = 0xF4,
+	ORAAbsolute(UnalignedU16) = 0x0D,
+	ORAAbsoluteX(UnalignedU16) = 0x1D,
+	ORAAbsoluteY(UnalignedU16) = 0x19,
+	ORAImmediate(u8) = 0x09,
+	ORAIndirectX(u8) = 0x01,
+	ORAIndirectY(u8) = 0x11,
+	ORAZeroPage(u8) = 0x05,
+	ORAZeroPageX(u8) = 0x15,
+	PHA = 0x48,
+	PHP = 0x08,
+	PLA = 0x68,
+	PLP = 0x28,
+	RLAAbsolute(UnalignedU16) = 0x2F,
+	RLAAbsoluteX(UnalignedU16) = 0x3F,
+	RLAAbsoluteY(UnalignedU16) = 0x3B,
+	RLAIndirectX(u8) = 0x23,
+	RLAIndirectY(u8) = 0x33,
+	RLAZeroPage(u8) = 0x27,
+	RLAZeroPageX(u8) = 0x37,
+	ROLAbsolute(UnalignedU16) = 0x2E,
+	ROLAbsoluteX(UnalignedU16) = 0x3E,
+	ROLAccumulator = 0x2A,
+	ROLZeroPage(u8) = 0x26,
+	ROLZeroPageX(u8) = 0x36,
+	RORAbsolute(UnalignedU16) = 0x6E,
+	RORAbsoluteX(UnalignedU16) = 0x7E,
+	RORAccumulator = 0x6A,
+	RORZeroPage(u8) = 0x66,
+	RORZeroPageX(u8) = 0x76,
+	RRAAbsolute(UnalignedU16) = 0x6F,
+	RRAAbsoluteX(UnalignedU16) = 0x7F,
+	RRAAbsoluteY(UnalignedU16) = 0x7B,
+	RRAIndirectX(u8) = 0x63,
+	RRAIndirectY(u8) = 0x73,
+	RRAZeroPage(u8) = 0x67,
+	RRAZeroPageX(u8) = 0x77,
+	RTI = 0x40,
+	RTS = 0x60,
+	SAXAbsolute(UnalignedU16) = 0x8F,
+	SAXIndirectX(u8) = 0x83,
+	SAXZeroPage(u8) = 0x87,
+	SAXZeroPageY(u8) = 0x97,
+	SBCAbsolute(UnalignedU16) = 0xED,
+	SBCAbsoluteX(UnalignedU16) = 0xFD,
+	SBCAbsoluteY(UnalignedU16) = 0xF9,
+	SBCImmediate(u8) = 0xE9,
+	SBCImmediate2(u8) = 0xEB,
+	SBCIndirectX(u8) = 0xE1,
+	SBCIndirectY(u8) = 0xF1,
+	SBCZeroPage(u8) = 0xE5,
+	SBCZeroPageX(u8) = 0xF5,
+	SEC = 0x38,
+	SED = 0xF8,
+	SEI = 0x78,
+	SHXAbsoluteY(UnalignedU16) = 0x9E,
+	SHYAbsoluteX(UnalignedU16) = 0x9C,
+	SLOAbsolute(UnalignedU16) = 0x0F,
+	SLOAbsoluteX(UnalignedU16) = 0x1F,
+	SLOAbsoluteY(UnalignedU16) = 0x1B,
+	SLOIndirectX(u8) = 0x03,
+	SLOIndirectY(u8) = 0x13,
+	SLOZeroPage(u8) = 0x07,
+	SLOZeroPageX(u8) = 0x17,
+	SREAbsolute(UnalignedU16) = 0x4F,
+	SREAbsoluteX(UnalignedU16) = 0x5F,
+	SREAbsoluteY(UnalignedU16) = 0x5B,
+	SREIndirectX(u8) = 0x43,
+	SREIndirectY(u8) = 0x53,
+	SREZeroPage(u8) = 0x47,
+	SREZeroPageX(u8) = 0x57,
+	STAAbsolute(UnalignedU16) = 0x8D,
+	STAAbsoluteX(UnalignedU16) = 0x9D,
+	STAAbsoluteY(UnalignedU16) = 0x99,
+	STAIndirectX(u8) = 0x81,
+	STAIndirectY(u8) = 0x91,
+	STAZeroPage(u8) = 0x85,
+	STAZeroPageX(u8) = 0x95,
+	STXAbsolute(UnalignedU16) = 0x8E,
+	STXZeroPage(u8) = 0x86,
+	STXZeroPageY(u8) = 0x96,
+	STYAbsolute(UnalignedU16) = 0x8C,
+	STYZeroPage(u8) = 0x84,
+	STYZeroPageX(u8) = 0x94,
+	TASAbsoluteY(UnalignedU16) = 0x9B,
+	TAX = 0xAA,
+	TAY = 0xA8,
+	TSX = 0xBA,
+	TXA = 0x8A,
+	TXS = 0x9A,
+	TYA = 0x98,
+	XAAImmediate(u8) = 0x8B,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum ADC {
-	Immediate(u8),
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum AND {
-	Immediate(u8),
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum ASL {
-	Accumulator,
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum BIT {
-	ZeroPage(u8),
-	Absolute(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum CMP {
-	Immediate(u8),
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum CPX {
-	Immediate(u8),
-	ZeroPage(u8),
-	Absolute(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum CPY {
-	Immediate(u8),
-	ZeroPage(u8),
-	Absolute(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum DEC {
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum EOR {
-	Immediate(u8),
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum INC {
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum JMP {
-	Absolute(u16),
-	Indirect(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum LDA {
-	Immediate(u8),
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum LDX {
-	Immediate(u8),
-	ZeroPage(u8),
-	ZeroPageY(u8),
-	Absolute(u16),
-	AbsoluteY(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum LDY {
-	Immediate(u8),
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum LSR {
-	Accumulator,
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum ORA {
-	Immediate(u8),
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum ROL {
-	Accumulator,
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum ROR {
-	Accumulator,
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum SBC {
-	Immediate(u8),
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum STA {
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum STX {
-	ZeroPage(u8),
-	ZeroPageY(u8),
-	Absolute(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum STY {
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum LAX {
-	ZeroPage(u8),
-	ZeroPageY(u8),
-	Absolute(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum SAX {
-	ZeroPage(u8),
-	ZeroPageY(u8),
-	Absolute(u16),
-	IndirectX(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum DCP {
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum ISC {
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum RLA {
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum RRA {
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum SLO {
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum SRE {
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-	IndirectX(u8),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum AHX {
-	AbsoluteY(u16),
-	IndirectY(u8),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum NOPU {
-	Immediate(u8),
-	ZeroPage(u8),
-	ZeroPageX(u8),
-	Absolute(u16),
-	AbsoluteX(u16),
-	AbsoluteY(u16),
-}
+const _: () = {
+	assert!(1 == align_of::<Inst>());
+	assert!(3 == size_of::<Inst>());
+};
 
 impl Inst {
 	pub fn ends_bb(&self) -> bool {
 		match self {
-			Inst::ADC(..) => false,
-			Inst::AND(..) => false,
-			Inst::ASL(..) => false,
 			Inst::BCC(..) => true,
 			Inst::BCS(..) => true,
 			Inst::BEQ(..) => true,
-			Inst::BIT(..) => false,
 			Inst::BMI(..) => true,
 			Inst::BNE(..) => true,
 			Inst::BPL(..) => true,
-			Inst::BRK => false,
 			Inst::BVC(..) => true,
 			Inst::BVS(..) => true,
-			Inst::CLC => false,
-			Inst::CLD => false,
-			Inst::CLI => false,
-			Inst::CLV => false,
-			Inst::CMP(..) => false,
-			Inst::CPX(..) => false,
-			Inst::CPY(..) => false,
-			Inst::DEC(..) => false,
-			Inst::DEX => false,
-			Inst::DEY => false,
-			Inst::EOR(..) => false,
-			Inst::INC(..) => false,
-			Inst::INX => false,
-			Inst::INY => false,
-			Inst::JMP(..) => true,
+			Inst::JMPIndirect(..) => true,
+			Inst::JMPAbsolute(..) => true,
 			Inst::JSR(..) => true,
-			Inst::LDA(..) => false,
-			Inst::LDX(..) => false,
-			Inst::LDY(..) => false,
-			Inst::LSR(..) => false,
-			Inst::NOP => false,
-			Inst::ORA(..) => false,
-			Inst::PHA => false,
-			Inst::PHP => false,
-			Inst::PLA => false,
-			Inst::PLP => false,
-			Inst::ROL(..) => false,
-			Inst::ROR(..) => false,
 			Inst::RTI => true,
 			Inst::RTS => true,
-			Inst::SBC(..) => false,
-			Inst::SEC => false,
-			Inst::SED => false,
-			Inst::SEI => false,
-			Inst::STA(..) => false,
-			Inst::STX(..) => false,
-			Inst::STY(..) => false,
-			Inst::TAX => false,
-			Inst::TAY => false,
-			Inst::TSX => false,
-			Inst::TXA => false,
-			Inst::TXS => false,
-			Inst::TYA => false,
-			Inst::LAX(..) => false,
-			Inst::SAX(..) => false,
-			Inst::DCP(..) => false,
-			Inst::ISC(..) => false,
-			Inst::RLA(..) => false,
-			Inst::RRA(..) => false,
-			Inst::SLO(..) => false,
-			Inst::SRE(..) => false,
-			Inst::ANC(..) => false,
-			Inst::ALR(..) => false,
-			Inst::ARR(..) => false,
-			Inst::AXS(..) => false,
-			Inst::LAS(..) => false,
-			Inst::TAS(..) => false,
-			Inst::SHY(..) => false,
-			Inst::SHX(..) => false,
-			Inst::AHX(..) => false,
-			Inst::NOPU(..) => false,
+			_ => false,
 		}
 	}
 
 	pub fn len(&self) -> u8 {
 		match self {
-			Inst::ADC(ADC::Immediate(..)) => 2,
-			Inst::ADC(ADC::ZeroPage(..)) => 2,
-			Inst::ADC(ADC::ZeroPageX(..)) => 2,
-			Inst::ADC(ADC::Absolute(..)) => 3,
-			Inst::ADC(ADC::AbsoluteX(..)) => 3,
-			Inst::ADC(ADC::AbsoluteY(..)) => 3,
-			Inst::ADC(ADC::IndirectX(..)) => 2,
-			Inst::ADC(ADC::IndirectY(..)) => 2,
-			Inst::AND(AND::Immediate(..)) => 2,
-			Inst::AND(AND::ZeroPage(..)) => 2,
-			Inst::AND(AND::ZeroPageX(..)) => 2,
-			Inst::AND(AND::Absolute(..)) => 3,
-			Inst::AND(AND::AbsoluteX(..)) => 3,
-			Inst::AND(AND::AbsoluteY(..)) => 3,
-			Inst::AND(AND::IndirectX(..)) => 2,
-			Inst::AND(AND::IndirectY(..)) => 2,
-			Inst::ASL(ASL::Accumulator) => 1,
-			Inst::ASL(ASL::ZeroPage(..)) => 2,
-			Inst::ASL(ASL::ZeroPageX(..)) => 2,
-			Inst::ASL(ASL::Absolute(..)) => 3,
-			Inst::ASL(ASL::AbsoluteX(..)) => 3,
-			Inst::BCC(..) => 2,
-			Inst::BCS(..) => 2,
-			Inst::BEQ(..) => 2,
-			Inst::BIT(BIT::ZeroPage(..)) => 2,
-			Inst::BIT(BIT::Absolute(..)) => 3,
-			Inst::BMI(..) => 2,
-			Inst::BNE(..) => 2,
-			Inst::BPL(..) => 2,
-			Inst::BRK => 1,
-			Inst::BVC(..) => 2,
-			Inst::BVS(..) => 2,
-			Inst::CLC => 1,
-			Inst::CLD => 1,
-			Inst::CLI => 1,
-			Inst::CLV => 1,
-			Inst::CMP(CMP::Immediate(..)) => 2,
-			Inst::CMP(CMP::ZeroPage(..)) => 2,
-			Inst::CMP(CMP::ZeroPageX(..)) => 2,
-			Inst::CMP(CMP::Absolute(..)) => 3,
-			Inst::CMP(CMP::AbsoluteX(..)) => 3,
-			Inst::CMP(CMP::AbsoluteY(..)) => 3,
-			Inst::CMP(CMP::IndirectX(..)) => 2,
-			Inst::CMP(CMP::IndirectY(..)) => 2,
-			Inst::CPX(CPX::Immediate(..)) => 2,
-			Inst::CPX(CPX::ZeroPage(..)) => 2,
-			Inst::CPX(CPX::Absolute(..)) => 3,
-			Inst::CPY(CPY::Immediate(..)) => 2,
-			Inst::CPY(CPY::ZeroPage(..)) => 2,
-			Inst::CPY(CPY::Absolute(..)) => 3,
-			Inst::DEC(DEC::ZeroPage(..)) => 2,
-			Inst::DEC(DEC::ZeroPageX(..)) => 2,
-			Inst::DEC(DEC::Absolute(..)) => 3,
-			Inst::DEC(DEC::AbsoluteX(..)) => 3,
-			Inst::DEX => 1,
-			Inst::DEY => 1,
-			Inst::EOR(EOR::Immediate(..)) => 2,
-			Inst::EOR(EOR::ZeroPage(..)) => 2,
-			Inst::EOR(EOR::ZeroPageX(..)) => 2,
-			Inst::EOR(EOR::Absolute(..)) => 3,
-			Inst::EOR(EOR::AbsoluteX(..)) => 3,
-			Inst::EOR(EOR::AbsoluteY(..)) => 3,
-			Inst::EOR(EOR::IndirectX(..)) => 2,
-			Inst::EOR(EOR::IndirectY(..)) => 2,
-			Inst::INC(INC::ZeroPage(..)) => 2,
-			Inst::INC(INC::ZeroPageX(..)) => 2,
-			Inst::INC(INC::Absolute(..)) => 3,
-			Inst::INC(INC::AbsoluteX(..)) => 3,
-			Inst::INX => 1,
-			Inst::INY => 1,
-			Inst::JMP(JMP::Absolute(..)) => 3,
-			Inst::JMP(JMP::Indirect(..)) => 3,
-			Inst::JSR(..) => 3,
-			Inst::LDA(LDA::Immediate(..)) => 2,
-			Inst::LDA(LDA::ZeroPage(..)) => 2,
-			Inst::LDA(LDA::ZeroPageX(..)) => 2,
-			Inst::LDA(LDA::Absolute(..)) => 3,
-			Inst::LDA(LDA::AbsoluteX(..)) => 3,
-			Inst::LDA(LDA::AbsoluteY(..)) => 3,
-			Inst::LDA(LDA::IndirectX(..)) => 2,
-			Inst::LDA(LDA::IndirectY(..)) => 2,
-			Inst::LDX(LDX::Immediate(..)) => 2,
-			Inst::LDX(LDX::ZeroPage(..)) => 2,
-			Inst::LDX(LDX::ZeroPageY(..)) => 2,
-			Inst::LDX(LDX::Absolute(..)) => 3,
-			Inst::LDX(LDX::AbsoluteY(..)) => 3,
-			Inst::LDY(LDY::Immediate(..)) => 2,
-			Inst::LDY(LDY::ZeroPage(..)) => 2,
-			Inst::LDY(LDY::ZeroPageX(..)) => 2,
-			Inst::LDY(LDY::Absolute(..)) => 3,
-			Inst::LDY(LDY::AbsoluteX(..)) => 3,
-			Inst::LSR(LSR::Accumulator) => 1,
-			Inst::LSR(LSR::ZeroPage(..)) => 2,
-			Inst::LSR(LSR::ZeroPageX(..)) => 2,
-			Inst::LSR(LSR::Absolute(..)) => 3,
-			Inst::LSR(LSR::AbsoluteX(..)) => 3,
-			Inst::NOP => 1,
-			Inst::ORA(ORA::Immediate(..)) => 2,
-			Inst::ORA(ORA::ZeroPage(..)) => 2,
-			Inst::ORA(ORA::ZeroPageX(..)) => 2,
-			Inst::ORA(ORA::Absolute(..)) => 3,
-			Inst::ORA(ORA::AbsoluteX(..)) => 3,
-			Inst::ORA(ORA::AbsoluteY(..)) => 3,
-			Inst::ORA(ORA::IndirectX(..)) => 2,
-			Inst::ORA(ORA::IndirectY(..)) => 2,
-			Inst::PHA => 1,
-			Inst::PHP => 1,
-			Inst::PLA => 1,
-			Inst::PLP => 1,
-			Inst::ROL(ROL::Accumulator) => 1,
-			Inst::ROL(ROL::ZeroPage(..)) => 2,
-			Inst::ROL(ROL::ZeroPageX(..)) => 2,
-			Inst::ROL(ROL::Absolute(..)) => 3,
-			Inst::ROL(ROL::AbsoluteX(..)) => 3,
-			Inst::ROR(ROR::Accumulator) => 1,
-			Inst::ROR(ROR::ZeroPage(..)) => 2,
-			Inst::ROR(ROR::ZeroPageX(..)) => 2,
-			Inst::ROR(ROR::Absolute(..)) => 3,
-			Inst::ROR(ROR::AbsoluteX(..)) => 3,
-			Inst::RTI => 1,
-			Inst::RTS => 1,
-			Inst::SBC(SBC::Immediate(..)) => 2,
-			Inst::SBC(SBC::ZeroPage(..)) => 2,
-			Inst::SBC(SBC::ZeroPageX(..)) => 2,
-			Inst::SBC(SBC::Absolute(..)) => 3,
-			Inst::SBC(SBC::AbsoluteX(..)) => 3,
-			Inst::SBC(SBC::AbsoluteY(..)) => 3,
-			Inst::SBC(SBC::IndirectX(..)) => 2,
-			Inst::SBC(SBC::IndirectY(..)) => 2,
-			Inst::SEC => 1,
-			Inst::SED => 1,
-			Inst::SEI => 1,
-			Inst::STA(STA::ZeroPage(..)) => 2,
-			Inst::STA(STA::ZeroPageX(..)) => 2,
-			Inst::STA(STA::Absolute(..)) => 3,
-			Inst::STA(STA::AbsoluteX(..)) => 3,
-			Inst::STA(STA::AbsoluteY(..)) => 3,
-			Inst::STA(STA::IndirectX(..)) => 2,
-			Inst::STA(STA::IndirectY(..)) => 2,
-			Inst::STX(STX::ZeroPage(..)) => 2,
-			Inst::STX(STX::ZeroPageY(..)) => 2,
-			Inst::STX(STX::Absolute(..)) => 3,
-			Inst::STY(STY::ZeroPage(..)) => 2,
-			Inst::STY(STY::ZeroPageX(..)) => 2,
-			Inst::STY(STY::Absolute(..)) => 3,
-			Inst::TAX => 1,
-			Inst::TAY => 1,
-			Inst::TSX => 1,
-			Inst::TXA => 1,
-			Inst::TXS => 1,
-			Inst::TYA => 1,
-			Inst::LAX(LAX::ZeroPage(..)) => 2,
-			Inst::LAX(LAX::ZeroPageY(..)) => 2,
-			Inst::LAX(LAX::Absolute(..)) => 3,
-			Inst::LAX(LAX::AbsoluteY(..)) => 3,
-			Inst::LAX(LAX::IndirectX(..)) => 2,
-			Inst::LAX(LAX::IndirectY(..)) => 2,
-			Inst::SAX(SAX::ZeroPage(..)) => 2,
-			Inst::SAX(SAX::ZeroPageY(..)) => 2,
-			Inst::SAX(SAX::Absolute(..)) => 3,
-			Inst::SAX(SAX::IndirectX(..)) => 2,
-			Inst::DCP(DCP::ZeroPage(..)) => 2,
-			Inst::DCP(DCP::ZeroPageX(..)) => 2,
-			Inst::DCP(DCP::Absolute(..)) => 3,
-			Inst::DCP(DCP::AbsoluteX(..)) => 3,
-			Inst::DCP(DCP::AbsoluteY(..)) => 3,
-			Inst::DCP(DCP::IndirectX(..)) => 2,
-			Inst::DCP(DCP::IndirectY(..)) => 2,
-			Inst::ISC(ISC::ZeroPage(..)) => 2,
-			Inst::ISC(ISC::ZeroPageX(..)) => 2,
-			Inst::ISC(ISC::Absolute(..)) => 3,
-			Inst::ISC(ISC::AbsoluteX(..)) => 3,
-			Inst::ISC(ISC::AbsoluteY(..)) => 3,
-			Inst::ISC(ISC::IndirectX(..)) => 2,
-			Inst::ISC(ISC::IndirectY(..)) => 2,
-			Inst::RLA(RLA::ZeroPage(..)) => 2,
-			Inst::RLA(RLA::ZeroPageX(..)) => 2,
-			Inst::RLA(RLA::Absolute(..)) => 3,
-			Inst::RLA(RLA::AbsoluteX(..)) => 3,
-			Inst::RLA(RLA::AbsoluteY(..)) => 3,
-			Inst::RLA(RLA::IndirectX(..)) => 2,
-			Inst::RLA(RLA::IndirectY(..)) => 2,
-			Inst::RRA(RRA::ZeroPage(..)) => 2,
-			Inst::RRA(RRA::ZeroPageX(..)) => 2,
-			Inst::RRA(RRA::Absolute(..)) => 3,
-			Inst::RRA(RRA::AbsoluteX(..)) => 3,
-			Inst::RRA(RRA::AbsoluteY(..)) => 3,
-			Inst::RRA(RRA::IndirectX(..)) => 2,
-			Inst::RRA(RRA::IndirectY(..)) => 2,
-			Inst::SLO(SLO::ZeroPage(..)) => 2,
-			Inst::SLO(SLO::ZeroPageX(..)) => 2,
-			Inst::SLO(SLO::Absolute(..)) => 3,
-			Inst::SLO(SLO::AbsoluteX(..)) => 3,
-			Inst::SLO(SLO::AbsoluteY(..)) => 3,
-			Inst::SLO(SLO::IndirectX(..)) => 2,
-			Inst::SLO(SLO::IndirectY(..)) => 2,
-			Inst::SRE(SRE::ZeroPage(..)) => 2,
-			Inst::SRE(SRE::ZeroPageX(..)) => 2,
-			Inst::SRE(SRE::Absolute(..)) => 3,
-			Inst::SRE(SRE::AbsoluteX(..)) => 3,
-			Inst::SRE(SRE::AbsoluteY(..)) => 3,
-			Inst::SRE(SRE::IndirectX(..)) => 2,
-			Inst::SRE(SRE::IndirectY(..)) => 2,
-			Inst::ANC(..) => 2,
-			Inst::ALR(..) => 2,
-			Inst::ARR(..) => 2,
-			Inst::AXS(..) => 2,
-			Inst::LAS(..) => 3,
-			Inst::TAS(..) => 3,
-			Inst::SHY(..) => 3,
-			Inst::SHX(..) => 3,
-			Inst::AHX(AHX::AbsoluteY(..)) => 3,
-			Inst::AHX(AHX::IndirectY(..)) => 2,
-			Inst::NOPU(NOPU::Immediate(..)) => 2,
-			Inst::NOPU(NOPU::ZeroPage(..)) => 2,
-			Inst::NOPU(NOPU::ZeroPageX(..)) => 2,
-			Inst::NOPU(NOPU::Absolute(..)) => 3,
-			Inst::NOPU(NOPU::AbsoluteX(..)) => 3,
-			Inst::NOPU(NOPU::AbsoluteY(..)) => 3,
+			Inst::BRK
+			| Inst::CLC
+			| Inst::CLD
+			| Inst::CLI
+			| Inst::CLV
+			| Inst::DEX
+			| Inst::DEY
+			| Inst::INX
+			| Inst::INY
+			| Inst::NOP2
+			| Inst::NOP3
+			| Inst::NOP4
+			| Inst::NOP5
+			| Inst::NOP6
+			| Inst::NOP7
+			| Inst::NOP8
+			| Inst::NOP9
+			| Inst::NOP10
+			| Inst::NOP11
+			| Inst::NOP12
+			| Inst::NOP13
+			| Inst::NOP14
+			| Inst::NOP15
+			| Inst::NOP16
+			| Inst::NOP17
+			| Inst::NOP18
+			| Inst::NOP19
+			| Inst::NOP20
+			| Inst::NOP21
+			| Inst::NOP22
+			| Inst::PHA
+			| Inst::PHP
+			| Inst::PLA
+			| Inst::PLP
+			| Inst::RTI
+			| Inst::RTS
+			| Inst::SEC
+			| Inst::SED
+			| Inst::SEI
+			| Inst::TAX
+			| Inst::TAY
+			| Inst::TSX
+			| Inst::TXA
+			| Inst::TXS
+			| Inst::TYA
+			| Inst::ASLAccumulator
+			| Inst::LSRAccumulator
+			| Inst::ROLAccumulator
+			| Inst::RORAccumulator => 1,
+			Inst::ORAImmediate(..)
+			| Inst::ORAZeroPage(..)
+			| Inst::ORAZeroPageX(..)
+			| Inst::ORAIndirectX(..)
+			| Inst::ORAIndirectY(..)
+			| Inst::ANDImmediate(..)
+			| Inst::ANDZeroPage(..)
+			| Inst::ANDZeroPageX(..)
+			| Inst::ANDIndirectX(..)
+			| Inst::ANDIndirectY(..)
+			| Inst::EORImmediate(..)
+			| Inst::EORZeroPage(..)
+			| Inst::EORZeroPageX(..)
+			| Inst::EORIndirectX(..)
+			| Inst::EORIndirectY(..)
+			| Inst::ADCImmediate(..)
+			| Inst::ADCZeroPage(..)
+			| Inst::ADCZeroPageX(..)
+			| Inst::ADCIndirectX(..)
+			| Inst::ADCIndirectY(..)
+			| Inst::LDAImmediate(..)
+			| Inst::LDAZeroPage(..)
+			| Inst::LDAZeroPageX(..)
+			| Inst::LDAIndirectX(..)
+			| Inst::LDAIndirectY(..)
+			| Inst::LDXImmediate(..)
+			| Inst::LDXZeroPage(..)
+			| Inst::LDXZeroPageY(..)
+			| Inst::LDYImmediate(..)
+			| Inst::LDYZeroPage(..)
+			| Inst::LDYZeroPageX(..)
+			| Inst::STAZeroPage(..)
+			| Inst::STAZeroPageX(..)
+			| Inst::STAIndirectX(..)
+			| Inst::STAIndirectY(..)
+			| Inst::STXZeroPage(..)
+			| Inst::STXZeroPageY(..)
+			| Inst::STYZeroPage(..)
+			| Inst::STYZeroPageX(..)
+			| Inst::CMPImmediate(..)
+			| Inst::CMPZeroPage(..)
+			| Inst::CMPZeroPageX(..)
+			| Inst::CMPIndirectX(..)
+			| Inst::CMPIndirectY(..)
+			| Inst::CPXImmediate(..)
+			| Inst::CPXZeroPage(..)
+			| Inst::CPYImmediate(..)
+			| Inst::CPYZeroPage(..)
+			| Inst::SBCImmediate(..)
+			| Inst::SBCZeroPage(..)
+			| Inst::SBCZeroPageX(..)
+			| Inst::SBCIndirectX(..)
+			| Inst::SBCIndirectY(..)
+			| Inst::BITZeroPage(..)
+			| Inst::ASLZeroPage(..)
+			| Inst::ASLZeroPageX(..)
+			| Inst::LSRZeroPage(..)
+			| Inst::LSRZeroPageX(..)
+			| Inst::ROLZeroPage(..)
+			| Inst::ROLZeroPageX(..)
+			| Inst::RORZeroPage(..)
+			| Inst::RORZeroPageX(..)
+			| Inst::DECZeroPage(..)
+			| Inst::DECZeroPageX(..)
+			| Inst::INCZeroPage(..)
+			| Inst::INCZeroPageX(..)
+			| Inst::BPL(..)
+			| Inst::BMI(..)
+			| Inst::BVC(..)
+			| Inst::BVS(..)
+			| Inst::BCC(..)
+			| Inst::BCS(..)
+			| Inst::BNE(..)
+			| Inst::BEQ(..)
+			| Inst::ANCImmediate(..)
+			| Inst::ANC2Immediate(..)
+			| Inst::ALRImmediate(..)
+			| Inst::ARRImmediate(..)
+			| Inst::AXSImmediate(..)
+			| Inst::LAXZeroPage(..)
+			| Inst::LAXZeroPageY(..)
+			| Inst::LAXIndirectX(..)
+			| Inst::LAXIndirectY(..)
+			| Inst::SAXZeroPage(..)
+			| Inst::SAXZeroPageY(..)
+			| Inst::SAXIndirectX(..)
+			| Inst::DCPZeroPage(..)
+			| Inst::DCPZeroPageX(..)
+			| Inst::DCPIndirectX(..)
+			| Inst::DCPIndirectY(..)
+			| Inst::ISCZeroPage(..)
+			| Inst::ISCZeroPageX(..)
+			| Inst::ISCIndirectX(..)
+			| Inst::ISCIndirectY(..)
+			| Inst::RLAZeroPage(..)
+			| Inst::RLAZeroPageX(..)
+			| Inst::RLAIndirectX(..)
+			| Inst::RLAIndirectY(..)
+			| Inst::RRAZeroPage(..)
+			| Inst::RRAZeroPageX(..)
+			| Inst::RRAIndirectX(..)
+			| Inst::RRAIndirectY(..)
+			| Inst::SLOZeroPage(..)
+			| Inst::SLOZeroPageX(..)
+			| Inst::SLOIndirectX(..)
+			| Inst::SLOIndirectY(..)
+			| Inst::SREZeroPage(..)
+			| Inst::SREZeroPageX(..)
+			| Inst::SREIndirectX(..)
+			| Inst::SREIndirectY(..)
+			| Inst::AHXIndirectY(..)
+			| Inst::NOPImmediate(..)
+			| Inst::NOPImmediate2(..)
+			| Inst::NOPImmediate3(..) => 2,
+			Inst::ORAAbsolute(..)
+			| Inst::ORAAbsoluteX(..)
+			| Inst::ORAAbsoluteY(..)
+			| Inst::ANDAbsolute(..)
+			| Inst::ANDAbsoluteX(..)
+			| Inst::ANDAbsoluteY(..)
+			| Inst::EORAbsolute(..)
+			| Inst::EORAbsoluteX(..)
+			| Inst::EORAbsoluteY(..)
+			| Inst::ADCAbsolute(..)
+			| Inst::ADCAbsoluteX(..)
+			| Inst::ADCAbsoluteY(..)
+			| Inst::LDAAbsolute(..)
+			| Inst::LDAAbsoluteX(..)
+			| Inst::LDAAbsoluteY(..)
+			| Inst::LDXAbsolute(..)
+			| Inst::LDXAbsoluteY(..)
+			| Inst::LDYAbsolute(..)
+			| Inst::LDYAbsoluteX(..)
+			| Inst::STAAbsolute(..)
+			| Inst::STAAbsoluteX(..)
+			| Inst::STAAbsoluteY(..)
+			| Inst::STXAbsolute(..)
+			| Inst::STYAbsolute(..)
+			| Inst::CMPAbsolute(..)
+			| Inst::CMPAbsoluteX(..)
+			| Inst::CMPAbsoluteY(..)
+			| Inst::CPXAbsolute(..)
+			| Inst::CPYAbsolute(..)
+			| Inst::SBCAbsolute(..)
+			| Inst::SBCAbsoluteX(..)
+			| Inst::SBCAbsoluteY(..)
+			| Inst::BITAbsolute(..)
+			| Inst::ASLAbsolute(..)
+			| Inst::ASLAbsoluteX(..)
+			| Inst::LSRAbsolute(..)
+			| Inst::LSRAbsoluteX(..)
+			| Inst::ROLAbsolute(..)
+			| Inst::ROLAbsoluteX(..)
+			| Inst::RORAbsolute(..)
+			| Inst::RORAbsoluteX(..)
+			| Inst::DECAbsolute(..)
+			| Inst::DECAbsoluteX(..)
+			| Inst::INCAbsolute(..)
+			| Inst::INCAbsoluteX(..)
+			| Inst::JMPAbsolute(..)
+			| Inst::JMPIndirect(..)
+			| Inst::JSR(..)
+			| Inst::LAXAbsolute(..)
+			| Inst::LAXAbsoluteY(..)
+			| Inst::SAXAbsolute(..)
+			| Inst::DCPAbsolute(..)
+			| Inst::DCPAbsoluteX(..)
+			| Inst::DCPAbsoluteY(..)
+			| Inst::ISCAbsolute(..)
+			| Inst::ISCAbsoluteX(..)
+			| Inst::ISCAbsoluteY(..)
+			| Inst::RLAAbsolute(..)
+			| Inst::RLAAbsoluteX(..)
+			| Inst::RLAAbsoluteY(..)
+			| Inst::RRAAbsolute(..)
+			| Inst::RRAAbsoluteX(..)
+			| Inst::RRAAbsoluteY(..)
+			| Inst::SLOAbsolute(..)
+			| Inst::SLOAbsoluteX(..)
+			| Inst::SLOAbsoluteY(..)
+			| Inst::SREAbsolute(..)
+			| Inst::SREAbsoluteX(..)
+			| Inst::SREAbsoluteY(..)
+			| Inst::LASAbsoluteY(..)
+			| Inst::TASAbsoluteY(..)
+			| Inst::SHYAbsoluteX(..)
+			| Inst::SHXAbsoluteY(..)
+			| Inst::AHXAbsoluteY(..)
+			| Inst::NOPAbsolute(..)
+			| Inst::NOPAbsoluteX(..)
+			| Inst::NOPAbsoluteX2(..)
+			| Inst::NOPAbsoluteX3(..)
+			| Inst::NOPAbsoluteX4(..)
+			| Inst::NOPAbsoluteX5(..)
+			| Inst::NOPAbsoluteX6(..) => 3,
+
+			Inst::LAXImmediate(_) => todo!(),
+			Inst::NOPZeroPage(_) => todo!(),
+			Inst::NOPZeroPage3(_) => todo!(),
+			Inst::NOPZeroPage4(_) => todo!(),
+			Inst::NOPZeroPageX(_) => todo!(),
+			Inst::NOPZeroPageX2(_) => todo!(),
+			Inst::NOPZeroPageX3(_) => todo!(),
+			Inst::NOPZeroPageX4(_) => todo!(),
+			Inst::NOPZeroPageX5(_) => todo!(),
+			Inst::NOPZeroPageX6(_) => todo!(),
+			Inst::SBCImmediate2(_) => todo!(),
+			Inst::XAAImmediate(_) => todo!(),
 		}
 	}
 
 	pub fn evaluate(&self, state: &mut State) {
 		match self {
-			Inst::ADC(ADC::Immediate(x)) => adc_immediate(state, *x),
-			Inst::ADC(ADC::ZeroPage(x)) => adc_zero_page(state, *x),
-			Inst::ADC(ADC::ZeroPageX(x)) => adc_zero_page_x(state, *x),
-			Inst::ADC(ADC::Absolute(a)) => adc_absolute(state, *a),
-			Inst::ADC(ADC::AbsoluteX(a)) => adc_absolute_x(state, *a),
-			Inst::ADC(ADC::AbsoluteY(a)) => adc_absolute_y(state, *a),
-			Inst::ADC(ADC::IndirectX(x)) => adc_indirect_x(state, *x),
-			Inst::ADC(ADC::IndirectY(x)) => adc_indirect_y(state, *x),
-			Inst::AND(AND::Immediate(x)) => and_immediate(state, *x),
-			Inst::AND(AND::ZeroPage(x)) => and_zero_page(state, *x),
-			Inst::AND(AND::ZeroPageX(x)) => and_zero_page_x(state, *x),
-			Inst::AND(AND::Absolute(a)) => and_absolute(state, *a),
-			Inst::AND(AND::AbsoluteX(a)) => and_absolute_x(state, *a),
-			Inst::AND(AND::AbsoluteY(a)) => and_absolute_y(state, *a),
-			Inst::AND(AND::IndirectX(x)) => and_indirect_x(state, *x),
-			Inst::AND(AND::IndirectY(x)) => and_indirect_y(state, *x),
-			Inst::ASL(ASL::Accumulator) => asl_accumulator(state),
-			Inst::ASL(ASL::ZeroPage(x)) => asl_zero_page(state, *x),
-			Inst::ASL(ASL::ZeroPageX(x)) => asl_zero_page_x(state, *x),
-			Inst::ASL(ASL::Absolute(a)) => asl_absolute(state, *a),
-			Inst::ASL(ASL::AbsoluteX(a)) => asl_absolute_x(state, *a),
+			Inst::ADCImmediate(x) => adc_immediate(state, *x),
+			Inst::ADCZeroPage(x) => adc_zero_page(state, *x),
+			Inst::ADCZeroPageX(x) => adc_zero_page_x(state, *x),
+			Inst::ADCAbsolute(a) => adc_absolute(state, a.into()),
+			Inst::ADCAbsoluteX(a) => adc_absolute_x(state, a.into()),
+			Inst::ADCAbsoluteY(a) => adc_absolute_y(state, a.into()),
+			Inst::ADCIndirectX(x) => adc_indirect_x(state, *x),
+			Inst::ADCIndirectY(x) => adc_indirect_y(state, *x),
+			Inst::ANDImmediate(x) => and_immediate(state, *x),
+			Inst::ANDZeroPage(x) => and_zero_page(state, *x),
+			Inst::ANDZeroPageX(x) => and_zero_page_x(state, *x),
+			Inst::ANDAbsolute(a) => and_absolute(state, a.into()),
+			Inst::ANDAbsoluteX(a) => and_absolute_x(state, a.into()),
+			Inst::ANDAbsoluteY(a) => and_absolute_y(state, a.into()),
+			Inst::ANDIndirectX(x) => and_indirect_x(state, *x),
+			Inst::ANDIndirectY(x) => and_indirect_y(state, *x),
+			Inst::ASLAccumulator => asl_accumulator(state),
+			Inst::ASLZeroPage(x) => asl_zero_page(state, *x),
+			Inst::ASLZeroPageX(x) => asl_zero_page_x(state, *x),
+			Inst::ASLAbsolute(a) => asl_absolute(state, a.into()),
+			Inst::ASLAbsoluteX(a) => asl_absolute_x(state, a.into()),
 			Inst::BCC(x) => bcc(state, *x),
 			Inst::BCS(x) => bcs(state, *x),
 			Inst::BEQ(x) => beq(state, *x),
-			Inst::BIT(BIT::ZeroPage(x)) => bit_zero_page(state, *x),
-			Inst::BIT(BIT::Absolute(a)) => bit_absolute(state, *a),
+			Inst::BITZeroPage(x) => bit_zero_page(state, *x),
+			Inst::BITAbsolute(a) => bit_absolute(state, a.into()),
 			Inst::BMI(x) => bmi(state, *x),
 			Inst::BNE(x) => bne(state, *x),
 			Inst::BPL(x) => bpl(state, *x),
@@ -730,115 +624,115 @@ impl Inst {
 			Inst::CLD => cld(state),
 			Inst::CLI => cli(state),
 			Inst::CLV => clv(state),
-			Inst::CMP(CMP::Immediate(x)) => cmp_immediate(state, *x),
-			Inst::CMP(CMP::ZeroPage(x)) => cmp_zero_page(state, *x),
-			Inst::CMP(CMP::ZeroPageX(x)) => cmp_zero_page_x(state, *x),
-			Inst::CMP(CMP::Absolute(a)) => cmp_absolute(state, *a),
-			Inst::CMP(CMP::AbsoluteX(a)) => cmp_absolute_x(state, *a),
-			Inst::CMP(CMP::AbsoluteY(a)) => cmp_absolute_y(state, *a),
-			Inst::CMP(CMP::IndirectX(x)) => cmp_indirect_x(state, *x),
-			Inst::CMP(CMP::IndirectY(x)) => cmp_indirect_y(state, *x),
-			Inst::CPX(CPX::Immediate(x)) => cpx_immediate(state, *x),
-			Inst::CPX(CPX::ZeroPage(x)) => cpx_zero_page(state, *x),
-			Inst::CPX(CPX::Absolute(a)) => cpx_absolute(state, *a),
-			Inst::CPY(CPY::Immediate(x)) => cpy_immediate(state, *x),
-			Inst::CPY(CPY::ZeroPage(x)) => cpy_zero_page(state, *x),
-			Inst::CPY(CPY::Absolute(a)) => cpy_absolute(state, *a),
-			Inst::DEC(DEC::ZeroPage(x)) => dec_zero_page(state, *x),
-			Inst::DEC(DEC::ZeroPageX(x)) => dec_zero_page_x(state, *x),
-			Inst::DEC(DEC::Absolute(a)) => dec_absolute(state, *a),
-			Inst::DEC(DEC::AbsoluteX(a)) => dec_absolute_x(state, *a),
+			Inst::CMPImmediate(x) => cmp_immediate(state, *x),
+			Inst::CMPZeroPage(x) => cmp_zero_page(state, *x),
+			Inst::CMPZeroPageX(x) => cmp_zero_page_x(state, *x),
+			Inst::CMPAbsolute(a) => cmp_absolute(state, a.into()),
+			Inst::CMPAbsoluteX(a) => cmp_absolute_x(state, a.into()),
+			Inst::CMPAbsoluteY(a) => cmp_absolute_y(state, a.into()),
+			Inst::CMPIndirectX(x) => cmp_indirect_x(state, *x),
+			Inst::CMPIndirectY(x) => cmp_indirect_y(state, *x),
+			Inst::CPXImmediate(x) => cpx_immediate(state, *x),
+			Inst::CPXZeroPage(x) => cpx_zero_page(state, *x),
+			Inst::CPXAbsolute(a) => cpx_absolute(state, a.into()),
+			Inst::CPYImmediate(x) => cpy_immediate(state, *x),
+			Inst::CPYZeroPage(x) => cpy_zero_page(state, *x),
+			Inst::CPYAbsolute(a) => cpy_absolute(state, a.into()),
+			Inst::DECZeroPage(x) => dec_zero_page(state, *x),
+			Inst::DECZeroPageX(x) => dec_zero_page_x(state, *x),
+			Inst::DECAbsolute(a) => dec_absolute(state, a.into()),
+			Inst::DECAbsoluteX(a) => dec_absolute_x(state, a.into()),
 			Inst::DEX => dex(state),
 			Inst::DEY => dey(state),
-			Inst::EOR(EOR::Immediate(x)) => eor_immediate(state, *x),
-			Inst::EOR(EOR::ZeroPage(x)) => eor_zero_page(state, *x),
-			Inst::EOR(EOR::ZeroPageX(x)) => eor_zero_page_x(state, *x),
-			Inst::EOR(EOR::Absolute(a)) => eor_absolute(state, *a),
-			Inst::EOR(EOR::AbsoluteX(a)) => eor_absolute_x(state, *a),
-			Inst::EOR(EOR::AbsoluteY(a)) => eor_absolute_y(state, *a),
-			Inst::EOR(EOR::IndirectX(x)) => eor_indirect_x(state, *x),
-			Inst::EOR(EOR::IndirectY(x)) => eor_indirect_y(state, *x),
-			Inst::INC(INC::ZeroPage(x)) => inc_zero_page(state, *x),
-			Inst::INC(INC::ZeroPageX(x)) => inc_zero_page_x(state, *x),
-			Inst::INC(INC::Absolute(a)) => inc_absolute(state, *a),
-			Inst::INC(INC::AbsoluteX(a)) => inc_absolute_x(state, *a),
+			Inst::EORImmediate(x) => eor_immediate(state, *x),
+			Inst::EORZeroPage(x) => eor_zero_page(state, *x),
+			Inst::EORZeroPageX(x) => eor_zero_page_x(state, *x),
+			Inst::EORAbsolute(a) => eor_absolute(state, a.into()),
+			Inst::EORAbsoluteX(a) => eor_absolute_x(state, a.into()),
+			Inst::EORAbsoluteY(a) => eor_absolute_y(state, a.into()),
+			Inst::EORIndirectX(x) => eor_indirect_x(state, *x),
+			Inst::EORIndirectY(x) => eor_indirect_y(state, *x),
+			Inst::INCZeroPage(x) => inc_zero_page(state, *x),
+			Inst::INCZeroPageX(x) => inc_zero_page_x(state, *x),
+			Inst::INCAbsolute(a) => inc_absolute(state, a.into()),
+			Inst::INCAbsoluteX(a) => inc_absolute_x(state, a.into()),
 			Inst::INX => inx(state),
 			Inst::INY => iny(state),
-			Inst::JMP(JMP::Absolute(a)) => jmp_absolute(state, *a),
-			Inst::JMP(JMP::Indirect(x)) => jmp_indirect(state, *x),
-			Inst::JSR(x) => jsr(state, *x),
-			Inst::LDA(LDA::Immediate(x)) => lda_immediate(state, *x),
-			Inst::LDA(LDA::ZeroPage(x)) => lda_zero_page(state, *x),
-			Inst::LDA(LDA::ZeroPageX(x)) => lda_zero_page_x(state, *x),
-			Inst::LDA(LDA::Absolute(a)) => lda_absolute(state, *a),
-			Inst::LDA(LDA::AbsoluteX(a)) => lda_absolute_x(state, *a),
-			Inst::LDA(LDA::AbsoluteY(a)) => lda_absolute_y(state, *a),
-			Inst::LDA(LDA::IndirectX(x)) => lda_indirect_x(state, *x),
-			Inst::LDA(LDA::IndirectY(x)) => lda_indirect_y(state, *x),
-			Inst::LDX(LDX::Immediate(x)) => ldx_immediate(state, *x),
-			Inst::LDX(LDX::ZeroPage(x)) => ldx_zero_page(state, *x),
-			Inst::LDX(LDX::ZeroPageY(x)) => ldx_zero_page_y(state, *x),
-			Inst::LDX(LDX::Absolute(a)) => ldx_absolute(state, *a),
-			Inst::LDX(LDX::AbsoluteY(a)) => ldx_absolute_y(state, *a),
-			Inst::LDY(LDY::Immediate(x)) => ldy_immediate(state, *x),
-			Inst::LDY(LDY::ZeroPage(x)) => ldy_zero_page(state, *x),
-			Inst::LDY(LDY::ZeroPageX(x)) => ldy_zero_page_x(state, *x),
-			Inst::LDY(LDY::Absolute(a)) => ldy_absolute(state, *a),
-			Inst::LDY(LDY::AbsoluteX(a)) => ldy_absolute_x(state, *a),
-			Inst::LSR(LSR::Accumulator) => lsr_accumulator(state),
-			Inst::LSR(LSR::ZeroPage(x)) => lsr_zero_page(state, *x),
-			Inst::LSR(LSR::ZeroPageX(x)) => lsr_zero_page_x(state, *x),
-			Inst::LSR(LSR::Absolute(a)) => lsr_absolute(state, *a),
-			Inst::LSR(LSR::AbsoluteX(a)) => lsr_absolute_x(state, *a),
-			Inst::NOP => nop(state),
-			Inst::ORA(ORA::Immediate(x)) => ora_immediate(state, *x),
-			Inst::ORA(ORA::ZeroPage(x)) => ora_zero_page(state, *x),
-			Inst::ORA(ORA::ZeroPageX(x)) => ora_zero_page_x(state, *x),
-			Inst::ORA(ORA::Absolute(a)) => ora_absolute(state, *a),
-			Inst::ORA(ORA::AbsoluteX(a)) => ora_absolute_x(state, *a),
-			Inst::ORA(ORA::AbsoluteY(a)) => ora_absolute_y(state, *a),
-			Inst::ORA(ORA::IndirectX(x)) => ora_indirect_x(state, *x),
-			Inst::ORA(ORA::IndirectY(x)) => ora_indirect_y(state, *x),
+			Inst::JMPAbsolute(a) => jmp_absolute(state, a.into()),
+			Inst::JMPIndirect(x) => jmp_indirect(state, x.into()),
+			Inst::JSR(x) => jsr(state, x.into()),
+			Inst::LDAImmediate(x) => lda_immediate(state, *x),
+			Inst::LDAZeroPage(x) => lda_zero_page(state, *x),
+			Inst::LDAZeroPageX(x) => lda_zero_page_x(state, *x),
+			Inst::LDAAbsolute(a) => lda_absolute(state, a.into()),
+			Inst::LDAAbsoluteX(a) => lda_absolute_x(state, a.into()),
+			Inst::LDAAbsoluteY(a) => lda_absolute_y(state, a.into()),
+			Inst::LDAIndirectX(x) => lda_indirect_x(state, *x),
+			Inst::LDAIndirectY(x) => lda_indirect_y(state, *x),
+			Inst::LDXImmediate(x) => ldx_immediate(state, *x),
+			Inst::LDXZeroPage(x) => ldx_zero_page(state, *x),
+			Inst::LDXZeroPageY(x) => ldx_zero_page_y(state, *x),
+			Inst::LDXAbsolute(a) => ldx_absolute(state, a.into()),
+			Inst::LDXAbsoluteY(a) => ldx_absolute_y(state, a.into()),
+			Inst::LDYImmediate(x) => ldy_immediate(state, *x),
+			Inst::LDYZeroPage(x) => ldy_zero_page(state, *x),
+			Inst::LDYZeroPageX(x) => ldy_zero_page_x(state, *x),
+			Inst::LDYAbsolute(a) => ldy_absolute(state, a.into()),
+			Inst::LDYAbsoluteX(a) => ldy_absolute_x(state, a.into()),
+			Inst::LSRAccumulator => lsr_accumulator(state),
+			Inst::LSRZeroPage(x) => lsr_zero_page(state, *x),
+			Inst::LSRZeroPageX(x) => lsr_zero_page_x(state, *x),
+			Inst::LSRAbsolute(a) => lsr_absolute(state, a.into()),
+			Inst::LSRAbsoluteX(a) => lsr_absolute_x(state, a.into()),
+			Inst::NOP2 => nop(state),
+			Inst::ORAImmediate(x) => ora_immediate(state, *x),
+			Inst::ORAZeroPage(x) => ora_zero_page(state, *x),
+			Inst::ORAZeroPageX(x) => ora_zero_page_x(state, *x),
+			Inst::ORAAbsolute(a) => ora_absolute(state, a.into()),
+			Inst::ORAAbsoluteX(a) => ora_absolute_x(state, a.into()),
+			Inst::ORAAbsoluteY(a) => ora_absolute_y(state, a.into()),
+			Inst::ORAIndirectX(x) => ora_indirect_x(state, *x),
+			Inst::ORAIndirectY(x) => ora_indirect_y(state, *x),
 			Inst::PHA => pha(state),
 			Inst::PHP => php(state),
 			Inst::PLA => pla(state),
 			Inst::PLP => plp(state),
-			Inst::ROL(ROL::Accumulator) => rol_accumulator(state),
-			Inst::ROL(ROL::ZeroPage(x)) => rol_zero_page(state, *x),
-			Inst::ROL(ROL::ZeroPageX(x)) => rol_zero_page_x(state, *x),
-			Inst::ROL(ROL::Absolute(a)) => rol_absolute(state, *a),
-			Inst::ROL(ROL::AbsoluteX(a)) => rol_absolute_x(state, *a),
-			Inst::ROR(ROR::Accumulator) => ror_accumulator(state),
-			Inst::ROR(ROR::ZeroPage(x)) => ror_zero_page(state, *x),
-			Inst::ROR(ROR::ZeroPageX(x)) => ror_zero_page_x(state, *x),
-			Inst::ROR(ROR::Absolute(a)) => ror_absolute(state, *a),
-			Inst::ROR(ROR::AbsoluteX(a)) => ror_absolute_x(state, *a),
+			Inst::ROLAccumulator => rol_accumulator(state),
+			Inst::ROLZeroPage(x) => rol_zero_page(state, *x),
+			Inst::ROLZeroPageX(x) => rol_zero_page_x(state, *x),
+			Inst::ROLAbsolute(a) => rol_absolute(state, a.into()),
+			Inst::ROLAbsoluteX(a) => rol_absolute_x(state, a.into()),
+			Inst::RORAccumulator => ror_accumulator(state),
+			Inst::RORZeroPage(x) => ror_zero_page(state, *x),
+			Inst::RORZeroPageX(x) => ror_zero_page_x(state, *x),
+			Inst::RORAbsolute(a) => ror_absolute(state, a.into()),
+			Inst::RORAbsoluteX(a) => ror_absolute_x(state, a.into()),
 			Inst::RTI => rti(state),
 			Inst::RTS => rts(state),
-			Inst::SBC(SBC::Immediate(x)) => sbc_immediate(state, *x),
-			Inst::SBC(SBC::ZeroPage(x)) => sbc_zero_page(state, *x),
-			Inst::SBC(SBC::ZeroPageX(x)) => sbc_zero_page_x(state, *x),
-			Inst::SBC(SBC::Absolute(a)) => sbc_absolute(state, *a),
-			Inst::SBC(SBC::AbsoluteX(a)) => sbc_absolute_x(state, *a),
-			Inst::SBC(SBC::AbsoluteY(a)) => sbc_absolute_y(state, *a),
-			Inst::SBC(SBC::IndirectX(x)) => sbc_indirect_x(state, *x),
-			Inst::SBC(SBC::IndirectY(x)) => sbc_indirect_y(state, *x),
+			Inst::SBCImmediate(x) => sbc_immediate(state, *x),
+			Inst::SBCZeroPage(x) => sbc_zero_page(state, *x),
+			Inst::SBCZeroPageX(x) => sbc_zero_page_x(state, *x),
+			Inst::SBCAbsolute(a) => sbc_absolute(state, a.into()),
+			Inst::SBCAbsoluteX(a) => sbc_absolute_x(state, a.into()),
+			Inst::SBCAbsoluteY(a) => sbc_absolute_y(state, a.into()),
+			Inst::SBCIndirectX(x) => sbc_indirect_x(state, *x),
+			Inst::SBCIndirectY(x) => sbc_indirect_y(state, *x),
 			Inst::SEC => sec(state),
 			Inst::SED => sed(state),
 			Inst::SEI => sei(state),
-			Inst::STA(STA::ZeroPage(x)) => sta_zero_page(state, *x),
-			Inst::STA(STA::ZeroPageX(x)) => sta_zero_page_x(state, *x),
-			Inst::STA(STA::Absolute(a)) => sta_absolute(state, *a),
-			Inst::STA(STA::AbsoluteX(a)) => sta_absolute_x(state, *a),
-			Inst::STA(STA::AbsoluteY(a)) => sta_absolute_y(state, *a),
-			Inst::STA(STA::IndirectX(x)) => sta_indirect_x(state, *x),
-			Inst::STA(STA::IndirectY(x)) => sta_indirect_y(state, *x),
-			Inst::STX(STX::ZeroPage(x)) => stx_zero_page(state, *x),
-			Inst::STX(STX::ZeroPageY(x)) => stx_zero_page_y(state, *x),
-			Inst::STX(STX::Absolute(a)) => stx_absolute(state, *a),
-			Inst::STY(STY::ZeroPage(x)) => sty_zero_page(state, *x),
-			Inst::STY(STY::ZeroPageX(x)) => sty_zero_page_x(state, *x),
-			Inst::STY(STY::Absolute(a)) => sty_absolute(state, *a),
+			Inst::STAZeroPage(x) => sta_zero_page(state, *x),
+			Inst::STAZeroPageX(x) => sta_zero_page_x(state, *x),
+			Inst::STAAbsolute(a) => sta_absolute(state, a.into()),
+			Inst::STAAbsoluteX(a) => sta_absolute_x(state, a.into()),
+			Inst::STAAbsoluteY(a) => sta_absolute_y(state, a.into()),
+			Inst::STAIndirectX(x) => sta_indirect_x(state, *x),
+			Inst::STAIndirectY(x) => sta_indirect_y(state, *x),
+			Inst::STXZeroPage(x) => stx_zero_page(state, *x),
+			Inst::STXZeroPageY(x) => stx_zero_page_y(state, *x),
+			Inst::STXAbsolute(a) => stx_absolute(state, a.into()),
+			Inst::STYZeroPage(x) => sty_zero_page(state, *x),
+			Inst::STYZeroPageX(x) => sty_zero_page_x(state, *x),
+			Inst::STYAbsolute(a) => sty_absolute(state, a.into()),
 			Inst::TAX => tax(state),
 			Inst::TAY => tay(state),
 			Inst::TSX => tsx(state),
@@ -914,1254 +808,12 @@ impl Inst {
 }
 
 pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
-	match code {
-		// ADC instructions
-		[0x69, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ADC(ADC::Immediate(*imm)))
-		}
-		[0x65, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ADC(ADC::ZeroPage(*adr)))
-		}
-		[0x75, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ADC(ADC::ZeroPageX(*adr)))
-		}
-		[0x6D, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ADC(ADC::Absolute(num)))
-		}
-		[0x7D, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ADC(ADC::AbsoluteX(num)))
-		}
-		[0x79, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ADC(ADC::AbsoluteY(num)))
-		}
-		[0x61, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ADC(ADC::IndirectX(*adr)))
-		}
-		[0x71, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ADC(ADC::IndirectY(*adr)))
-		}
-
-		// AND instructions
-		[0x29, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::AND(AND::Immediate(*imm)))
-		}
-		[0x25, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::AND(AND::ZeroPage(*adr)))
-		}
-		[0x35, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::AND(AND::ZeroPageX(*adr)))
-		}
-		[0x2D, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::AND(AND::Absolute(num)))
-		}
-		[0x3D, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::AND(AND::AbsoluteX(num)))
-		}
-		[0x39, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::AND(AND::AbsoluteY(num)))
-		}
-		[0x21, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::AND(AND::IndirectX(*adr)))
-		}
-		[0x31, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::AND(AND::IndirectY(*adr)))
-		}
-
-		// ASL instructions
-		[0x0A, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ASL(ASL::Accumulator))
-		}
-		[0x06, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ASL(ASL::ZeroPage(*adr)))
-		}
-		[0x16, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ASL(ASL::ZeroPageX(*adr)))
-		}
-		[0x0E, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ASL(ASL::Absolute(num)))
-		}
-		[0x1E, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ASL(ASL::AbsoluteX(num)))
-		}
-
-		// BCC instruction
-		[0x90, rel, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::BCC(*rel as i8))
-		}
-
-		// BCS instruction
-		[0xB0, rel, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::BCS(*rel as i8))
-		}
-
-		// BEQ instruction
-		[0xF0, rel, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::BEQ(*rel as i8))
-		}
-
-		// BIT instructions
-		[0x24, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::BIT(BIT::ZeroPage(*adr)))
-		}
-		[0x2C, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::BIT(BIT::Absolute(num)))
-		}
-
-		// BMI instruction
-		[0x30, rel, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::BMI(*rel as i8))
-		}
-
-		// BNE instruction
-		[0xD0, rel, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::BNE(*rel as i8))
-		}
-
-		// BPL instruction
-		[0x10, rel, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::BPL(*rel as i8))
-		}
-
-		// BRK instruction
-		[0x00, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::BRK)
-		}
-
-		// BVC instruction
-		[0x50, rel, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::BVC(*rel as i8))
-		}
-
-		// BVS instruction
-		[0x70, rel, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::BVS(*rel as i8))
-		}
-
-		// CLC instruction
-		[0x18, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::CLC)
-		}
-
-		// CLD instruction
-		[0xD8, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::CLD)
-		}
-
-		// CLI instruction
-		[0x58, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::CLI)
-		}
-
-		// CLV instruction
-		[0xB8, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::CLV)
-		}
-
-		// CMP instructions
-		[0xC9, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::CMP(CMP::Immediate(*imm)))
-		}
-		[0xC5, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::CMP(CMP::ZeroPage(*adr)))
-		}
-		[0xD5, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::CMP(CMP::ZeroPageX(*adr)))
-		}
-		[0xCD, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::CMP(CMP::Absolute(num)))
-		}
-		[0xDD, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::CMP(CMP::AbsoluteX(num)))
-		}
-		[0xD9, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::CMP(CMP::AbsoluteY(num)))
-		}
-		[0xC1, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::CMP(CMP::IndirectX(*adr)))
-		}
-		[0xD1, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::CMP(CMP::IndirectY(*adr)))
-		}
-
-		// CPX instructions
-		[0xE0, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::CPX(CPX::Immediate(*imm)))
-		}
-		[0xE4, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::CPX(CPX::ZeroPage(*adr)))
-		}
-		[0xEC, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::CPX(CPX::Absolute(num)))
-		}
-
-		// CPY instructions
-		[0xC0, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::CPY(CPY::Immediate(*imm)))
-		}
-		[0xC4, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::CPY(CPY::ZeroPage(*adr)))
-		}
-		[0xCC, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::CPY(CPY::Absolute(num)))
-		}
-
-		// DEC instructions
-		[0xC6, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::DEC(DEC::ZeroPage(*adr)))
-		}
-		[0xD6, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::DEC(DEC::ZeroPageX(*adr)))
-		}
-		[0xCE, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::DEC(DEC::Absolute(num)))
-		}
-		[0xDE, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::DEC(DEC::AbsoluteX(num)))
-		}
-
-		// DEX instruction
-		[0xCA, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::DEX)
-		}
-
-		// DEY instruction
-		[0x88, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::DEY)
-		}
-
-		// EOR instructions
-		[0x49, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::EOR(EOR::Immediate(*imm)))
-		}
-		[0x45, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::EOR(EOR::ZeroPage(*adr)))
-		}
-		[0x55, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::EOR(EOR::ZeroPageX(*adr)))
-		}
-		[0x4D, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::EOR(EOR::Absolute(num)))
-		}
-		[0x5D, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::EOR(EOR::AbsoluteX(num)))
-		}
-		[0x59, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::EOR(EOR::AbsoluteY(num)))
-		}
-		[0x41, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::EOR(EOR::IndirectX(*adr)))
-		}
-		[0x51, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::EOR(EOR::IndirectY(*adr)))
-		}
-
-		// INC instructions
-		[0xE6, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::INC(INC::ZeroPage(*adr)))
-		}
-		[0xF6, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::INC(INC::ZeroPageX(*adr)))
-		}
-		[0xEE, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::INC(INC::Absolute(num)))
-		}
-		[0xFE, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::INC(INC::AbsoluteX(num)))
-		}
-
-		// INX instruction
-		[0xE8, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::INX)
-		}
-
-		// INY instruction
-		[0xC8, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::INY)
-		}
-
-		// JMP instructions
-		[0x4C, lo, hi, rest @ ..] => {
-			*code = rest;
-			let x = u16::from_le_bytes([*lo, *hi]);
-			Ok(Inst::JMP(JMP::Absolute(x)))
-		}
-		[0x6C, lo, hi, rest @ ..] => {
-			*code = rest;
-			let x = u16::from_le_bytes([*lo, *hi]);
-			Ok(Inst::JMP(JMP::Indirect(x)))
-		}
-
-		// JSR instruction
-		[0x20, lo, hi, rest @ ..] => {
-			*code = rest;
-			let x = u16::from_le_bytes([*lo, *hi]);
-			Ok(Inst::JSR(x))
-		}
-
-		// LDA instructions
-		[0xA9, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LDA(LDA::Immediate(*imm)))
-		}
-		[0xA5, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LDA(LDA::ZeroPage(*adr)))
-		}
-		[0xB5, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LDA(LDA::ZeroPageX(*adr)))
-		}
-		[0xAD, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::LDA(LDA::Absolute(num)))
-		}
-		[0xBD, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::LDA(LDA::AbsoluteX(num)))
-		}
-		[0xB9, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::LDA(LDA::AbsoluteY(num)))
-		}
-		[0xA1, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LDA(LDA::IndirectX(*adr)))
-		}
-		[0xB1, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LDA(LDA::IndirectY(*adr)))
-		}
-
-		// LDX instructions
-		[0xA2, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LDX(LDX::Immediate(*imm)))
-		}
-		[0xA6, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LDX(LDX::ZeroPage(*adr)))
-		}
-		[0xB6, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LDX(LDX::ZeroPageY(*adr)))
-		}
-		[0xAE, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::LDX(LDX::Absolute(num)))
-		}
-		[0xBE, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::LDX(LDX::AbsoluteY(num)))
-		}
-
-		// LDY instructions
-		[0xA0, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LDY(LDY::Immediate(*imm)))
-		}
-		[0xA4, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LDY(LDY::ZeroPage(*adr)))
-		}
-		[0xB4, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LDY(LDY::ZeroPageX(*adr)))
-		}
-		[0xAC, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::LDY(LDY::Absolute(num)))
-		}
-		[0xBC, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::LDY(LDY::AbsoluteX(num)))
-		}
-
-		// LSR instructions
-		[0x4A, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LSR(LSR::Accumulator))
-		}
-		[0x46, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LSR(LSR::ZeroPage(*adr)))
-		}
-		[0x56, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LSR(LSR::ZeroPageX(*adr)))
-		}
-		[0x4E, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::LSR(LSR::Absolute(num)))
-		}
-		[0x5E, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::LSR(LSR::AbsoluteX(num)))
-		}
-
-		// NOP instruction
-		[0xEA, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-
-		// ORA instructions
-		[0x09, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ORA(ORA::Immediate(*imm)))
-		}
-		[0x05, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ORA(ORA::ZeroPage(*adr)))
-		}
-		[0x15, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ORA(ORA::ZeroPageX(*adr)))
-		}
-		[0x0D, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ORA(ORA::Absolute(num)))
-		}
-		[0x1D, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ORA(ORA::AbsoluteX(num)))
-		}
-		[0x19, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ORA(ORA::AbsoluteY(num)))
-		}
-		[0x01, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ORA(ORA::IndirectX(*adr)))
-		}
-		[0x11, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ORA(ORA::IndirectY(*adr)))
-		}
-
-		// PHA instruction
-		[0x48, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::PHA)
-		}
-
-		// PHP instruction
-		[0x08, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::PHP)
-		}
-
-		// PLA instruction
-		[0x68, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::PLA)
-		}
-
-		// PLP instruction
-		[0x28, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::PLP)
-		}
-
-		// ROL instructions
-		[0x2A, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ROL(ROL::Accumulator))
-		}
-		[0x26, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ROL(ROL::ZeroPage(*adr)))
-		}
-		[0x36, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ROL(ROL::ZeroPageX(*adr)))
-		}
-		[0x2E, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ROL(ROL::Absolute(num)))
-		}
-		[0x3E, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ROL(ROL::AbsoluteX(num)))
-		}
-
-		// ROR instructions
-		[0x6A, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ROR(ROR::Accumulator))
-		}
-		[0x66, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ROR(ROR::ZeroPage(*adr)))
-		}
-		[0x76, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ROR(ROR::ZeroPageX(*adr)))
-		}
-		[0x6E, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ROR(ROR::Absolute(num)))
-		}
-		[0x7E, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ROR(ROR::AbsoluteX(num)))
-		}
-
-		// RTI instruction
-		[0x40, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::RTI)
-		}
-
-		// RTS instruction
-		[0x60, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::RTS)
-		}
-
-		// SBC instructions
-		[0xE9, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SBC(SBC::Immediate(*imm)))
-		}
-		[0xE5, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SBC(SBC::ZeroPage(*adr)))
-		}
-		[0xF5, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SBC(SBC::ZeroPageX(*adr)))
-		}
-		[0xED, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::SBC(SBC::Absolute(num)))
-		}
-		[0xFD, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::SBC(SBC::AbsoluteX(num)))
-		}
-		[0xF9, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::SBC(SBC::AbsoluteY(num)))
-		}
-		[0xE1, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SBC(SBC::IndirectX(*adr)))
-		}
-		[0xF1, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SBC(SBC::IndirectY(*adr)))
-		}
-
-		// SEC instruction
-		[0x38, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SEC)
-		}
-
-		// SED instruction
-		[0xF8, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SED)
-		}
-
-		// SEI instruction
-		[0x78, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SEI)
-		}
-
-		// STA instructions
-		[0x85, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::STA(STA::ZeroPage(*adr)))
-		}
-		[0x95, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::STA(STA::ZeroPageX(*adr)))
-		}
-		[0x8D, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::STA(STA::Absolute(num)))
-		}
-		[0x9D, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::STA(STA::AbsoluteX(num)))
-		}
-		[0x99, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::STA(STA::AbsoluteY(num)))
-		}
-		[0x81, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::STA(STA::IndirectX(*adr)))
-		}
-		[0x91, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::STA(STA::IndirectY(*adr)))
-		}
-
-		// STX instructions
-		[0x86, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::STX(STX::ZeroPage(*adr)))
-		}
-		[0x96, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::STX(STX::ZeroPageY(*adr)))
-		}
-		[0x8E, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::STX(STX::Absolute(num)))
-		}
-
-		// STY instructions
-		[0x84, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::STY(STY::ZeroPage(*adr)))
-		}
-		[0x94, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::STY(STY::ZeroPageX(*adr)))
-		}
-		[0x8C, y, x, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::STY(STY::Absolute(num)))
-		}
-
-		// TAX instruction
-		[0xAA, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::TAX)
-		}
-
-		// TAY instruction
-		[0xA8, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::TAY)
-		}
-
-		// TSX instruction
-		[0xBA, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::TSX)
-		}
-
-		// TXA instruction
-		[0x8A, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::TXA)
-		}
-
-		// TXS instruction
-		[0x9A, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::TXS)
-		}
-
-		// TYA instruction
-		[0x98, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::TYA)
-		}
-
-		// LAX instructions (unofficial)
-		[0xA7, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LAX(LAX::ZeroPage(*adr)))
-		}
-		[0xB7, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LAX(LAX::ZeroPageY(*adr)))
-		}
-		[0xAF, y, x, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::LAX(LAX::Absolute(num)))
-		}
-		[0xBF, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::LAX(LAX::AbsoluteY(num)))
-		}
-		[0xA3, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LAX(LAX::IndirectX(*adr)))
-		}
-		[0xB3, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LAX(LAX::IndirectY(*adr)))
-		}
-
-		// SAX instructions (unofficial)
-		[0x87, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SAX(SAX::ZeroPage(*adr)))
-		}
-		[0x97, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SAX(SAX::ZeroPageY(*adr)))
-		}
-		[0x8F, y, x, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::SAX(SAX::Absolute(num)))
-		}
-		[0x83, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SAX(SAX::IndirectX(*adr)))
-		}
-
-		// DCP instructions (unofficial)
-		[0xC7, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::DCP(DCP::ZeroPage(*adr)))
-		}
-		[0xD7, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::DCP(DCP::ZeroPageX(*adr)))
-		}
-		[0xCF, y, x, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::DCP(DCP::Absolute(num)))
-		}
-		[0xDF, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::DCP(DCP::AbsoluteX(num)))
-		}
-		[0xDB, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::DCP(DCP::AbsoluteY(num)))
-		}
-		[0xC3, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::DCP(DCP::IndirectX(*adr)))
-		}
-		[0xD3, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::DCP(DCP::IndirectY(*adr)))
-		}
-
-		// ISC instructions (unofficial)
-		[0xE7, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ISC(ISC::ZeroPage(*adr)))
-		}
-		[0xF7, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ISC(ISC::ZeroPageX(*adr)))
-		}
-		[0xEF, y, x, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ISC(ISC::Absolute(num)))
-		}
-		[0xFF, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ISC(ISC::AbsoluteX(num)))
-		}
-		[0xFB, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::ISC(ISC::AbsoluteY(num)))
-		}
-		[0xE3, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ISC(ISC::IndirectX(*adr)))
-		}
-		[0xF3, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ISC(ISC::IndirectY(*adr)))
-		}
-
-		// RLA instructions (unofficial)
-		[0x27, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::RLA(RLA::ZeroPage(*adr)))
-		}
-		[0x37, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::RLA(RLA::ZeroPageX(*adr)))
-		}
-		[0x2F, y, x, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::RLA(RLA::Absolute(num)))
-		}
-		[0x3F, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::RLA(RLA::AbsoluteX(num)))
-		}
-		[0x3B, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::RLA(RLA::AbsoluteY(num)))
-		}
-		[0x23, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::RLA(RLA::IndirectX(*adr)))
-		}
-		[0x33, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::RLA(RLA::IndirectY(*adr)))
-		}
-
-		// RRA instructions (unofficial)
-		[0x67, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::RRA(RRA::ZeroPage(*adr)))
-		}
-		[0x77, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::RRA(RRA::ZeroPageX(*adr)))
-		}
-		[0x6F, y, x, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::RRA(RRA::Absolute(num)))
-		}
-		[0x7F, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::RRA(RRA::AbsoluteX(num)))
-		}
-		[0x7B, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::RRA(RRA::AbsoluteY(num)))
-		}
-		[0x63, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::RRA(RRA::IndirectX(*adr)))
-		}
-		[0x73, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::RRA(RRA::IndirectY(*adr)))
-		}
-
-		// SLO instructions (unofficial)
-		[0x07, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SLO(SLO::ZeroPage(*adr)))
-		}
-		[0x17, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SLO(SLO::ZeroPageX(*adr)))
-		}
-		[0x0F, y, x, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::SLO(SLO::Absolute(num)))
-		}
-		[0x1F, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::SLO(SLO::AbsoluteX(num)))
-		}
-		[0x1B, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::SLO(SLO::AbsoluteY(num)))
-		}
-		[0x03, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SLO(SLO::IndirectX(*adr)))
-		}
-		[0x13, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SLO(SLO::IndirectY(*adr)))
-		}
-
-		// SRE instructions (unofficial)
-		[0x47, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SRE(SRE::ZeroPage(*adr)))
-		}
-		[0x57, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SRE(SRE::ZeroPageX(*adr)))
-		}
-		[0x4F, y, x, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::SRE(SRE::Absolute(num)))
-		}
-		[0x5F, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::SRE(SRE::AbsoluteX(num)))
-		}
-		[0x5B, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::SRE(SRE::AbsoluteY(num)))
-		}
-		[0x43, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SRE(SRE::IndirectX(*adr)))
-		}
-		[0x53, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SRE(SRE::IndirectY(*adr)))
-		}
-
-		// ANC instructions (unofficial)
-		[0x0B, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ANC(*imm))
-		}
-		[0x2B, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ANC(*imm))
-		}
-
-		// ALR instructions (unofficial)
-		[0x4B, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ALR(*imm))
-		}
-
-		// ARR instructions (unofficial)
-		[0x6B, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::ARR(*imm))
-		}
-
-		// AXS instructions (unofficial)
-		[0xCB, imm, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::AXS(*imm))
-		}
-
-		// LAS instructions (unofficial)
-		[0xBB, x, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::LAS(*x))
-		}
-
-		// TAS instructions (unofficial)
-		[0x9B, x, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::TAS(*x))
-		}
-
-		// SHY instructions (unofficial)
-		[0x9C, x, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SHY(*x))
-		}
-
-		// SHX instructions (unofficial)
-		[0x9E, x, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::SHX(*x))
-		}
-
-		// AHX instructions (unofficial)
-		[0x9F, x, y, rest @ ..] => {
-			*code = rest;
-			let num = u16::from_le_bytes([*x, *y]);
-			Ok(Inst::AHX(AHX::AbsoluteY(num)))
-		}
-		[0x93, adr, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::AHX(AHX::IndirectY(*adr)))
-		}
-
-		// NOP instructions (unofficial)
-		[0x1A, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x3A, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x5A, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x7A, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xDA, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xFA, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-
-		// Generated invalid op-codes, to be looked up later
-		[0x02, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x04, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x0C, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x12, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x14, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x1C, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x22, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x32, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x34, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x3C, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x42, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x44, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x52, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x54, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x5C, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x62, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x64, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x72, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x74, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x7C, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x80, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x82, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x89, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x8B, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0x92, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xAB, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xB2, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xC2, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xD2, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xD4, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xDC, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xE2, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xEB, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xF2, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xF4, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-		[0xFC, rest @ ..] => {
-			*code = rest;
-			Ok(Inst::NOP)
-		}
-
-		// Default case - unknown instruction
-		x => bail!("Unknown opcode: {:02x?}", &x),
+	if code.len() < size_of::<Inst>() {
+		bail!("Not enough memory to read an instruction");
 	}
+	let mut copy = [0u8; size_of::<Inst>()];
+	copy.copy_from_slice(&code[..size_of::<Inst>()]);
+	Ok(unsafe { std::mem::transmute(copy) })
 }
 
 #[cfg(test)]

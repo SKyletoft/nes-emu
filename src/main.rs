@@ -65,13 +65,7 @@ fn main() {
 
 #[cfg(test)]
 mod test {
-	use crate::{
-		cpu::P,
-		drawing,
-		inst::{Inst, LDA, STA},
-		interpret::State,
-		nes_file::Mapper,
-	};
+	use crate::{cpu::P, drawing, inst::Inst, interpret::State, nes_file::Mapper};
 
 	#[test]
 	fn smb3_first_few() {
@@ -83,15 +77,15 @@ mod test {
 		state.next();
 		assert_eq!(state.next_inst(), Inst::CLD);
 		state.next();
-		assert_eq!(state.next_inst(), Inst::LDA(LDA::Immediate(0)));
+		assert_eq!(state.next_inst(), Inst::LDAImmediate(0));
 		assert_eq!(state.cpu.a, 0);
 		assert!(!state.cpu.p.contains(P::D)); // A bit late for some reason
 		state.next();
-		assert_eq!(state.next_inst(), Inst::STA(STA::Absolute(0x2001)));
+		assert_eq!(state.next_inst(), Inst::STAAbsolute(0x2001u16.into()));
 		state.next();
-		assert_eq!(state.next_inst(), Inst::LDA(LDA::Immediate(8)));
+		assert_eq!(state.next_inst(), Inst::LDAImmediate(8));
 		state.next();
-		assert_eq!(state.next_inst(), Inst::STA(STA::Absolute(0x2000)));
+		assert_eq!(state.next_inst(), Inst::STAAbsolute(0x2000u16.into()));
 		assert_eq!(state.cpu.a, 8);
 		assert_eq!(state.cpu.pc, 0xFF49);
 		assert_eq!(state.cpu.s, 0xFD);
@@ -108,7 +102,7 @@ mod test {
 		// Wait for PPU to init...
 		for i in 0..(25559 / 2) {
 			assert_eq!(state.cpu.pc, 0xFF4E);
-			assert_eq!(state.next_inst(), Inst::LDA(LDA::Absolute(0x2002)));
+			assert_eq!(state.next_inst(), Inst::LDAAbsolute(0x2002u16.into()));
 			state.next();
 			assert_eq!(state.cpu.pc, 0xFF51);
 			assert_eq!(state.next_inst(), Inst::BPL(-5), "Loop: {i}");
