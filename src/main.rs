@@ -1,10 +1,10 @@
 mod cpu;
+mod drawing;
 mod evaluate_instruction;
 mod inst;
 mod interpret;
 mod nes_file;
 mod ppu;
-mod drawing;
 
 use interpret::State;
 use nes_file::Mapper;

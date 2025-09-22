@@ -45,6 +45,9 @@ typedef struct {
 	Ppu ppu;
 	/* Mapper */ void *rom;
 	uint8_t ram[2048];
+	uint8_t bus;
+	/* Arc<Mutex<Bitmap>> */void *output_texture;
+	/* Bitmap */ uint8_t current_texture[240][256];
 } State;
 
 uint8_t state_get_mem(State *state, uint16_t adr);

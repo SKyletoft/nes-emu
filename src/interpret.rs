@@ -1,5 +1,8 @@
+use std::sync::{Arc, Mutex};
+
 use crate::{
 	cpu::{Cpu, P},
+	drawing::{self, Bitmap},
 	inst::{self, Inst},
 	nes_file::Mapper,
 	ppu::Ppu,
@@ -13,6 +16,8 @@ pub struct State {
 	pub rom: Box<Mapper>,
 	pub ram: [u8; 2048],
 	pub bus: u8,
+	pub output_texture: Arc<Mutex<Bitmap>>,
+	pub current_texture: Bitmap,
 }
 
 #[unsafe(no_mangle)]
@@ -28,7 +33,7 @@ pub unsafe fn state_set_mem(ptr: *mut State, adr: u16, val: u8) {
 }
 
 impl State {
-	pub fn new(rom: Box<Mapper>) -> Self {
+	pub fn new(rom: Box<Mapper>, output_texture: Arc<Mutex<Bitmap>>) -> Self {
 		let pc = u16::from_le_bytes([
 			rom.get_cpu(0xFFFC).expect("Cannot read reset vector"),
 			rom.get_cpu(0xFFFD).expect("Cannot read reset vector (2)"),
@@ -46,6 +51,7 @@ impl State {
 		let ram = [0; 2048];
 		let ppu = Ppu::default();
 		let bus = 0;
+		let current_texture = drawing::empty_bitmap();
 
 		Self {
 			cpu,
@@ -53,6 +59,8 @@ impl State {
 			rom,
 			ram,
 			bus,
+			output_texture,
+			current_texture,
 		}
 	}
 
