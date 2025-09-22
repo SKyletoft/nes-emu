@@ -6,6 +6,9 @@ mod interpret;
 mod nes_file;
 mod ppu;
 
+use std::sync::{Arc, Mutex};
+
+use drawing::Bitmap;
 use interpret::State;
 use nes_file::Mapper;
 
@@ -31,11 +34,7 @@ fn display(state: &State) {
 	println!("Next: {inst:X?}");
 }
 
-fn main() {
-	let shared_texture = drawing::new_bitmap();
-	let texture_ptr = shared_texture.clone();
-	let _sdl = std::thread::spawn(|| drawing::sdl_thread(texture_ptr));
-
+fn emulation_loop(shared_texture: Arc<Mutex<Bitmap>>) {
 	let path = std::env::args()
 		.nth(1)
 		.unwrap_or_else(|| "../non-free/SMB3.nes".into());
@@ -52,8 +51,16 @@ fn main() {
 		buf.clear();
 		std::io::stdin().read_line(&mut buf).unwrap();
 	}
+}
 
-	_sdl.join().unwrap().unwrap();
+fn main() {
+	let shared_texture = drawing::new_bitmap();
+
+	let texture_ptr = shared_texture.clone();
+	let _emulation = std::thread::spawn(|| emulation_loop(texture_ptr));
+	drawing::sdl_thread(shared_texture).unwrap();
+
+	_emulation.join().unwrap();
 }
 
 #[cfg(test)]
