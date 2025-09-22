@@ -1,8 +1,5 @@
 use sdl2::{event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect};
-use std::{
-	sync::{Arc, atomic::AtomicPtr},
-	time::Duration,
-};
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct Colour {
@@ -12,17 +9,20 @@ pub struct Colour {
 	alpha: u8,
 }
 
-const WIDTH: usize = 256;
-const HEIGHT: usize = 240;
+pub const WIDTH: usize = 256;
+pub const HEIGHT: usize = 240;
 
 pub type Bitmap = [[Colour; WIDTH]; HEIGHT];
 
-pub fn main() {
-	let texture = Arc::new(Box::new([[Colour::default(); _]; _]));
-	sdl_thread(texture);
+pub fn empty_bitmap() -> Bitmap {
+	[[Colour::default(); _]; _]
 }
 
-pub fn sdl_thread(texture: Arc<Box<Bitmap>>) -> Result<(), String> {
+pub fn new_bitmap() -> Arc<Mutex<Bitmap>> {
+	Arc::new(Mutex::new(empty_bitmap()))
+}
+
+pub fn sdl_thread(texture_ptr: Arc<Mutex<Bitmap>>) -> Result<(), String> {
 	let sdl_context = sdl2::init()?;
 	let video_subsystem = sdl_context.video()?;
 
@@ -44,17 +44,19 @@ pub fn sdl_thread(texture: Arc<Box<Bitmap>>) -> Result<(), String> {
 		.create_texture_streaming(PixelFormatEnum::ARGB8888, WIDTH as _, HEIGHT as _)
 		.map_err(|e| e.to_string())?;
 
-	// Fill texture pixel by pixel
 	texture.with_lock(None, |buffer: &mut [u8], pitch: usize| {
-		for y in 0..HEIGHT {
-			for x in 0..WIDTH {
-				let offset = y * pitch + x * 4;
-				// Simple gradient pattern
-				buffer[offset] = x as u8; // B
-				buffer[offset + 1] = y as u8; // G
-				buffer[offset + 2] = 128; // R
-				buffer[offset + 3] = 255; // A
-			}
+		let texture_ptr = texture_ptr
+			.lock()
+			.expect("Mutex poisoned, not dealing with that");
+		for (src, dst) in texture_ptr
+			.iter()
+			.flat_map(|line| line.iter())
+			.zip(buffer.chunks_mut(4))
+		{
+			dst[0] = src.alpha;
+			dst[1] = src.red;
+			dst[2] = src.green;
+			dst[3] = src.blue;
 		}
 	})?;
 
