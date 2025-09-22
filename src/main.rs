@@ -32,30 +32,35 @@ fn display(state: &State) {
 }
 
 fn main() {
-	// let path = std::env::args()
-	//	.nth(1)
-	//	.unwrap_or_else(|| "../non-free/SMB3.nes".into());
-	// dbg!(&path);
-	// let buffer = std::fs::read(path).unwrap();
-	// let game = Mapper::parse_ines(buffer).unwrap();
-	// let mut system_state = State::new(game);
+	let shared_texture = drawing::new_bitmap();
+	let texture_ptr = shared_texture.clone();
+	let _sdl = std::thread::spawn(|| drawing::sdl_thread(texture_ptr));
 
-	// let mut buf = String::new();
-	// loop {
-	//	system_state.next();
+	let path = std::env::args()
+		.nth(1)
+		.unwrap_or_else(|| "../non-free/SMB3.nes".into());
+	dbg!(&path);
+	let buffer = std::fs::read(path).unwrap();
+	let game = Mapper::parse_ines(buffer).unwrap();
+	let mut system_state = State::new(game, shared_texture);
 
-	//	display(&system_state);
-	//	buf.clear();
-	//	std::io::stdin().read_line(&mut buf).unwrap();
-	// }
+	let mut buf = String::new();
+	loop {
+		system_state.next();
 
-	drawing::main();
+		display(&system_state);
+		buf.clear();
+		std::io::stdin().read_line(&mut buf).unwrap();
+	}
+
+	_sdl.join().unwrap().unwrap();
 }
 
 #[cfg(test)]
 mod test {
 	use crate::{
 		cpu::P,
+		drawing,
 		inst::{Inst, LDA, STA},
 		interpret::State,
 		nes_file::Mapper,
@@ -65,7 +70,7 @@ mod test {
 	fn smb3_first_few() {
 		let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
 		let game = Mapper::parse_ines(buffer).unwrap();
-		let mut state = State::new(game);
+		let mut state = State::new(game, drawing::new_bitmap());
 		assert_eq!(state.next_inst(), Inst::SEI);
 		assert_eq!(state.cpu.pc, 0xFF40);
 		state.next();
@@ -89,7 +94,7 @@ mod test {
 	fn smb3_first_jsr() {
 		let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
 		let game = Mapper::parse_ines(buffer).unwrap();
-		let mut state = State::new(game);
+		let mut state = State::new(game, drawing::new_bitmap());
 		for _ in 0..7 {
 			state.next();
 		}
