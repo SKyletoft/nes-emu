@@ -40,14 +40,16 @@ typedef struct {
 	uint8_t data;
 } Ppu;
 
+typedef uint8_t Bitmap[240][256];
+
 typedef struct {
 	Cpu cpu;
 	Ppu ppu;
 	/* Mapper */ void *rom;
 	uint8_t ram[2048];
 	uint8_t bus;
-	/* Arc<Mutex<Bitmap>> */void *output_texture;
-	/* Bitmap */ uint8_t current_texture[240][256];
+	/* Arc<Mutex<Bitmap>> */ void *output_texture;
+	Bitmap current_texture;
 } State;
 
 uint8_t state_get_mem(State *state, uint16_t adr);
