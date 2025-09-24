@@ -4,6 +4,7 @@
 -Wexta
 -Wpedantic
 -Wno-unused-parameter
+-Wno-extra-semi
 -Wfloat-equal
 -Wcast-align
 -Wzero-as-null-pointer-constant

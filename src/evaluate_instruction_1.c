@@ -14,14 +14,14 @@ void adc_impl(State *state, uint8_t val) {
 	state->cpu.a   = (uint8_t) res;
 }
 
-IMMEDIATE(adc)
-ZERO_PAGE(adc)
-ZERO_PAGE_X(adc)
-ABSOLUTE(adc)
-ABSOLUTE_X(adc)
-ABSOLUTE_Y(adc)
-INDIRECT_X(adc)
-INDIRECT_Y(adc)
+IMMEDIATE(adc);
+ZERO_PAGE(adc);
+ZERO_PAGE_X(adc);
+ABSOLUTE(adc);
+ABSOLUTE_X(adc);
+ABSOLUTE_Y(adc);
+INDIRECT_X(adc);
+INDIRECT_Y(adc);
 
 void and_impl(State *state, uint8_t val) {
 	state->cpu.a &= val;
@@ -29,14 +29,14 @@ void and_impl(State *state, uint8_t val) {
 	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-IMMEDIATE(and)
-ZERO_PAGE(and)
-ZERO_PAGE_X(and)
-ABSOLUTE(and)
-ABSOLUTE_X(and)
-ABSOLUTE_Y(and)
-INDIRECT_X(and)
-INDIRECT_Y(and)
+IMMEDIATE(and);
+ZERO_PAGE(and);
+ZERO_PAGE_X(and);
+ABSOLUTE(and);;
+ABSOLUTE_X(and);
+ABSOLUTE_Y(and);
+INDIRECT_X(and);
+INDIRECT_Y(and);
 
 void asl_impl(State *state, uint8_t *val) {
 	state->cpu.p.C = (*val & 0x80) >> 7;
@@ -45,11 +45,11 @@ void asl_impl(State *state, uint8_t *val) {
 	state->cpu.p.N = (*val & 0x80) >> 7;
 }
 
-ACCUMULATOR(asl)
-ZERO_PAGE_RMW(asl)
-ZERO_PAGE_X_RMW(asl)
-ABSOLUTE_RMW(asl)
-ABSOLUTE_X_RMW(asl)
+ACCUMULATOR(asl);
+ZERO_PAGE_RMW(asl);
+ZERO_PAGE_X_RMW(asl);
+ABSOLUTE_RMW(asl);
+ABSOLUTE_X_RMW(asl);
 
 void bcc(State *state, int8_t offset) {
 	if (!state->cpu.p.C) {
@@ -78,8 +78,8 @@ void bit_impl(State *state, uint8_t val) {
 	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-ZERO_PAGE(bit)
-ABSOLUTE(bit)
+ZERO_PAGE(bit);
+ABSOLUTE(bit);
 
 void bmi(State *state, int8_t offset) {
 	if (state->cpu.p.N) {

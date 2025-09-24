@@ -24,14 +24,14 @@ void cmp_impl(State *state, uint8_t val) {
 	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
-IMMEDIATE(cmp)
-ZERO_PAGE(cmp)
-ZERO_PAGE_X(cmp)
-ABSOLUTE(cmp)
-ABSOLUTE_X(cmp)
-ABSOLUTE_Y(cmp)
-INDIRECT_X(cmp)
-INDIRECT_Y(cmp)
+IMMEDIATE(cmp);
+ZERO_PAGE(cmp);
+ZERO_PAGE_X(cmp);
+ABSOLUTE(cmp);
+ABSOLUTE_X(cmp);
+ABSOLUTE_Y(cmp);
+INDIRECT_X(cmp);
+INDIRECT_Y(cmp);
 
 void cpx_impl(State *state, uint8_t val) {
 	uint16_t res   = (uint16_t) state->cpu.x - (uint16_t) val;
@@ -40,9 +40,9 @@ void cpx_impl(State *state, uint8_t val) {
 	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
-IMMEDIATE(cpx)
-ZERO_PAGE(cpx)
-ABSOLUTE(cpx)
+IMMEDIATE(cpx);
+ZERO_PAGE(cpx);
+ABSOLUTE(cpx);
 
 void cpy_impl(State *state, uint8_t val) {
 	uint16_t res   = (uint16_t) state->cpu.y - (uint16_t) val;
@@ -51,9 +51,9 @@ void cpy_impl(State *state, uint8_t val) {
 	state->cpu.p.N = (res & 0x80) >> 7;
 }
 
-IMMEDIATE(cpy)
-ZERO_PAGE(cpy)
-ABSOLUTE(cpy)
+IMMEDIATE(cpy);
+ZERO_PAGE(cpy);
+ABSOLUTE(cpy);
 
 void dec_impl(State *state, uint8_t val) {
 	val--;
@@ -61,10 +61,10 @@ void dec_impl(State *state, uint8_t val) {
 	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-ZERO_PAGE(dec)
-ZERO_PAGE_X(dec)
-ABSOLUTE(dec)
-ABSOLUTE_X(dec)
+ZERO_PAGE(dec);
+ZERO_PAGE_X(dec);
+ABSOLUTE(dec);
+ABSOLUTE_X(dec);
 
 void dex(State *state) {
 	state->cpu.x--;
@@ -86,14 +86,14 @@ void eor_impl(State *state, uint8_t val) {
 	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 }
 
-IMMEDIATE(eor)
-ZERO_PAGE(eor)
-ZERO_PAGE_X(eor)
-ABSOLUTE(eor)
-ABSOLUTE_X(eor)
-ABSOLUTE_Y(eor)
-INDIRECT_X(eor)
-INDIRECT_Y(eor)
+IMMEDIATE(eor);
+ZERO_PAGE(eor);
+ZERO_PAGE_X(eor);
+ABSOLUTE(eor);
+ABSOLUTE_X(eor);
+ABSOLUTE_Y(eor);
+INDIRECT_X(eor);
+INDIRECT_Y(eor);
 
 void inc_impl(State *state, uint8_t val) {
 	val++;
@@ -101,10 +101,10 @@ void inc_impl(State *state, uint8_t val) {
 	state->cpu.p.N = (val & 0x80) >> 7;
 }
 
-ZERO_PAGE(inc)
-ZERO_PAGE_X(inc)
-ABSOLUTE(inc)
-ABSOLUTE_X(inc)
+ZERO_PAGE(inc);
+ZERO_PAGE_X(inc);
+ABSOLUTE(inc);
+ABSOLUTE_X(inc);
 
 void inx(State *state) {
 	state->cpu.x++;

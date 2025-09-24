@@ -9,14 +9,14 @@ void lda_impl(State *state, uint8_t val) {
 	state->cpu.p.N = (uint8_t) ((state->cpu.a & 0x80) >> 7);
 }
 
-IMMEDIATE(lda)
-ZERO_PAGE(lda)
-ZERO_PAGE_X(lda)
-ABSOLUTE(lda)
-ABSOLUTE_X(lda)
-ABSOLUTE_Y(lda)
-INDIRECT_X(lda)
-INDIRECT_Y(lda)
+IMMEDIATE(lda);
+ZERO_PAGE(lda);
+ZERO_PAGE_X(lda);
+ABSOLUTE(lda);
+ABSOLUTE_X(lda);
+ABSOLUTE_Y(lda);
+INDIRECT_X(lda);
+INDIRECT_Y(lda);
 
 void ldx_impl(State *state, uint8_t val) {
 	state->cpu.x   = val;
@@ -24,11 +24,11 @@ void ldx_impl(State *state, uint8_t val) {
 	state->cpu.p.N = (uint8_t) ((state->cpu.x & 0x80) >> 7);
 }
 
-IMMEDIATE(ldx)
-ZERO_PAGE(ldx)
-ZERO_PAGE_Y(ldx)
-ABSOLUTE(ldx)
-ABSOLUTE_Y(ldx)
+IMMEDIATE(ldx);
+ZERO_PAGE(ldx);
+ZERO_PAGE_Y(ldx);
+ABSOLUTE(ldx);
+ABSOLUTE_Y(ldx);
 
 void ldy_impl(State *state, uint8_t val) {
 	state->cpu.y   = val;
@@ -36,11 +36,11 @@ void ldy_impl(State *state, uint8_t val) {
 	state->cpu.p.N = (uint8_t) ((state->cpu.y & 0x80) >> 7);
 }
 
-IMMEDIATE(ldy)
-ZERO_PAGE(ldy)
-ZERO_PAGE_X(ldy)
-ABSOLUTE(ldy)
-ABSOLUTE_X(ldy)
+IMMEDIATE(ldy);
+ZERO_PAGE(ldy);
+ZERO_PAGE_X(ldy);
+ABSOLUTE(ldy);
+ABSOLUTE_X(ldy);
 
 void lsr_impl(State *state, uint8_t* val) {
 	state->cpu.p.C = (uint8_t) (*val & 0x01);
@@ -49,11 +49,11 @@ void lsr_impl(State *state, uint8_t* val) {
 	state->cpu.p.N = (uint8_t) ((*val & 0x80) >> 7);
 }
 
-ACCUMULATOR(lsr)
-ZERO_PAGE_RMW(lsr)
-ZERO_PAGE_X_RMW(lsr)
-ABSOLUTE_RMW(lsr)
-ABSOLUTE_X_RMW(lsr)
+ACCUMULATOR(lsr);
+ZERO_PAGE_RMW(lsr);
+ZERO_PAGE_X_RMW(lsr);
+ABSOLUTE_RMW(lsr);
+ABSOLUTE_X_RMW(lsr);
 
 void ora_impl(State *state, uint8_t val) {
 	state->cpu.a |= val;
@@ -61,14 +61,14 @@ void ora_impl(State *state, uint8_t val) {
 	state->cpu.p.N = (uint8_t) ((state->cpu.a & 0x80) >> 7);
 }
 
-IMMEDIATE(ora)
-ZERO_PAGE(ora)
-ZERO_PAGE_X(ora)
-ABSOLUTE(ora)
-ABSOLUTE_X(ora)
-ABSOLUTE_Y(ora)
-INDIRECT_X(ora)
-INDIRECT_Y(ora)
+IMMEDIATE(ora);
+ZERO_PAGE(ora);
+ZERO_PAGE_X(ora);
+ABSOLUTE(ora);
+ABSOLUTE_X(ora);
+ABSOLUTE_Y(ora);
+INDIRECT_X(ora);
+INDIRECT_Y(ora);
 
 void pha(State *state) {
 	state_set_mem(state, (uint16_t) (state->cpu.s + 0x100), state->cpu.a);
@@ -102,11 +102,11 @@ void rol_impl(State *state, uint8_t *val) {
 	state->cpu.p.N = (uint8_t) ((*val & 0x80) >> 7);
 }
 
-ACCUMULATOR(rol)
-ZERO_PAGE_RMW(rol)
-ZERO_PAGE_X_RMW(rol)
-ABSOLUTE_RMW(rol)
-ABSOLUTE_X_RMW(rol)
+ACCUMULATOR(rol);
+ZERO_PAGE_RMW(rol);
+ZERO_PAGE_X_RMW(rol);
+ABSOLUTE_RMW(rol);
+ABSOLUTE_X_RMW(rol);
 
 void ror_impl(State *state, uint8_t *val) {
 	uint8_t carry  = state->cpu.p.C;
@@ -116,8 +116,8 @@ void ror_impl(State *state, uint8_t *val) {
 	state->cpu.p.N = (uint8_t) ((*val & 0x80) >> 7);
 }
 
-ACCUMULATOR(ror)
-ZERO_PAGE_RMW(ror)
-ZERO_PAGE_X_RMW(ror)
-ABSOLUTE_RMW(ror)
-ABSOLUTE_X_RMW(ror)
+ACCUMULATOR(ror);
+ZERO_PAGE_RMW(ror);
+ZERO_PAGE_X_RMW(ror);
+ABSOLUTE_RMW(ror);
+ABSOLUTE_X_RMW(ror);
