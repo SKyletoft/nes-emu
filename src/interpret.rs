@@ -70,7 +70,7 @@ impl State {
 			self.mem_pure(self.cpu.pc + 1),
 			self.mem_pure(self.cpu.pc + 2),
 		];
-		inst::parse_instruction(code)
+		code.into()
 	}
 
 	pub fn next_step(mut self) -> Self {

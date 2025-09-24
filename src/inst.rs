@@ -304,6 +304,15 @@ const _: () = {
 	assert!(3 == size_of::<Inst>());
 };
 
+impl From<[u8; 3]> for Inst {
+	fn from(code: [u8; 3]) -> Self {
+		// This could be a huge match statement, but I checked that LLVM could optimise that to the
+		// same thing and then went with the more readable version:
+		// https://godbolt.org/z/eM74c6EEs
+		unsafe { std::mem::transmute::<[u8; size_of::<Inst>()], Inst>(code) }
+	}
+}
+
 impl Inst {
 	pub fn ends_bb(&self) -> bool {
 		match self {
@@ -805,11 +814,4 @@ impl Inst {
 			_ => todo!("No support for unofficial instructions yet"),
 		}
 	}
-}
-
-pub fn parse_instruction(code: [u8; 3]) -> Inst {
-	// This could be a huge match statement, but I checked that LLVM could optimise that to the
-	// same thing and then went with the more readable version:
-	// https://godbolt.org/z/eM74c6EEs
-	unsafe { std::mem::transmute::<[u8; size_of::<Inst>()], Inst>(code) }
 }
