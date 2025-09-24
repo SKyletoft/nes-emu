@@ -70,8 +70,7 @@ impl State {
 			self.mem_pure(self.cpu.pc + 1),
 			self.mem_pure(self.cpu.pc + 2),
 		];
-		inst::parse_instruction(&code)
-			.expect("Instruction parse can only fail if there aren't enough operands")
+		inst::parse_instruction(code)
 	}
 
 	pub fn next_step(mut self) -> Self {

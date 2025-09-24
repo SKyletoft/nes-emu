@@ -807,25 +807,9 @@ impl Inst {
 	}
 }
 
-pub fn parse_instruction(code: &[u8]) -> Result<Inst> {
-	if code.len() < size_of::<Inst>() {
-		bail!("Not enough memory to read an instruction");
-	}
-	let mut copy = [0u8; size_of::<Inst>()];
-	copy.copy_from_slice(&code[..size_of::<Inst>()]);
-	Ok(unsafe { std::mem::transmute(copy) })
-}
-
-#[cfg(test)]
-mod test {
-	use super::*;
-	#[test]
-	fn all_opcodes_parse() {
-		let mut buf = [0, 0, 0];
-		for byte in u8::MIN..=u8::MAX {
-			buf[0] = byte;
-			let res = parse_instruction(&buf);
-			assert!(res.is_ok());
-		}
-	}
+pub fn parse_instruction(code: [u8; 3]) -> Inst {
+	// This could be a huge match statement, but I checked that LLVM could optimise that to the
+	// same thing and then went with the more readable version:
+	// https://godbolt.org/z/eM74c6EEs
+	unsafe { std::mem::transmute::<[u8; size_of::<Inst>()], Inst>(code) }
 }
