@@ -122,11 +122,11 @@ impl Mapper {
 				Ok(mapper)
 			}
 			0 if *prg_size == 2 => {
-				let mut mapper = Box::new(Mapper::NROM128 {
+				let mut mapper = Box::new(Mapper::NROM256 {
 					ram: [0; _],
 					rom: [0; _],
 				});
-				let Mapper::NROM128 { rom, .. } = &mut *mapper else {
+				let Mapper::NROM256 { rom, .. } = &mut *mapper else {
 					unreachable!()
 				};
 				rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
