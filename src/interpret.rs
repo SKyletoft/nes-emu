@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use crate::{
 	cpu::{Cpu, P},
 	drawing::{self, Bitmap},
-	inst::{self, Inst},
+	inst::Inst,
 	nes_file::Mapper,
 	ppu::Ppu,
 };

@@ -315,22 +315,21 @@ impl From<[u8; 3]> for Inst {
 
 impl Inst {
 	pub fn ends_bb(&self) -> bool {
-		match self {
-			Inst::Bcc(..) => true,
-			Inst::Bcs(..) => true,
-			Inst::Beq(..) => true,
-			Inst::Bmi(..) => true,
-			Inst::Bne(..) => true,
-			Inst::Bpl(..) => true,
-			Inst::Bvc(..) => true,
-			Inst::Bvs(..) => true,
-			Inst::JmpIndirect(..) => true,
-			Inst::JmpAbsolute(..) => true,
-			Inst::Jsr(..) => true,
-			Inst::Rti => true,
-			Inst::Rts => true,
-			_ => false,
-		}
+		matches!(
+			self,
+			Inst::Bcc(..)
+				| Inst::Bcs(..)
+				| Inst::Beq(..)
+				| Inst::Bmi(..)
+				| Inst::Bne(..)
+				| Inst::Bpl(..)
+				| Inst::Bvc(..)
+				| Inst::Bvs(..)
+				| Inst::JmpIndirect(..)
+				| Inst::JmpAbsolute(..)
+				| Inst::Jsr(..)
+				| Inst::Rti | Inst::Rts
+		)
 	}
 
 	pub fn len(&self) -> u8 {

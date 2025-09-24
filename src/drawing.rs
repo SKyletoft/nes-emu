@@ -44,7 +44,7 @@ pub fn sdl_thread(texture_ptr: Arc<Mutex<Bitmap>>) -> Result<(), String> {
 		.create_texture_streaming(PixelFormatEnum::ARGB8888, WIDTH as _, HEIGHT as _)
 		.map_err(|e| e.to_string())?;
 
-	texture.with_lock(None, |buffer: &mut [u8], pitch: usize| {
+	texture.with_lock(None, |buffer: &mut [u8], _: usize| {
 		let texture_ptr = texture_ptr
 			.lock()
 			.expect("Mutex poisoned, not dealing with that");
