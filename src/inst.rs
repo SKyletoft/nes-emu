@@ -807,7 +807,7 @@ impl Inst {
 	}
 }
 
-pub fn parse_instruction(code: &mut &[u8]) -> Result<Inst> {
+pub fn parse_instruction(code: &[u8]) -> Result<Inst> {
 	if code.len() < size_of::<Inst>() {
 		bail!("Not enough memory to read an instruction");
 	}
@@ -821,12 +821,10 @@ mod test {
 	use super::*;
 	#[test]
 	fn all_opcodes_parse() {
-		let mut buf = [0, 0, 0, 0];
+		let mut buf = [0, 0, 0];
 		for byte in u8::MIN..=u8::MAX {
 			buf[0] = byte;
-			let mut code = buf.as_slice();
-
-			let res = parse_instruction(&mut code);
+			let res = parse_instruction(&buf);
 			assert!(res.is_ok());
 		}
 	}

@@ -65,14 +65,12 @@ impl State {
 	}
 
 	pub fn next_inst(&self) -> Inst {
-		let arr = [
+		let code = [
 			self.mem_pure(self.cpu.pc),
 			self.mem_pure(self.cpu.pc + 1),
 			self.mem_pure(self.cpu.pc + 2),
-			self.mem_pure(self.cpu.pc + 3),
 		];
-		let mut slice = arr.as_slice();
-		inst::parse_instruction(&mut slice)
+		inst::parse_instruction(&code)
 			.expect("Instruction parse can only fail if there aren't enough operands")
 	}
 
