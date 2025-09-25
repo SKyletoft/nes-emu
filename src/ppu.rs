@@ -1,7 +1,8 @@
 use bitfields::bitfield;
-use bitflags::bitflags;
 use bytemuck::{Pod, Zeroable};
 use derive_more::derive::Into;
+
+use crate::drawing::Colour;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
@@ -40,52 +41,66 @@ impl Default for Ppu {
 	}
 }
 
-pub type Vram = [u8; 2048];
 
-#[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
-pub struct Ctrl(u8);
+	}
 
-bitflags! {
-	impl Ctrl: u8 {
-		const NAMETABLE0 = 1 << 0;
-		const NAMETABLE1 = 1 << 1;
-		const VRAM_INCREMENT = 1 << 2;
-		const SPRITE_TABLE = 1 << 3;
-		const BACKGROUND_TABLE = 1 << 4;
-		const SPRITE_SIZE = 1 << 5;
-		const MASTER_SLAVE = 1 << 6;
-		const NMI_ENABLE = 1 << 7;
 	}
 }
 
-#[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
-pub struct Mask(u8);
 
-bitflags! {
-	impl Mask: u8 {
-		const GREYSCALE = 1 << 0;
-		const SHOW_BG_LEFT = 1 << 1;
-		const SHOW_SPR_LEFT = 1 << 2;
-		const SHOW_BG = 1 << 3;
-		const SHOW_SPR = 1 << 4;
-		const EMPHASISE_RED = 1 << 5;
-		const EMPHASISE_GREEN = 1 << 6;
-		const EMPHASISE_BLUE = 1 << 7;
-	}
+#[bitfield(u8)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Ctrl {
+	#[bits(1)]
+	nametable_0: bool,
+	#[bits(1)]
+	nametable_1: bool,
+	#[bits(1)]
+	_unused: bool,
+	#[bits(1)]
+	vram_increment: bool,
+	#[bits(1)]
+	background_table: bool,
+	#[bits(1)]
+	sprite_size: bool,
+	#[bits(1)]
+	master_slave: bool,
+	#[bits(1)]
+	nmi_enable: bool,
 }
 
-#[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Into)]
-pub struct Status(u8);
+#[bitfield(u8)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Mask {
+	#[bits(1)]
+	greyscale: bool,
+	#[bits(1)]
+	show_bg_left: bool,
+	#[bits(1)]
+	show_spr_left: bool,
+	#[bits(1)]
+	show_bg: bool,
+	#[bits(1)]
+	show_spr: bool,
+	#[bits(1)]
+	emphasise_red: bool,
+	#[bits(1)]
+	emphasise_green: bool,
+	#[bits(1)]
+	emphasise_blue: bool,
+}
 
-bitflags! {
-	impl Status: u8 {
-		const SPRITE_OVERFLOW = 1 << 5;
-		const SPRITE0_HIT = 1 << 6;
-		const VBLANK = 1 << 7;
-	}
+#[bitfield(u8)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Status {
+	#[bits(5)]
+	_unused: u8,
+	#[bits(1)]
+	sprite_overflow: bool,
+	#[bits(1)]
+	sprite_0_hit: bool,
+	#[bits(1)]
+	vblank: bool,
 }
 
 #[repr(transparent)]
@@ -124,7 +139,7 @@ pub struct Sprite {
 }
 
 #[bitfield(u8)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Into, Pod, Zeroable)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Pod, Zeroable)]
 pub struct SpriteAttributes {
 	#[bits(2)]
 	palette: u8,
@@ -139,7 +154,7 @@ pub struct SpriteAttributes {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Pod, Zeroable)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Pod, Zeroable, Into)]
 pub struct Oam([Sprite; 64]);
 
 impl Default for Oam {
