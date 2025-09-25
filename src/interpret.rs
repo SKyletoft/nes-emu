@@ -142,5 +142,36 @@ impl State {
 	}
 
 	pub fn step_ppu(&mut self) {
+		match (self.ppu.scanline, self.ppu.dot) {
+			(0..240, 0..255) => {
+				let mut sprites: [Sprite; 64] = self.ppu.oam.into();
+
+				// Stable sort: Primarily by x, then by prio, lastly by index.
+				sprites.sort_by(|l, r| {
+					l.x.cmp(&r.x)
+						.then(l.attr.priority().cmp(&r.attr.priority()))
+				});
+
+				let colour = sprites
+					.iter()
+					.filter(|sprite| self.ppu.sprite_is_visible_y(sprite))
+					.take(8)
+					.find(|sprite| self.ppu.sprite_is_visible_x(sprite))
+					.map(|_| todo!())
+					.unwrap_or_else(|| todo!());
+				self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour;
+			}
+			(262, 255) => {
+				self.ppu.scanline = 0;
+				self.ppu.dot = 0;
+			}
+			(240, 0) => self.set_vblank(),
+			(_, 341) => {
+				self.ppu.dot = 0;
+				self.ppu.scanline += 1;
+			}
+
+			_ => {}
+		}
 	}
 }
