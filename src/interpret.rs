@@ -2,10 +2,10 @@ use std::sync::{Arc, Mutex};
 
 use crate::{
 	cpu::{Cpu, P},
-	drawing::{self, Bitmap},
+	drawing::{self, Bitmap, Colour},
 	inst::Inst,
 	nes_file::Mapper,
-	ppu::Ppu,
+	ppu::{Ppu, Sprite},
 };
 
 // REMEMBER TO REFLECT ANY CHANGES IN `cpu.h`
@@ -30,6 +30,11 @@ pub unsafe fn state_get_mem(ptr: *mut State, adr: u16) -> u8 {
 pub unsafe fn state_set_mem(ptr: *mut State, adr: u16, val: u8) {
 	let state = unsafe { &mut *ptr };
 	state.set_mem(adr, val);
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn state_step_ppu(ptr: *mut State) {
+	unsafe { &mut *ptr }.step_ppu();
 }
 
 impl State {
@@ -134,5 +139,8 @@ impl State {
 
 	pub fn set_vblank(&mut self) {
 		todo!()
+	}
+
+	pub fn step_ppu(&mut self) {
 	}
 }
