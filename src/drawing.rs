@@ -72,6 +72,7 @@ pub fn sdl_thread(texture_ptr: Arc<Mutex<Bitmap>>) -> Result<(), String> {
 			let texture_ptr = texture_ptr
 				.lock()
 				.expect("Mutex poisoned, not dealing with that");
+			// Bytemuck can't handle nested arrays?
 			for (src, dst) in texture_ptr
 				.iter()
 				.flat_map(|line| line.iter())
