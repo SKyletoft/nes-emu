@@ -1,3 +1,4 @@
+use bitfields::bitfield;
 use bitflags::bitflags;
 use bytemuck::{Pod, Zeroable};
 use derive_more::derive::Into;
@@ -116,10 +117,25 @@ pub struct Data(u8);
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Pod, Zeroable)]
 pub struct Sprite {
-	y: u8,
-	tile: u8,
-	attr: u8,
-	x: u8,
+	pub y: u8,
+	pub tile: u8,
+	pub attr: SpriteAttributes,
+	pub x: u8,
+}
+
+#[bitfield(u8)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Into, Pod, Zeroable)]
+pub struct SpriteAttributes {
+	#[bits(2)]
+	palette: u8,
+	#[bits(3)]
+	_unused: u8,
+	#[bits(1)]
+	priority: bool,
+	#[bits(1)]
+	flip_h: bool,
+	#[bits(1)]
+	flip_v: bool,
 }
 
 #[repr(C)]
