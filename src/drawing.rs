@@ -3,10 +3,10 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct Colour {
-	red: u8,
-	green: u8,
-	blue: u8,
-	alpha: u8,
+	pub red: u8,
+	pub green: u8,
+	pub blue: u8,
+	pub alpha: u8,
 }
 
 pub const WIDTH: usize = 256;
