@@ -44,22 +44,6 @@ pub fn sdl_thread(texture_ptr: Arc<Mutex<Bitmap>>) -> Result<(), String> {
 		.create_texture_streaming(PixelFormatEnum::ARGB8888, WIDTH as _, HEIGHT as _)
 		.map_err(|e| e.to_string())?;
 
-	texture.with_lock(None, |buffer: &mut [u8], _: usize| {
-		let texture_ptr = texture_ptr
-			.lock()
-			.expect("Mutex poisoned, not dealing with that");
-		for (src, dst) in texture_ptr
-			.iter()
-			.flat_map(|line| line.iter())
-			.zip(buffer.chunks_mut(4))
-		{
-			dst[0] = src.alpha;
-			dst[1] = src.red;
-			dst[2] = src.green;
-			dst[3] = src.blue;
-		}
-	})?;
-
 	let mut event_pump = sdl_context.event_pump()?;
 
 	'running: loop {
@@ -83,6 +67,22 @@ pub fn sdl_thread(texture_ptr: Arc<Mutex<Bitmap>>) -> Result<(), String> {
 			size,
 			size,
 		);
+
+		texture.with_lock(None, |buffer: &mut [u8], _: usize| {
+			let texture_ptr = texture_ptr
+				.lock()
+				.expect("Mutex poisoned, not dealing with that");
+			for (src, dst) in texture_ptr
+				.iter()
+				.flat_map(|line| line.iter())
+				.zip(buffer.chunks_exact_mut(4))
+			{
+				dst[0] = src.alpha;
+				dst[1] = src.red;
+				dst[2] = src.green;
+				dst[3] = src.blue;
+			}
+		})?;
 
 		canvas.set_draw_color(sdl2::pixels::Color::BLACK);
 		canvas.clear();
