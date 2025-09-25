@@ -1,7 +1,8 @@
 use bitflags::bitflags;
+use bytemuck::{Pod, Zeroable};
 use derive_more::derive::Into;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 pub struct Ppu {
 	pub ctrl: Ctrl,
@@ -12,7 +13,33 @@ pub struct Ppu {
 	pub scroll: Scroll,
 	pub adr: Adr,
 	pub data: Data,
+
+	pub scanline: u16,
+	pub dot: u16,
+	pub vram: Vram,
+	pub oam: Oam,
 }
+
+impl Default for Ppu {
+	fn default() -> Self {
+		Self {
+			ctrl: Default::default(),
+			mask: Default::default(),
+			status: Default::default(),
+			oam_adr: Default::default(),
+			oam_data: Default::default(),
+			scroll: Default::default(),
+			adr: Default::default(),
+			data: Default::default(),
+			scanline: Default::default(),
+			dot: Default::default(),
+			vram: [0; _],
+			oam: Oam::zeroed(),
+		}
+	}
+}
+
+pub type Vram = [u8; 2048];
 
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
@@ -85,3 +112,22 @@ pub struct Adr {
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Into)]
 pub struct Data(u8);
+
+#[repr(C)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Pod, Zeroable)]
+pub struct Sprite {
+	y: u8,
+	tile: u8,
+	attr: u8,
+	x: u8,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Pod, Zeroable)]
+pub struct Oam([Sprite; 64]);
+
+impl Default for Oam {
+	fn default() -> Self {
+		Self::zeroed()
+	}
+}

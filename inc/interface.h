@@ -38,6 +38,11 @@ typedef struct {
 		uint8_t low;
 	} adr;
 	uint8_t data;
+
+	uint16_t scanline;
+	uint16_t dot;
+	uint8_t vram[2048];
+	uint8_t oam[256];
 } Ppu;
 
 typedef uint8_t Bitmap[240][256];
