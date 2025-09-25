@@ -57,6 +57,10 @@ impl Ppu {
 	pub fn sprite_get_colour(&self, sprite: &Sprite) -> Colour {
 		todo!()
 	}
+
+	pub fn background_get_colour(&self) -> Colour {
+		todo!()
+	}
 }
 
 pub type Vram = [u8; 2048];

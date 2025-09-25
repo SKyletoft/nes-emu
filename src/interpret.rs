@@ -157,8 +157,8 @@ impl State {
 					.filter(|sprite| self.ppu.sprite_is_visible_y(sprite))
 					.take(8)
 					.find(|sprite| self.ppu.sprite_is_visible_x(sprite))
-					.map(|_| todo!())
-					.unwrap_or_else(|| todo!());
+					.map(|s| self.ppu.sprite_get_colour(s))
+					.unwrap_or_else(|| self.ppu.background_get_colour());
 				self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour;
 			}
 			(262, 255) => {
