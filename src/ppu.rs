@@ -41,12 +41,25 @@ impl Default for Ppu {
 	}
 }
 
-
+impl Ppu {
+	pub fn sprite_is_visible_x(&self, sprite: &Sprite) -> bool {
+		self.dot <= sprite.x as u16 && (sprite.x as u16) < self.dot + self.sprite_width()
 	}
 
+	pub fn sprite_is_visible_y(&self, sprite: &Sprite) -> bool {
+		self.scanline <= sprite.y as u16 && (sprite.y as u16) < self.scanline + 8
+	}
+
+	fn sprite_width(&self) -> u16 {
+		if self.ctrl.sprite_size() { 16 } else { 8 }
+	}
+
+	pub fn sprite_get_colour(&self, sprite: &Sprite) -> Colour {
+		todo!()
 	}
 }
 
+pub type Vram = [u8; 2048];
 
 #[bitfield(u8)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
