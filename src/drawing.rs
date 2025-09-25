@@ -51,7 +51,7 @@ pub fn sdl_thread(texture_ptr: Arc<Mutex<Bitmap>>) -> Result<(), String> {
 			match event {
 				Event::Quit { .. }
 				| Event::KeyDown {
-					keycode: Some(Keycode::Escape),
+					keycode: Some(Keycode::Escape | Keycode::Q),
 					..
 				} => break 'running,
 				_ => {}
