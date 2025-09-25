@@ -131,4 +131,8 @@ impl State {
 		}
 		self.bus = val;
 	}
+
+	pub fn set_vblank(&mut self) {
+		todo!()
+	}
 }
