@@ -138,7 +138,9 @@ impl State {
 	}
 
 	pub fn set_vblank(&mut self) {
-		todo!()
+		if self.ppu.ctrl.nmi_enable() {
+			self.ppu.status.checked_set_vblank(true).unwrap();
+		}
 	}
 
 	pub fn step_ppu(&mut self) {
