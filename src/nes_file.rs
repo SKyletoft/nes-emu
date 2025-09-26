@@ -243,8 +243,30 @@ impl Mapper {
 		}
 	}
 
-	pub fn get_ppu(&self, _adr: u16) -> Option<()> {
-		todo!()
+	pub fn get_ppu(&self, adr: u16) -> Option<()> {
+		match self {
+			Mapper::MMC3 {
+				prg_banks,
+				chr_2k_banks,
+				chr_1k_banks,
+				prg_roms,
+				prg_mode,
+				chr_mode,
+				registers,
+			} => match adr {
+				0x0000..0x0800 => todo!(),
+				0x0800..0x1000 => todo!(),
+				0x1000..0x1400 => todo!(),
+				0x1400..0x1800 => todo!(),
+				0x1800..0x1C00 => todo!(),
+				0x1C00..0x2000 => todo!(),
+				_ => None,
+			},
+			Mapper::NROM256 { chr_rom, .. } => match adr {
+				_ => todo!()
+			},
+			_ => todo!(),
+		}
 	}
 
 	pub fn set_ppu(&mut self, _adr: u16, _val: u8) -> Option<()> {
