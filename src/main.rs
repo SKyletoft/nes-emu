@@ -37,7 +37,7 @@ fn display(state: &State) {
 fn emulation_loop(shared_texture: Arc<Mutex<Bitmap>>) {
 	let path = std::env::args()
 		.nth(1)
-		.unwrap_or_else(|| "../non-free/SMB3.nes".into());
+		.unwrap_or_else(|| "../non-free/SMB1.nes".into());
 	dbg!(&path);
 	let buffer = std::fs::read(path).unwrap();
 	let game = Mapper::parse_ines(buffer).unwrap();
@@ -48,8 +48,8 @@ fn emulation_loop(shared_texture: Arc<Mutex<Bitmap>>) {
 		system_state.next();
 
 		display(&system_state);
-		buf.clear();
-		std::io::stdin().read_line(&mut buf).unwrap();
+		// buf.clear();
+		// std::io::stdin().read_line(&mut buf).unwrap();
 	}
 }
 
