@@ -1,5 +1,6 @@
-use sdl2::{event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect};
 use std::sync::{Arc, Mutex};
+
+use sdl2::{event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct Colour {
