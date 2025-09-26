@@ -17,13 +17,13 @@ fn display(state: &State) {
 		a, x, y, s, p, pc, ..
 	} = state.cpu;
 
-	let c = p.c();
-	let z = p.z();
-	let i = p.i();
-	let d = p.d();
-	let b = p.b();
-	let v = p.v();
-	let n = p.n();
+	let c = p.c() as u8;
+	let z = p.z() as u8;
+	let i = p.i() as u8;
+	let d = p.d() as u8;
+	let b = p.b() as u8;
+	let v = p.v() as u8;
+	let n = p.n() as u8;
 
 	let inst = state.next_inst();
 
