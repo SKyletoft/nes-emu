@@ -79,7 +79,7 @@ mod test {
 		state.next();
 		assert_eq!(state.next_inst(), Inst::LdaImmediate(0));
 		assert_eq!(state.cpu.a, 0);
-		assert!(!state.cpu.p.contains(P::D)); // A bit late for some reason
+		assert!(!state.cpu.p.d()); // A bit late for some reason
 		state.next();
 		assert_eq!(state.next_inst(), Inst::StaAbsolute(0x2001u16.into()));
 		state.next();
