@@ -11,14 +11,16 @@ pub enum Mapper {
 		prg_roms: [[u8; 8 * 1024]; 32],
 		// chr_roms: [],
 		prg_mode: Mmc3PrgMode,
+		chr_mode: Mmc3ChrMode,
 		registers: Mmc3Registers,
 	},
 
 	MMC4,
 
 	NROM256 {
-		ram: [u8; 8 * 1024],
-		rom: [u8; 32 * 1024],
+		prg_ram: [u8; 8 * 1024],
+		prg_rom: [u8; 32 * 1024],
+		chr_rom: [u8; 8 * 1024],
 	},
 
 	NROM128 {
@@ -29,6 +31,13 @@ pub enum Mapper {
 
 #[derive(Debug, Copy, Clone, Default)]
 pub enum Mmc3PrgMode {
+	#[default]
+	Mode0 = 0,
+	Mode1 = 1,
+}
+
+#[derive(Debug, Copy, Clone, Default)]
+pub enum Mmc3ChrMode {
 	#[default]
 	Mode0 = 0,
 	Mode1 = 1,
@@ -92,6 +101,7 @@ impl Mapper {
 					chr_1k_banks: [0; _],
 					prg_roms: [[0; _]; _],
 					prg_mode: Mmc3PrgMode::Mode0,
+					chr_mode: Mmc3ChrMode::Mode0,
 					registers: Mmc3Registers::default(),
 				});
 
@@ -123,10 +133,11 @@ impl Mapper {
 			}
 			0 if *prg_size == 2 => {
 				let mut mapper = Box::new(Mapper::NROM256 {
-					ram: [0; _],
-					rom: [0; _],
+					prg_ram: [0; _],
+					prg_rom: [0; _],
+					chr_rom: [0; _],
 				});
-				let Mapper::NROM256 { rom, .. } = &mut *mapper else {
+				let Mapper::NROM256 { prg_rom: rom, .. } = &mut *mapper else {
 					unreachable!()
 				};
 				rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
@@ -181,7 +192,11 @@ impl Mapper {
 				0x8000..=0xFFFF => rom.get((adr % 0x4000) as usize).copied(),
 				_ => panic!("Out of bounds read from mapper, check against actual emulators"),
 			},
-			Mapper::NROM256 { ram, rom } => match adr {
+			Mapper::NROM256 {
+				prg_ram: ram,
+				prg_rom: rom,
+				..
+			} => match adr {
 				0x6000..=0x7FFF => ram.get(adr as usize % ram.len()).copied(),
 				0x8000..=0xFFFF => rom.get((adr - 0x8000) as usize).copied(),
 				_ => panic!("Out of bounds read from mapper, check against actual emulators"),
