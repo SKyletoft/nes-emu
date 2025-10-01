@@ -8,7 +8,7 @@ pub struct P {
 	c: bool,
 	#[bits(1)]
 	z: bool,
-	#[bits(1)]
+	#[bits(1, default = true)]
 	i: bool,
 	#[bits(1)]
 	d: bool,
