@@ -27,11 +27,18 @@ fn display(state: &State) {
 
 	let inst = state.next_inst();
 
+	let line = state.ppu.scanline;
+	let dot = state.ppu.dot;
+	let frame = state.ppu.frame % 10000;
+
 	println!("┌─CPU──────────────────────────┐");
 	println!("│ A:{a:02X} X:{x:02X} Y:{y:02X} SP:{s:02X} pc:{pc:04X} │");
 	println!("│ C:{c} Z:{z} I:{i} D:{d} B:{b} V:{v} N:{n}  │");
+	println!("├─PPU──────────────────────────┤");
+	println!("│ line:{line:03} dot:{dot:03} frame: {frame:04} │");
 	println!("└──────────────────────────────┘");
 	println!("Next: {inst:X?}");
+	println!();
 }
 
 fn emulation_loop(shared_texture: Arc<Mutex<Bitmap>>) {
