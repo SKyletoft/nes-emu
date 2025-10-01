@@ -202,7 +202,7 @@ fn print_instruction(instruction: Inst, f: &mut String) -> fmt::Result {
 		Inst::NOPAbsoluteX6(addr) => write!(f, "NOP ${:04X},X", addr),
 		Inst::NOPImmediate(val) => write!(f, "NOP #${:02X}", val),
 		Inst::NOPImmediate2(val) => write!(f, "NOP #${:02X}", val),
-		Inst::NOPImmediate3(val) => write!(f, "NOP"),
+		Inst::NOPImmediate3(_val) => write!(f, "NOP"), // Fixed unused variable warning
 		Inst::NOPZeroPage(addr) => write!(f, "NOP ${:02X}", addr),
 		Inst::NOPZeroPage3(addr) => write!(f, "NOP ${:02X}", addr),
 		Inst::NOPZeroPage4(addr) => write!(f, "NOP ${:02X}", addr),
