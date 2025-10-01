@@ -153,7 +153,9 @@ impl State {
 	}
 
 	pub fn step_ppu(&mut self) {
+		println!("{} {}", self.ppu.scanline, self.ppu.dot);
 		match (self.ppu.scanline, self.ppu.dot) {
+			(263.., _) | (_, 342..) => panic!("{} {}", self.ppu.scanline, self.ppu.dot),
 			(0..240, 0..255) => {
 				let mut sprites: [Sprite; 64] = self.ppu.oam.into();
 
@@ -171,19 +173,26 @@ impl State {
 					.map(|s| self.ppu.sprite_get_colour(s))
 					.unwrap_or_else(|| self.ppu.background_get_colour());
 				self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour;
+
+				self.ppu.dot += 1;
 			}
 			(262, 255) => {
 				self.ppu.scanline = 0;
 				self.ppu.dot = 0;
 				self.ppu.frame += 1;
 			}
-			(240, 0) => self.set_vblank(),
+			(240, 0) => {
+				self.set_vblank();
+				self.ppu.dot += 1;
+			}
 			(_, 341) => {
 				self.ppu.dot = 0;
 				self.ppu.scanline += 1;
 			}
 
-			_ => {}
+			_ => {
+				self.ppu.dot += 1;
+			}
 		}
 	}
 }
