@@ -155,7 +155,6 @@ impl State {
 	}
 
 	pub fn step_ppu(&mut self) {
-		println!("{} {}", self.ppu.scanline, self.ppu.dot);
 		match (self.ppu.scanline, self.ppu.dot) {
 			(263.., _) | (_, 342..) => panic!("{} {}", self.ppu.scanline, self.ppu.dot),
 			(0..240, 0..255) => {
