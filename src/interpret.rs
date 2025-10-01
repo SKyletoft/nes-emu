@@ -175,6 +175,7 @@ impl State {
 			(262, 255) => {
 				self.ppu.scanline = 0;
 				self.ppu.dot = 0;
+				self.ppu.frame += 1;
 			}
 			(240, 0) => self.set_vblank(),
 			(_, 341) => {

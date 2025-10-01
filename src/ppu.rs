@@ -18,6 +18,7 @@ pub struct Ppu {
 
 	pub scanline: u16,
 	pub dot: u16,
+	pub frame: u64,
 	pub vram: Vram,
 	pub oam: Oam,
 
@@ -37,6 +38,7 @@ impl Default for Ppu {
 			data: Default::default(),
 			scanline: Default::default(),
 			dot: Default::default(),
+			frame: Default::default(),
 			vram: [0; _],
 			oam: Oam::zeroed(),
 			palettes: Palettes([Palette([NesColour::DarkGrey; 4]); 8]),
