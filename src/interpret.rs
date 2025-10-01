@@ -37,6 +37,15 @@ pub unsafe fn state_step_ppu(ptr: *mut State) {
 	unsafe { &mut *ptr }.step_ppu();
 }
 
+#[unsafe(no_mangle)]
+pub unsafe fn state_step_ppu_many(ptr: *mut State, times: u32) {
+	for _ in 0..(times * 3) {
+		unsafe {
+			state_step_ppu(ptr);
+		}
+	}
+}
+
 impl State {
 	pub fn new(rom: Box<Mapper>, output_texture: Arc<Mutex<Bitmap>>) -> Self {
 		let pc = u16::from_le_bytes([

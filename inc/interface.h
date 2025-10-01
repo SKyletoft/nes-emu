@@ -59,17 +59,21 @@ typedef struct {
 
 uint8_t state_get_mem(State *state, uint16_t adr);
 void state_set_mem(State *state, uint16_t adr, uint8_t val);
+void state_step_ppu(State *state);
+void state_step_ppu_many(State *state, uint32_t times);
 
 #define ACCUMULATOR(fn)                                                                          \
 	void fn##_accumulator(State *state) {                                                    \
 		fn##_impl(state, &state->cpu.a);                                                 \
 		state->cpu.pc += 1;                                                              \
+		state_step_ppu_many(state, 2);                                                   \
 	}
 
 #define IMMEDIATE(fn)                                                                            \
 	void fn##_immediate(State *state, uint8_t val) {                                         \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 2;                                                              \
+		state_step_ppu_many(state, 2);                                                   \
 	}
 
 #define ZERO_PAGE(fn)                                                                            \
@@ -77,6 +81,7 @@ void state_set_mem(State *state, uint16_t adr, uint8_t val);
 		uint8_t val = state_get_mem(state, (uint16_t) offset);                           \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 2;                                                              \
+		state_step_ppu_many(state, 3);                                                   \
 	}
 
 #define ZERO_PAGE_RMW(fn)                                                                        \
@@ -93,7 +98,9 @@ void state_set_mem(State *state, uint16_t adr, uint8_t val);
 		    state_get_mem(state, ((uint16_t) state->cpu.x + (uint16_t) offset) & 0xFF);  \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 2;                                                              \
+		state_step_ppu_many(state, 4);                                                   \
 	}
+
 #define ZERO_PAGE_X_RMW(fn)                                                                      \
 	void fn##_zero_page_x(State *state, uint8_t offset) {                                    \
 		uint8_t val =                                                                    \
@@ -101,6 +108,7 @@ void state_set_mem(State *state, uint16_t adr, uint8_t val);
 		fn##_impl(state, &val);                                                          \
 		state_set_mem(state, (uint16_t) offset, val);                                    \
 		state->cpu.pc += 2;                                                              \
+		state_step_ppu_many(state, 5);                                                   \
 	}
 
 #define ZERO_PAGE_Y(fn)                                                                          \
@@ -109,6 +117,7 @@ void state_set_mem(State *state, uint16_t adr, uint8_t val);
 		    state_get_mem(state, ((uint16_t) state->cpu.y + (uint16_t) offset) & 0xFF);  \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 2;                                                              \
+		state_step_ppu_many(state, 4);                                                   \
 	}
 
 #define ABSOLUTE(fn)                                                                             \
@@ -116,6 +125,7 @@ void state_set_mem(State *state, uint16_t adr, uint8_t val);
 		uint8_t val = state_get_mem(state, adr);                                         \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 3;                                                              \
+		state_step_ppu_many(state, 4);                                                   \
 	}
 
 #define ABSOLUTE_RMW(fn)                                                                         \
@@ -124,6 +134,7 @@ void state_set_mem(State *state, uint16_t adr, uint8_t val);
 		fn##_impl(state, &val);                                                          \
 		state_set_mem(state, adr, val);                                                  \
 		state->cpu.pc += 3;                                                              \
+		state_step_ppu_many(state, 6);                                                   \
 	}
 
 #define ABSOLUTE_X(fn)                                                                           \
@@ -131,6 +142,7 @@ void state_set_mem(State *state, uint16_t adr, uint8_t val);
 		uint8_t val = state_get_mem(state, (uint16_t) state->cpu.x + adr);               \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 3;                                                              \
+		state_step_ppu_many(state, 3);                                                   \
 	}
 
 #define ABSOLUTE_X_RMW(fn)                                                                       \
@@ -139,6 +151,7 @@ void state_set_mem(State *state, uint16_t adr, uint8_t val);
 		fn##_impl(state, &val);                                                          \
 		state_set_mem(state, (uint16_t) state->cpu.x + adr, val);                        \
 		state->cpu.pc += 3;                                                              \
+		state_step_ppu_many(state, 7);                                                   \
 	}
 
 #define ABSOLUTE_Y(fn)                                                                           \
@@ -146,6 +159,7 @@ void state_set_mem(State *state, uint16_t adr, uint8_t val);
 		uint8_t val = state_get_mem(state, (uint16_t) state->cpu.y + adr);               \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 3;                                                              \
+		state_step_ppu_many(state, 3);                                                   \
 	}
 
 #define ABSOLUTE_Y_RMW(fn)                                                                       \
@@ -154,6 +168,7 @@ void state_set_mem(State *state, uint16_t adr, uint8_t val);
 		fn##_impl(state, &val);                                                          \
 		state_set_mem(state, (uint16_t) state->cpu.y + adr, val);                        \
 		state->cpu.pc += 3;                                                              \
+		state_step_ppu_many(state, 7);                                                   \
 	}
 
 #define INDIRECT_X(fn)                                                                           \
@@ -165,6 +180,7 @@ void state_set_mem(State *state, uint16_t adr, uint8_t val);
 		uint8_t val = state_get_mem(state, adr2);                                        \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 2;                                                              \
+		state_step_ppu_many(state, 2);                                                   \
 	}
 
 #define INDIRECT_Y(fn)                                                                           \
@@ -176,4 +192,5 @@ void state_set_mem(State *state, uint16_t adr, uint8_t val);
 		uint8_t val = state_get_mem(state, adr2);                                        \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 2;                                                              \
+		state_step_ppu_many(state, 2);                                                   \
 	}
