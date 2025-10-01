@@ -1,5 +1,7 @@
 use anyhow::{Result, bail};
 
+use crate::ppu::Ppu;
+
 // Yeah, yeah, it's huge, but this entire thing is expected to be boxed, so it's fine.
 // #[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone)]
@@ -237,35 +239,51 @@ impl Mapper {
 			Mapper::NROM128 { .. } => match adr {
 				_ => todo!(),
 			},
-			Mapper::NROM256 { .. } => match adr {
-				_ => panic!("Out of bounds write to mapper, check against actual emulators"),
-			},
+			Mapper::NROM256 {
+				prg_ram: ram,
+				prg_rom: rom,
+				..
+			} => {
+				match adr {
+					0x6000..=0x7FFF => ram[adr as usize % ram.len()] = val,
+					0x8000..=0xFFFF => todo!(),
+					_ => panic!("Out of bounds read from mapper, check against actual emulators"),
+				}
+				Some(())
+			}
 		}
 	}
 
-	pub fn get_ppu(&self, adr: u16) -> Option<()> {
+	pub fn get_ppu(&self, adr: u16, ppu: &Ppu) -> Option<u8> {
 		match self {
-			Mapper::MMC3 {
-				prg_banks,
-				chr_2k_banks,
-				chr_1k_banks,
-				prg_roms,
-				prg_mode,
-				chr_mode,
-				registers,
-			} => match adr {
-				0x0000..0x0800 => todo!(),
-				0x0800..0x1000 => todo!(),
-				0x1000..0x1400 => todo!(),
-				0x1400..0x1800 => todo!(),
-				0x1800..0x1C00 => todo!(),
-				0x1C00..0x2000 => todo!(),
+			// Mapper::MMC3 {
+			//	chr_2k_banks,
+			//	chr_1k_banks,
+			//	chr_mode,
+			//	// chr_rom,
+			//	..
+			// } => match adr {
+			//	0x0000..=0x1FFF => {let bank = match chr_mode {
+			//		Mmc3ChrMode::Mode0 =>
+			//		Mmc3ChrMode::Mode1 => todo!(),
+			//	};
+			//		let idx = bank
+			//	},
+			//	0x2000..=0x3EFF => ppu.vram.get(adr as usize & 0x07FF).copied(),
+			//	0x3F00..=0x3FFF => ppu.palettes.get((adr & 0x1F) as usize).copied(),
+			//	_ => None,
+			// },
+			Mapper::NROM256 { chr_rom, .. } => match adr {
+				0x0000..=0x1FFF => chr_rom.get(adr as usize).copied(),
+				0x2000..=0x3EFF => ppu.vram.get(adr as usize & 0x07FF).copied(),
+				0x3F00..=0x3FFF => {
+					let palettes_raw: &[u8] = ppu.palettes.as_raw_bytes();
+					palettes_raw.get((adr & 0x1F) as usize).copied()
+				}
 				_ => None,
 			},
-			Mapper::NROM256 { chr_rom, .. } => match adr {
-				_ => todo!()
-			},
-			_ => todo!(),
+
+			_ => None,
 		}
 	}
 
