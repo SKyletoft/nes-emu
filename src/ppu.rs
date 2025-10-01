@@ -60,11 +60,11 @@ impl Ppu {
 	}
 
 	pub fn sprite_get_colour(&self, sprite: &Sprite) -> Colour {
-		todo!()
+		NesColour::Black.into()
 	}
 
 	pub fn background_get_colour(&self) -> Colour {
-		todo!()
+		NesColour::White.into()
 	}
 }
 
