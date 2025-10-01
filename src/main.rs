@@ -437,7 +437,7 @@ mod test {
 		let file = File::open("reference-logs/SMB1.log").unwrap();
 		let reader = BufReader::new(file);
 
-		for (i, line) in reader.lines().skip(1).enumerate() {
+		for (i, line) in reader.lines().enumerate() {
 			let line = line.unwrap();
 			let ours = crate::fceux_log(&state);
 			assert_eq!(
