@@ -1,8 +1,10 @@
+#![allow(unused, dead_code)]
+
 use std::sync::{Arc, Mutex};
 
 use crate::{
 	cpu::{Cpu, P},
-	drawing::{self, Bitmap, Colour},
+	drawing::{self, Bitmap},
 	inst::Inst,
 	nes_file::Mapper,
 	ppu::{Ppu, Sprite},
@@ -113,11 +115,11 @@ impl State {
 		}
 	}
 
-	fn write_ppu(&self, adr: u16, val: u8) {
+	fn write_ppu(&self, _adr: u16, _val: u8) {
 		todo!()
 	}
 
-	fn mem_pure(&self, adr: u16) -> u8 {
+	pub(crate) fn mem_pure(&self, adr: u16) -> u8 {
 		match adr {
 			0x0000..0x0800 => self.ram[adr as usize],
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize],

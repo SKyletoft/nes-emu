@@ -1,3 +1,5 @@
+#![allow(dead_code, unused)]
+
 use bitfields::bitfield;
 use bytemuck::{Pod, Zeroable};
 use derive_more::derive::Into;

@@ -1,3 +1,5 @@
+#![allow(dead_code, unused)]
+
 use anyhow::{Result, bail};
 
 use crate::ppu::Ppu;

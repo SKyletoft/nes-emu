@@ -6,9 +6,12 @@ mod interpret;
 mod nes_file;
 mod ppu;
 
-use std::sync::{Arc, Mutex};
+use std::{fmt, sync::{Arc, Mutex}};
+#[cfg(test)]
+use std::fmt::Write;
 
 use drawing::Bitmap;
+use inst::Inst;
 use interpret::State;
 use nes_file::Mapper;
 
@@ -50,7 +53,7 @@ fn emulation_loop(shared_texture: Arc<Mutex<Bitmap>>) {
 	let game = Mapper::parse_ines(buffer).unwrap();
 	let mut system_state = State::new(game, shared_texture);
 
-	let mut buf = String::new();
+	// let mut buf = String::new();
 	loop {
 		system_state.next();
 
