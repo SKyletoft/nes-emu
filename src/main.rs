@@ -72,7 +72,7 @@ fn main() {
 
 #[cfg(test)]
 mod test {
-	use crate::{cpu::P, drawing, inst::Inst, interpret::State, nes_file::Mapper};
+	use crate::{drawing, inst::Inst, interpret::State, nes_file::Mapper};
 
 	#[test]
 	fn smb3_first_few() {
