@@ -1,5 +1,7 @@
 #![allow(unused, clippy::upper_case_acronyms)]
 
+use std::fmt::{self, Display};
+
 use crate::{cpu::Cpu, evaluate_instruction::*, interpret::State};
 
 use anyhow::{Result, bail};
@@ -9,6 +11,19 @@ use anyhow::{Result, bail};
 pub struct UnalignedU16 {
 	lo: u8,
 	hi: u8,
+}
+
+impl Display for UnalignedU16 {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		u16::from(*self).fmt(f)
+	}
+}
+
+impl fmt::UpperHex for UnalignedU16 {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		let x = u16::from(*self);
+		write!(f, "{x:X}")
+	}
 }
 
 impl std::fmt::Debug for UnalignedU16 {
