@@ -16,7 +16,7 @@ pub const HEIGHT: usize = 240;
 pub type Bitmap = [[Colour; WIDTH]; HEIGHT];
 
 pub fn empty_bitmap() -> Bitmap {
-	[[Colour::default(); _]; _]
+	[[Colour::default(); WIDTH]; HEIGHT]
 }
 
 pub fn new_bitmap() -> Arc<Mutex<Bitmap>> {
