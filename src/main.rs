@@ -45,7 +45,8 @@ fn display(state: &State) {
 }
 
 #[cfg(test)]
-fn print_instruction(instruction: Inst, f: &mut String) -> fmt::Result {
+fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
+	let instruction = state.next_inst();
 	match instruction {
 		Inst::AdcAbsolute(addr) => write!(f, "ADC ${:04X}", addr),
 		Inst::AdcAbsoluteX(addr) => write!(f, "ADC ${:04X},X", addr),
@@ -149,7 +150,10 @@ fn print_instruction(instruction: Inst, f: &mut String) -> fmt::Result {
 		Inst::LAXIndirectY(addr) => write!(f, "LAX (${:02X}),Y", addr),
 		Inst::LAXZeroPage(addr) => write!(f, "LAX ${:02X}", addr),
 		Inst::LAXZeroPageY(addr) => write!(f, "LAX ${:02X},Y", addr),
-		Inst::LdaAbsolute(addr) => write!(f, "LDA ${:04X}", addr),
+		Inst::LdaAbsolute(adr) => {
+			let mem = state.mem_pure(adr.into());
+			write!(f, "LDA ${adr:04X} = #${mem}")
+		},
 		Inst::LdaAbsoluteX(addr) => write!(f, "LDA ${:04X},X", addr),
 		Inst::LdaAbsoluteY(addr) => write!(f, "LDA ${:04X},Y", addr),
 		Inst::LdaImmediate(val) => write!(f, "LDA #${:02X}", val),
@@ -282,7 +286,10 @@ fn print_instruction(instruction: Inst, f: &mut String) -> fmt::Result {
 		Inst::SREIndirectY(_) => todo!(),
 		Inst::SREZeroPage(_) => todo!(),
 		Inst::SREZeroPageX(_) => todo!(),
-		Inst::StaAbsolute(unaligned_u16) => write!(f, "STA ${unaligned_u16:04X}"),
+		Inst::StaAbsolute(x) => {
+			let mem = state.mem_pure(x.into());
+			write!(f, "STA ${x:04X} = #${mem:02X}")
+		},
 		Inst::StaAbsoluteX(unaligned_u16) => todo!(),
 		Inst::StaAbsoluteY(unaligned_u16) => todo!(),
 		Inst::StaIndirectX(_) => todo!(),
@@ -300,7 +307,7 @@ fn print_instruction(instruction: Inst, f: &mut String) -> fmt::Result {
 		Inst::Tay => todo!(),
 		Inst::Tsx => todo!(),
 		Inst::Txa => todo!(),
-		Inst::Txs => todo!(),
+		Inst::Txs => write!(f, "TXS"),
 		Inst::Tya => todo!(),
 		Inst::XAAImmediate(_) => todo!(),
 	}
@@ -329,21 +336,25 @@ fn fceux_log(state: &State) -> String {
 			let mem = state.mem_pure(state.cpu.pc + offset as u16);
 			write!(&mut s, "{mem:02X} ").unwrap();
 		}
+		s.pop();
 		s
 	};
 
+	let width = (0xFF - s) as usize;
+
 	let mut out = format!(
-		"A:{:02X} X:{:02X} Y:{:02X} S:{:02X} {}   ${:04X}: {:<8}",
+		"A:{:02X} X:{:02X} Y:{:02X} S:{:02X} {} {:width$}${:04X}: {:<9}",
 		a,
 		x,
 		y,
 		s,
 		format!("{n}{v}{u}{b}{d}{i}{z}{c}"),
+		"",
 		pc,
 		byte_str,
 	);
 
-	print_instruction(inst, &mut out).unwrap();
+	print_instruction(state, &mut out).unwrap();
 
 	out
 }
