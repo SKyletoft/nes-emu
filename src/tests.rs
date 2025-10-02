@@ -106,7 +106,13 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		}
 		Inst::Bmi(offset) => write!(f, "BMI ${:02X}", offset),
 		Inst::Bne(offset) => write!(f, "BNE ${:02X}", offset),
-		Inst::Bpl(offset) => write!(f, "BPL ${:02X}", offset),
+		Inst::Bpl(offset) => write!(
+			f,
+			"BPL ${:02X}",
+			(offset as u16)
+				.wrapping_add(state.cpu.pc)
+				.wrapping_add(instruction.len() as u16)
+		),
 		Inst::Brk => write!(f, "BRK"),
 		Inst::Bvc(offset) => write!(f, "BVC ${:02X}", offset),
 		Inst::Bvs(offset) => write!(f, "BVS ${:02X}", offset),
