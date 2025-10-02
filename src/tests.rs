@@ -919,6 +919,7 @@ fn fceux_log_1() {
 	let reader = BufReader::new(file);
 
 	for (i, line) in reader.lines().enumerate() {
+		let i = i + 1;
 		let line = line.unwrap();
 		let ours = fceux_log(&state);
 		assert_eq!(
