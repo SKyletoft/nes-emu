@@ -26,16 +26,19 @@ INDIRECT_Y(sbc);
 void sec(State *state) {
 	state->cpu.p.C = 1;
 	state->cpu.pc += 1;
+	state_step_ppu_many(state, 2);
 }
 
 void sed(State *state) {
 	state->cpu.p.D = 1;
 	state->cpu.pc += 1;
+	state_step_ppu_many(state, 2);
 }
 
 void sei(State *state) {
 	state->cpu.p.I = 1;
 	state->cpu.pc += 1;
+	state_step_ppu_many(state, 2);
 }
 
 void sta_impl(State *state, uint8_t val) {
@@ -74,6 +77,7 @@ void tax(State *state) {
 	state->cpu.p.Z = 0 == state->cpu.x;
 	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
 	state->cpu.pc += 1;
+	state_step_ppu_many(state, 2);
 }
 
 void tay(State *state) {
@@ -81,6 +85,7 @@ void tay(State *state) {
 	state->cpu.p.Z = 0 == state->cpu.y;
 	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
 	state->cpu.pc += 1;
+	state_step_ppu_many(state, 2);
 }
 
 void tsx(State *state) {
@@ -88,6 +93,7 @@ void tsx(State *state) {
 	state->cpu.p.Z = 0 == state->cpu.x;
 	state->cpu.p.N = (state->cpu.x & 0x80) >> 7;
 	state->cpu.pc += 1;
+	state_step_ppu_many(state, 2);
 }
 
 void txa(State *state) {
@@ -95,18 +101,21 @@ void txa(State *state) {
 	state->cpu.p.Z = 0 == state->cpu.a;
 	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 	state->cpu.pc += 1;
+	state_step_ppu_many(state, 2);
 }
 
 void txs(State *state) {
 	state->cpu.s = state->cpu.x;
 	state->cpu.pc += 1;
+	state_step_ppu_many(state, 2);
 }
 
 void tya(State *state) {
 	state->cpu.a   = state->cpu.y;
 	state->cpu.p.Z = 0 == state->cpu.a;
-	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
+	state->cpu.p.N = (state->cpu.y & 0x80) >> 7;
 	state->cpu.pc += 1;
+	state_step_ppu_many(state, 2);
 }
 
 void rti(State *state) {
@@ -114,13 +123,16 @@ void rti(State *state) {
 	state->cpu.p.raw = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
 	state->cpu.s += 1;
 	state->cpu.pc = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
+	state_step_ppu_many(state, 2);
 }
 
 void rts(State *state) {
 	state->cpu.s += 1;
 	state->cpu.pc = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
+	state_step_ppu_many(state, 2);
 }
 
 void nop([[maybe_unused]] State *state) {
 	state->cpu.pc += 1;
+	state_step_ppu_many(state, 2);
 }

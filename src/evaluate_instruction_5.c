@@ -258,7 +258,7 @@ void isc_indirect_y(State *state, uint8_t val) {
 void rla_zero_page(State *state, uint8_t val) {
 	// Rotate left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)((val << 1) | (uint8_t)state->cpu.p.C);
+	uint8_t result = (uint8_t) ((val << 1) | (uint8_t) state->cpu.p.C);
 	state->cpu.p.C = carry;
 
 	// AND with accumulator
@@ -276,7 +276,7 @@ void rla_zero_page(State *state, uint8_t val) {
 void rla_zero_page_x(State *state, uint8_t val) {
 	// Rotate left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)((val << 1) | (uint8_t)state->cpu.p.C);
+	uint8_t result = (uint8_t) ((val << 1) | (uint8_t) state->cpu.p.C);
 	state->cpu.p.C = carry;
 
 	// AND with accumulator
@@ -294,7 +294,7 @@ void rla_zero_page_x(State *state, uint8_t val) {
 void rla_absolute(State *state, uint8_t val) {
 	// Rotate left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)((val << 1) | (uint8_t)state->cpu.p.C);
+	uint8_t result = (uint8_t) ((val << 1) | (uint8_t) state->cpu.p.C);
 	state->cpu.p.C = carry;
 
 	// AND with accumulator
@@ -312,7 +312,7 @@ void rla_absolute(State *state, uint8_t val) {
 void rla_absolute_x(State *state, uint8_t val) {
 	// Rotate left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)((val << 1) | (uint8_t)state->cpu.p.C);
+	uint8_t result = (uint8_t) ((val << 1) | (uint8_t) state->cpu.p.C);
 	state->cpu.p.C = carry;
 
 	// AND with accumulator
@@ -330,7 +330,7 @@ void rla_absolute_x(State *state, uint8_t val) {
 void rla_absolute_y(State *state, uint8_t val) {
 	// Rotate left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)((val << 1) | (uint8_t)state->cpu.p.C);
+	uint8_t result = (uint8_t) ((val << 1) | (uint8_t) state->cpu.p.C);
 	state->cpu.p.C = carry;
 
 	// AND with accumulator
@@ -348,7 +348,7 @@ void rla_absolute_y(State *state, uint8_t val) {
 void rla_indirect_x(State *state, uint8_t val) {
 	// Rotate left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)((val << 1) | (uint8_t)state->cpu.p.C);
+	uint8_t result = (uint8_t) ((val << 1) | (uint8_t) state->cpu.p.C);
 	state->cpu.p.C = carry;
 
 	// AND with accumulator
@@ -366,7 +366,7 @@ void rla_indirect_x(State *state, uint8_t val) {
 void rla_indirect_y(State *state, uint8_t val) {
 	// Rotate left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)((val << 1) | (uint8_t)state->cpu.p.C);
+	uint8_t result = (uint8_t) ((val << 1) | (uint8_t) state->cpu.p.C);
 	state->cpu.p.C = carry;
 
 	// AND with accumulator
@@ -384,7 +384,7 @@ void rla_indirect_y(State *state, uint8_t val) {
 void rra_zero_page(State *state, uint8_t val) {
 	// Rotate right
 	uint8_t carry  = (val & 0x01) ? 0x80 : 0;
-	uint8_t result = (uint8_t)((val >> 1) | ((uint8_t)state->cpu.p.C << 7));
+	uint8_t result = (uint8_t) ((val >> 1) | ((uint8_t) state->cpu.p.C << 7));
 	state->cpu.p.C = carry;
 
 	// Add with carry
@@ -401,7 +401,7 @@ void rra_zero_page(State *state, uint8_t val) {
 void rra_zero_page_x(State *state, uint8_t val) {
 	// Rotate right
 	uint8_t carry  = (val & 0x01) ? 0x80 : 0;
-	uint8_t result = (uint8_t)((val >> 1) | ((uint8_t)state->cpu.p.C << 7));
+	uint8_t result = (uint8_t) ((val >> 1) | ((uint8_t) state->cpu.p.C << 7));
 	state->cpu.p.C = carry;
 
 	// Add with carry
@@ -418,7 +418,7 @@ void rra_zero_page_x(State *state, uint8_t val) {
 void rra_absolute(State *state, uint8_t val) {
 	// Rotate right
 	uint8_t carry  = (val & 0x01) ? 0x80 : 0;
-	uint8_t result = (uint8_t)((val >> 1) | ((uint8_t)state->cpu.p.C << 7));
+	uint8_t result = (uint8_t) ((val >> 1) | ((uint8_t) state->cpu.p.C << 7));
 	state->cpu.p.C = carry;
 
 	// Add with carry
@@ -435,7 +435,7 @@ void rra_absolute(State *state, uint8_t val) {
 void rra_absolute_x(State *state, uint8_t val) {
 	// Rotate right
 	uint8_t carry  = (val & 0x01) ? 0x80 : 0;
-	uint8_t result = (uint8_t)((val >> 1) | ((uint8_t)state->cpu.p.C << 7));
+	uint8_t result = (uint8_t) ((val >> 1) | ((uint8_t) state->cpu.p.C << 7));
 	state->cpu.p.C = carry;
 
 	// Add with carry
@@ -452,7 +452,7 @@ void rra_absolute_x(State *state, uint8_t val) {
 void rra_absolute_y(State *state, uint8_t val) {
 	// Rotate right
 	uint8_t carry  = (val & 0x01) ? 0x80 : 0;
-	uint8_t result = (uint8_t)((val >> 1) | ((uint8_t)state->cpu.p.C << 7));
+	uint8_t result = (uint8_t) ((val >> 1) | ((uint8_t) state->cpu.p.C << 7));
 	state->cpu.p.C = carry;
 
 	// Add with carry
@@ -469,7 +469,7 @@ void rra_absolute_y(State *state, uint8_t val) {
 void rra_indirect_x(State *state, uint8_t val) {
 	// Rotate right
 	uint8_t carry  = (val & 0x01) ? 0x80 : 0;
-	uint8_t result = (uint8_t)((val >> 1) | ((uint8_t)state->cpu.p.C << 7));
+	uint8_t result = (uint8_t) ((val >> 1) | ((uint8_t) state->cpu.p.C << 7));
 	state->cpu.p.C = carry;
 
 	// Add with carry
@@ -486,7 +486,7 @@ void rra_indirect_x(State *state, uint8_t val) {
 void rra_indirect_y(State *state, uint8_t val) {
 	// Rotate right
 	uint8_t carry  = (val & 0x01) ? 0x80 : 0;
-	uint8_t result = (uint8_t)((val >> 1) | ((uint8_t)state->cpu.p.C << 7));
+	uint8_t result = (uint8_t) ((val >> 1) | ((uint8_t) state->cpu.p.C << 7));
 	state->cpu.p.C = carry;
 
 	// Add with carry
@@ -503,7 +503,7 @@ void rra_indirect_y(State *state, uint8_t val) {
 void slo_zero_page(State *state, uint8_t val) {
 	// Shift left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)(val << 1);
+	uint8_t result = (uint8_t) (val << 1);
 	state->cpu.p.C = carry;
 
 	// OR with accumulator
@@ -521,7 +521,7 @@ void slo_zero_page(State *state, uint8_t val) {
 void slo_zero_page_x(State *state, uint8_t val) {
 	// Shift left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)(val << 1);
+	uint8_t result = (uint8_t) (val << 1);
 	state->cpu.p.C = carry;
 
 	// OR with accumulator
@@ -539,7 +539,7 @@ void slo_zero_page_x(State *state, uint8_t val) {
 void slo_absolute(State *state, uint8_t val) {
 	// Shift left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)(val << 1);
+	uint8_t result = (uint8_t) (val << 1);
 	state->cpu.p.C = carry;
 
 	// OR with accumulator
@@ -557,7 +557,7 @@ void slo_absolute(State *state, uint8_t val) {
 void slo_absolute_x(State *state, uint8_t val) {
 	// Shift left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)(val << 1);
+	uint8_t result = (uint8_t) (val << 1);
 	state->cpu.p.C = carry;
 
 	// OR with accumulator
@@ -575,7 +575,7 @@ void slo_absolute_x(State *state, uint8_t val) {
 void slo_absolute_y(State *state, uint8_t val) {
 	// Shift left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)(val << 1);
+	uint8_t result = (uint8_t) (val << 1);
 	state->cpu.p.C = carry;
 
 	// OR with accumulator
@@ -593,7 +593,7 @@ void slo_absolute_y(State *state, uint8_t val) {
 void slo_indirect_x(State *state, uint8_t val) {
 	// Shift left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)(val << 1);
+	uint8_t result = (uint8_t) (val << 1);
 	state->cpu.p.C = carry;
 
 	// OR with accumulator
@@ -611,7 +611,7 @@ void slo_indirect_x(State *state, uint8_t val) {
 void slo_indirect_y(State *state, uint8_t val) {
 	// Shift left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
-	uint8_t result = (uint8_t)(val << 1);
+	uint8_t result = (uint8_t) (val << 1);
 	state->cpu.p.C = carry;
 
 	// OR with accumulator
@@ -787,7 +787,7 @@ void arr(State *state, uint8_t val) {
 	// Shift right with carry
 	uint8_t carry = (state->cpu.a & 0x01) ? 0x80 : 0;
 	state->cpu.a >>= 1;
-	state->cpu.a |= ((uint8_t)state->cpu.p.C << 7);
+	state->cpu.a |= ((uint8_t) state->cpu.p.C << 7);
 	state->cpu.p.C = carry;
 
 	// Update flags
@@ -839,7 +839,7 @@ void shy(State *state, uint8_t val) {
 	uint8_t adr_high = (val + 1) & 0xFF;
 
 	// Store Y register in memory
-	state_set_mem(state, (uint16_t)(adr_low | (adr_high << 8)), state->cpu.y);
+	state_set_mem(state, (uint16_t) (adr_low | (adr_high << 8)), state->cpu.y);
 	state->cpu.pc += 2;
 }
 
@@ -849,7 +849,7 @@ void shx(State *state, uint8_t val) {
 	uint8_t adr_high = (val + 1) & 0xFF;
 
 	// Store X register in memory
-	state_set_mem(state, (uint16_t)(adr_low | (adr_high << 8)), state->cpu.x);
+	state_set_mem(state, (uint16_t) (adr_low | (adr_high << 8)), state->cpu.x);
 	state->cpu.pc += 2;
 }
 
@@ -859,7 +859,7 @@ void ahx_absolute_y(State *state, uint8_t val) {
 	uint8_t adr_high = (val + 1) & 0xFF;
 
 	// Store (A & X) in memory
-	state_set_mem(state, (uint16_t)(adr_low | (adr_high << 8)), state->cpu.a & state->cpu.x);
+	state_set_mem(state, (uint16_t) (adr_low | (adr_high << 8)), state->cpu.a & state->cpu.x);
 	state->cpu.pc += 2;
 }
 
@@ -869,6 +869,6 @@ void ahx_indirect_y(State *state, uint8_t val) {
 	uint8_t adr_high = (val + 1) & 0xFF;
 
 	// Store (A & X) in memory
-	state_set_mem(state, (uint16_t)(adr_low | (adr_high << 8)), state->cpu.a & state->cpu.x);
+	state_set_mem(state, (uint16_t) (adr_low | (adr_high << 8)), state->cpu.a & state->cpu.x);
 	state->cpu.pc += 2;
 }

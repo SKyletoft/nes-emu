@@ -32,7 +32,8 @@ void and_impl(State *state, uint8_t val) {
 IMMEDIATE(and);
 ZERO_PAGE(and);
 ZERO_PAGE_X(and);
-ABSOLUTE(and);;
+ABSOLUTE(and);
+;
 ABSOLUTE_X(and);
 ABSOLUTE_Y(and);
 INDIRECT_X(and);
@@ -52,24 +53,33 @@ ABSOLUTE_RMW(asl);
 ABSOLUTE_X_RMW(asl);
 
 void bcc(State *state, int8_t offset) {
-	if (!state->cpu.p.C) {
-		state->cpu.pc += offset;
-	}
-	state->cpu.pc += 2;
+	uint16_t old_pc   = state->cpu.pc;
+	bool taken        = !state->cpu.p.C;
+	uint16_t new_pc   = old_pc + 2 + (taken ? (uint16_t) offset : 0);
+	bool page_crossed = ((old_pc + 2) & 0xFF00) != (new_pc & 0xFF00);
+	uint8_t cycles    = 2 + (taken ? 1 : 0) + (page_crossed ? 1 : 0);
+	state->cpu.pc     = new_pc;
+	state_step_ppu_many(state, cycles);
 }
 
 void bcs(State *state, int8_t offset) {
-	if (state->cpu.p.C) {
-		state->cpu.pc += offset;
-	}
-	state->cpu.pc += 2;
+	uint16_t old_pc   = state->cpu.pc;
+	bool taken        = state->cpu.p.C;
+	uint16_t new_pc   = old_pc + 2 + (taken ? (uint16_t) offset : 0);
+	bool page_crossed = ((old_pc + 2) & 0xFF00) != (new_pc & 0xFF00);
+	uint8_t cycles    = 2 + (taken ? 1 : 0) + (page_crossed ? 1 : 0);
+	state->cpu.pc     = new_pc;
+	state_step_ppu_many(state, cycles);
 }
 
 void beq(State *state, int8_t offset) {
-	if (state->cpu.p.Z) {
-		state->cpu.pc += offset;
-	}
-	state->cpu.pc += 2;
+	uint16_t old_pc   = state->cpu.pc;
+	bool taken        = state->cpu.p.Z;
+	uint16_t new_pc   = old_pc + 2 + (taken ? (uint16_t) offset : 0);
+	bool page_crossed = ((old_pc + 2) & 0xFF00) != (new_pc & 0xFF00);
+	uint8_t cycles    = 2 + (taken ? 1 : 0) + (page_crossed ? 1 : 0);
+	state->cpu.pc     = new_pc;
+	state_step_ppu_many(state, cycles);
 }
 
 void bit_impl(State *state, uint8_t val) {
@@ -82,47 +92,64 @@ ZERO_PAGE(bit);
 ABSOLUTE(bit);
 
 void bmi(State *state, int8_t offset) {
-	if (state->cpu.p.N) {
-		state->cpu.pc += offset;
-	}
-	state->cpu.pc += 2;
+	uint16_t old_pc   = state->cpu.pc;
+	bool taken        = state->cpu.p.N;
+	uint16_t new_pc   = old_pc + 2 + (taken ? (uint16_t) offset : 0);
+	bool page_crossed = ((old_pc + 2) & 0xFF00) != (new_pc & 0xFF00);
+	uint8_t cycles    = 2 + (taken ? 1 : 0) + (page_crossed ? 1 : 0);
+	state->cpu.pc     = new_pc;
+	state_step_ppu_many(state, cycles);
 }
 
 void bne(State *state, int8_t offset) {
-	if (!state->cpu.p.Z) {
-		state->cpu.pc += offset;
-	}
-	state->cpu.pc += 2;
+	uint16_t old_pc   = state->cpu.pc;
+	bool taken        = !state->cpu.p.Z;
+	uint16_t new_pc   = old_pc + 2 + (taken ? (uint16_t) offset : 0);
+	bool page_crossed = ((old_pc + 2) & 0xFF00) != (new_pc & 0xFF00);
+	uint8_t cycles    = 2 + (taken ? 1 : 0) + (page_crossed ? 1 : 0);
+	state->cpu.pc     = new_pc;
+	state_step_ppu_many(state, cycles);
 }
 
 void bpl(State *state, int8_t offset) {
-	if (!state->cpu.p.N) {
-		state->cpu.pc += offset;
-	}
-	state->cpu.pc += 2;
+	uint16_t old_pc   = state->cpu.pc;
+	bool taken        = !state->cpu.p.N;
+	uint16_t new_pc   = old_pc + 2 + (taken ? (uint16_t) offset : 0);
+	bool page_crossed = ((old_pc + 2) & 0xFF00) != (new_pc & 0xFF00);
+	uint8_t cycles    = 2 + (taken ? 1 : 0) + (page_crossed ? 1 : 0);
+	state->cpu.pc     = new_pc;
+	state_step_ppu_many(state, cycles);
 }
 
 void brk(State *state) {
 	// BRK is a complex instruction that pushes PC+2 and status flags
 	// This is a simplified version for demonstration
 	state->cpu.pc++;
+	state_step_ppu_many(state, 2);
 }
 
 void bvc(State *state, int8_t offset) {
-	if (!state->cpu.p.V) {
-		state->cpu.pc += offset;
-	}
-	state->cpu.pc += 2;
+	uint16_t old_pc   = state->cpu.pc;
+	bool taken        = !state->cpu.p.V;
+	uint16_t new_pc   = old_pc + 2 + (taken ? (uint16_t) offset : 0);
+	bool page_crossed = ((old_pc + 2) & 0xFF00) != (new_pc & 0xFF00);
+	uint8_t cycles    = 2 + (taken ? 1 : 0) + (page_crossed ? 1 : 0);
+	state->cpu.pc     = new_pc;
+	state_step_ppu_many(state, cycles);
 }
 
 void bvs(State *state, int8_t offset) {
-	if (state->cpu.p.V) {
-		state->cpu.pc += offset;
-	}
-	state->cpu.pc += 2;
+	uint16_t old_pc   = state->cpu.pc;
+	bool taken        = state->cpu.p.V;
+	uint16_t new_pc   = old_pc + 2 + (taken ? (uint16_t) offset : 0);
+	bool page_crossed = ((old_pc + 2) & 0xFF00) != (new_pc & 0xFF00);
+	uint8_t cycles    = 2 + (taken ? 1 : 0) + (page_crossed ? 1 : 0);
+	state->cpu.pc     = new_pc;
+	state_step_ppu_many(state, cycles);
 }
 
 void clc(State *state) {
 	state->cpu.p.C = 0;
 	state->cpu.pc += 1;
+	state_step_ppu_many(state, 2);
 }
