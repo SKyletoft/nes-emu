@@ -15,7 +15,9 @@ use drawing::Bitmap;
 use interpret::State;
 use nes_file::Mapper;
 
-fn display(state: &State) {
+fn display(state: &State) -> String {
+	use std::fmt::Write;
+
 	let cpu::Cpu {
 		a, x, y, s, p, pc, ..
 	} = state.cpu;
@@ -34,14 +36,26 @@ fn display(state: &State) {
 	let dot = state.ppu.dot;
 	let frame = state.ppu.frame % 10000;
 
-	println!("┌─CPU──────────────────────────┐");
-	println!("│ A:{a:02X} X:{x:02X} Y:{y:02X} SP:{s:02X} pc:{pc:04X} │");
-	println!("│ C:{c} Z:{z} I:{i} D:{d} B:{b} V:{v} N:{n}  │");
-	println!("├─PPU──────────────────────────┤");
-	println!("│ line:{line:03} dot:{dot:03} frame: {frame:04} │");
-	println!("└──────────────────────────────┘");
-	println!("Next: {inst:X?}");
-	println!();
+	let mut out = String::new();
+
+	writeln!(&mut out, "┌─CPU──────────────────────────┐").unwrap();
+	writeln!(
+		&mut out,
+		"│ A:{a:02X} X:{x:02X} Y:{y:02X} SP:{s:02X} pc:{pc:04X} │"
+	)
+	.unwrap();
+	writeln!(&mut out, "│ C:{c} Z:{z} I:{i} D:{d} B:{b} V:{v} N:{n}  │").unwrap();
+	writeln!(&mut out, "├─PPU──────────────────────────┤").unwrap();
+	writeln!(
+		&mut out,
+		"│ line:{line:03} dot:{dot:03} frame: {frame:04} │"
+	)
+	.unwrap();
+	writeln!(&mut out, "└──────────────────────────────┘").unwrap();
+	writeln!(&mut out, "Next: {inst:X?}").unwrap();
+	writeln!(&mut out).unwrap();
+
+	out
 }
 
 fn emulation_loop(shared_texture: Arc<Mutex<Bitmap>>) {
@@ -57,7 +71,7 @@ fn emulation_loop(shared_texture: Arc<Mutex<Bitmap>>) {
 	loop {
 		system_state.next();
 
-		display(&system_state);
+		print!("{}", display(&system_state));
 		// buf.clear();
 		// std::io::stdin().read_line(&mut buf).unwrap();
 	}
