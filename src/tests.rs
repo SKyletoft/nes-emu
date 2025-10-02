@@ -868,26 +868,32 @@ fn fceux_log(state: &State) -> String {
 	out
 }
 
-#[test]
-fn fceux_log_1() {
-	use std::fs::File;
-	use std::io::{BufRead, BufReader};
+macro_rules! make_log_test {
+	($name:ident, $game:expr, $log:expr) => {
+		#[test]
+		fn $name() {
+			use std::fs::File;
+			use std::io::{BufRead, BufReader};
 
-	let buffer = std::fs::read("non-free/SMB1.nes").unwrap();
-	let game = Mapper::parse_ines(buffer).unwrap();
-	let mut state = State::new(game, drawing::new_bitmap());
-	let file = File::open("reference-logs/SMB1.log").unwrap();
-	let reader = BufReader::new(file);
+			let buffer = std::fs::read($game).unwrap();
+			let game = Mapper::parse_ines(buffer).unwrap();
+			let mut state = State::new(game, drawing::new_bitmap());
+			let file = File::open($log).unwrap();
+			let reader = BufReader::new(file);
 
-	for (i, line) in reader.lines().enumerate() {
-		let i = i + 1;
-		let line = line.unwrap();
-		let ours = fceux_log(&state);
-		let debug_state = crate::display(&state);
-		assert_eq!(
-			ours, line,
-			"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n{debug_state}"
-		);
-		state.next();
-	}
+			for (i, line) in reader.lines().enumerate() {
+				let i = i + 1;
+				let line = line.unwrap();
+				let ours = fceux_log(&state);
+				let debug_state = crate::display(&state);
+				assert_eq!(
+					ours, line,
+					"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n{debug_state}"
+				);
+				state.next();
+			}
+		}
+	};
 }
+
+make_log_test!(fceux_log_1, "non-free/SMB1.nes", "reference-logs/SMB1.log");
