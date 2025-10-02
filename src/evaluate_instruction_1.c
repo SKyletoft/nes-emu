@@ -33,7 +33,6 @@ IMMEDIATE(and);
 ZERO_PAGE(and);
 ZERO_PAGE_X(and);
 ABSOLUTE(and);
-;
 ABSOLUTE_X(and);
 ABSOLUTE_Y(and);
 INDIRECT_X(and);
