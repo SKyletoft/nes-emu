@@ -883,9 +883,10 @@ fn fceux_log_1() {
 		let i = i + 1;
 		let line = line.unwrap();
 		let ours = fceux_log(&state);
+		let debug_state = crate::display(&state);
 		assert_eq!(
 			ours, line,
-			"Mismatch at line {i}\n ours: {ours}\n ref : {line}"
+			"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n{debug_state}"
 		);
 		state.next();
 	}
