@@ -105,7 +105,11 @@ impl State {
 		match adr % 8 {
 			0 => self.bus,
 			1 => self.bus,
-			2 => self.ppu.status.into(),
+			2 => {
+				let status: u8 = self.ppu.status.into();
+				let bus = self.bus;
+				(status & 0b1110_0000) | (bus & 0b0001_1111)
+			}
 			3 => self.bus,
 			4 => self.ppu.oam_data.into(),
 			5 => self.bus,
