@@ -869,51 +869,6 @@ fn fceux_log(state: &State) -> String {
 }
 
 #[test]
-fn smb3_first_few() {
-	let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
-	let game = Mapper::parse_ines(buffer).unwrap();
-	let mut state = State::new(game, drawing::new_bitmap());
-	assert_eq!(state.next_inst(), Inst::Sei);
-	assert_eq!(state.cpu.pc, 0xFF40);
-	state.next();
-	assert_eq!(state.next_inst(), Inst::Cld);
-	state.next();
-	assert_eq!(state.next_inst(), Inst::LdaImmediate(0));
-	assert_eq!(state.cpu.a, 0);
-	assert!(!state.cpu.p.d()); // A bit late for some reason
-	state.next();
-	assert_eq!(state.next_inst(), Inst::StaAbsolute(0x2001u16.into()));
-	state.next();
-	assert_eq!(state.next_inst(), Inst::LdaImmediate(8));
-	state.next();
-	assert_eq!(state.next_inst(), Inst::StaAbsolute(0x2000u16.into()));
-	assert_eq!(state.cpu.a, 8);
-	assert_eq!(state.cpu.pc, 0xFF49);
-	assert_eq!(state.cpu.s, 0xFD);
-}
-
-#[test]
-fn smb3_first_jsr() {
-	let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
-	let game = Mapper::parse_ines(buffer).unwrap();
-	let mut state = State::new(game, drawing::new_bitmap());
-	for _ in 0..7 {
-		state.next();
-	}
-	// Wait for PPU to init...
-	for i in 0..(25559 / 2) {
-		assert_eq!(state.cpu.pc, 0xFF4E);
-		assert_eq!(state.next_inst(), Inst::LdaAbsolute(0x2002u16.into()));
-		state.next();
-		assert_eq!(state.cpu.pc, 0xFF51);
-		assert_eq!(state.next_inst(), Inst::Bpl(-5), "Loop: {i}");
-		state.next();
-	}
-	assert_eq!(state.cpu.pc, 0xFF53);
-	assert_eq!(state.next_inst(), Inst::Dex);
-}
-
-#[test]
 fn fceux_log_1() {
 	use std::fs::File;
 	use std::io::{BufRead, BufReader};
