@@ -9,9 +9,7 @@ mod ppu;
 #[cfg(test)]
 mod tests;
 
-use std::{
-	sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use drawing::Bitmap;
 use interpret::State;

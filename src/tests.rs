@@ -1,6 +1,6 @@
 use std::fmt::{self, Write};
 
-use crate::{drawing, inst::Inst, interpret::State, nes_file::Mapper, cpu};
+use crate::{cpu, drawing, inst::Inst, interpret::State, nes_file::Mapper};
 
 fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 	let instruction = state.next_inst();
