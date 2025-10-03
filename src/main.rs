@@ -32,8 +32,14 @@ fn display(state: &State) -> String {
 
 	let inst = state.next_inst();
 
-	let line = state.ppu.scanline;
-	let dot = state.ppu.dot;
+	let ppu::Ppu {
+		ctrl,
+		mask,
+		status,
+		scanline,
+		dot,
+		..
+	} = state.ppu;
 	let frame = state.ppu.frame % 10000;
 
 	let mut out = String::new();
@@ -48,7 +54,15 @@ fn display(state: &State) -> String {
 	writeln!(&mut out, "├─PPU──────────────────────────┤").unwrap();
 	writeln!(
 		&mut out,
-		"│ line:{line:03} dot:{dot:03} frame: {frame:04} │"
+		"│ line:{scanline:03} dot:{dot:03} frame: {frame:04} │"
+	)
+	.unwrap();
+	writeln!(
+		&mut out,
+		"│ ctrl:{:02X} mask:{:02X} status:{:02X}    │",
+		ctrl.into_bits(),
+		mask.into_bits(),
+		status.into_bits()
 	)
 	.unwrap();
 	writeln!(&mut out, "└──────────────────────────────┘").unwrap();
