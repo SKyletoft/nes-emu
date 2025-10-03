@@ -163,45 +163,33 @@ impl State {
 	}
 
 	pub fn step_ppu(&mut self) {
-		match (self.ppu.scanline, self.ppu.dot) {
-			(263.., _) | (_, 342..) => panic!("{} {}", self.ppu.scanline, self.ppu.dot),
-			(0..240, 0..255) => {
-				let mut sprites: [Sprite; 64] = self.ppu.oam.into();
+		self.ppu.cycles += 1;
 
-				// Stable sort: Primarily by x, then by prio, lastly by index.
-				sprites.sort_by(|l, r| {
-					l.x.cmp(&r.x)
-						.then(l.attr.priority().cmp(&r.attr.priority()))
-				});
+		if (0..240).contains(&self.ppu.scanline) && (0..255).contains(&self.ppu.dot) {
+			let mut sprites: [Sprite; 64] = self.ppu.oam.into();
 
-				let colour = sprites
-					.iter()
-					.filter(|sprite| self.ppu.sprite_is_visible_y(sprite))
-					.take(8)
-					.find(|sprite| self.ppu.sprite_is_visible_x(sprite))
-					.map(|s| self.ppu.sprite_get_colour(s))
-					.unwrap_or_else(|| self.ppu.background_get_colour());
-				self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour;
+			// Stable sort: Primarily by x, then by prio, lastly by index.
+			sprites.sort_by(|l, r| {
+				l.x.cmp(&r.x)
+					.then(l.attr.priority().cmp(&r.attr.priority()))
+			});
 
-				self.ppu.dot += 1;
-			}
-			(262, 255) => {
-				self.ppu.scanline = 0;
-				self.ppu.dot = 0;
-				self.ppu.frame += 1;
-			}
-			(240, 0) => {
-				self.set_vblank();
-				self.ppu.dot += 1;
-			}
-			(_, 341) => {
-				self.ppu.dot = 0;
-				self.ppu.scanline += 1;
-			}
-
-			_ => {
-				self.ppu.dot += 1;
-			}
+			let colour = sprites
+				.iter()
+				.filter(|sprite| self.ppu.sprite_is_visible_y(sprite))
+				.take(8)
+				.find(|sprite| self.ppu.sprite_is_visible_x(sprite))
+				.map(|s| self.ppu.sprite_get_colour(s))
+				.unwrap_or_else(|| self.ppu.background_get_colour());
+			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour;
 		}
+		if self.ppu.scanline == 240 {
+			self.set_vblank();
+		}
+		self.ppu.dot += 1;
+		self.ppu.scanline += self.ppu.dot / 341;
+		self.ppu.dot %= 341;
+		self.ppu.frame += (self.ppu.scanline / 262) as u64;
+		self.ppu.scanline %= 262;
 	}
 }
