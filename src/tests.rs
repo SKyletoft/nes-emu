@@ -902,4 +902,8 @@ macro_rules! make_log_test {
 	};
 }
 
-make_log_test!(fceux_log_2, "non-free/SMB1.nes", "reference-logs/SMB1-2.log");
+make_log_test!(
+	fceux_log_2,
+	"non-free/SMB1.nes",
+	"reference-logs/SMB1-2.log"
+);
