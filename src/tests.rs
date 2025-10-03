@@ -853,6 +853,7 @@ fn fceux_log(state: &State) -> String {
 
 	let frames = state.ppu.frame;
 	let cycles = state.cycles;
+	assert!(cycles.checked_mul(3).is_none() || cycles * 3 == state.ppu.cycles); // Implication operator when?
 
 	let mut out = format!(
 		"f{:<5} c{:<10} A:{:02X} X:{:02X} Y:{:02X} S:{:02X} {} {:width$}${:04X}: {:<9}",
