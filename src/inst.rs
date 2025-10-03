@@ -15,21 +15,19 @@ pub struct UnalignedU16 {
 
 impl Display for UnalignedU16 {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		u16::from(*self).fmt(f)
+		fmt::Display::fmt(&u16::from(*self), f)
 	}
 }
 
 impl fmt::UpperHex for UnalignedU16 {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		let x = u16::from(*self);
-		write!(f, "{x:X}")
+		fmt::UpperHex::fmt(&u16::from(*self), f)
 	}
 }
 
 impl std::fmt::Debug for UnalignedU16 {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		let x: u16 = (*self).into();
-		write!(f, "{}", x)
+		fmt::Debug::fmt(&u16::from(*self), f)
 	}
 }
 
