@@ -12,11 +12,11 @@ pub struct Ppu {
 	pub ctrl: Ctrl,
 	pub mask: Mask,
 	pub status: Status,
-	pub oam_adr: OamAdr,
-	pub oam_data: OamData,
+	pub oam_adr: u8,
+	pub oam_data: u8,
 	pub scroll: Scroll,
 	pub adr: Adr,
-	pub data: Data,
+	pub data: u8,
 
 	pub scanline: u16,
 	pub dot: u16,
@@ -129,14 +129,6 @@ pub struct Status {
 	vblank: bool,
 }
 
-#[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Into)]
-pub struct OamAdr(u8);
-
-#[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Into)]
-pub struct OamData(u8);
-
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct Scroll {
@@ -150,10 +142,6 @@ pub struct Adr {
 	high: u8,
 	low: u8,
 }
-
-#[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Into)]
-pub struct Data(u8);
 
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Pod, Zeroable)]
@@ -179,15 +167,7 @@ pub struct SpriteAttributes {
 	flip_v: bool,
 }
 
-#[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Pod, Zeroable, Into)]
-pub struct Oam([Sprite; 64]);
-
-impl Default for Oam {
-	fn default() -> Self {
-		Self::zeroed()
-	}
-}
+type Oam = [Sprite; 64];
 
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Into)]
