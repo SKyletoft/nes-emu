@@ -1,5 +1,6 @@
 #include "interface.h"
 #include <stdint.h>
+#include <stdio.h>
 
 // C-implementations of NES instructions
 
@@ -41,22 +42,58 @@ void sei(State *state) {
 	state_step_ppu_many(state, 2);
 }
 
-void sta_impl(State *state, uint8_t val) {
-	// Store accumulator in memory
-	state_set_mem(state, val, state->cpu.a);
-}
+void sta_zero_page(State *state, uint8_t offset) {
+	state_set_mem(state, (uint16_t) offset, state->cpu.a);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 3);
+};
 
-ZERO_PAGE(sta);
-ZERO_PAGE_X(sta);
-ABSOLUTE(sta);
-ABSOLUTE_X(sta);
-ABSOLUTE_Y(sta);
-INDIRECT_X(sta);
-INDIRECT_Y(sta);
+void sta_zero_page_x(State *state, uint8_t offset) {
+	state_set_mem(state, ((uint16_t) state->cpu.x + (uint16_t) offset) & 0xFF, state->cpu.a);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 4);
+};
+
+void sta_absolute(State *state, uint16_t adr) {
+	state_set_mem(state, adr, state->cpu.a);
+	state->cpu.pc += 3;
+	state_step_ppu_many(state, 4);
+};
+
+void sta_absolute_x(State *state, uint16_t adr) {
+	state_set_mem(state, (uint16_t) state->cpu.x + adr, state->cpu.a);
+	state->cpu.pc += 3;
+	state_step_ppu_many(state, 3);
+};
+
+void sta_absolute_y(State *state, uint16_t adr) {
+	state_set_mem(state, (uint16_t) state->cpu.y + adr, state->cpu.a);
+	state->cpu.pc += 3;
+	state_step_ppu_many(state, 3);
+};
+
+void sta_indirect_x(State *state, uint8_t adr) {
+	uint8_t tmp   = state_get_mem(state, (uint16_t) (state->cpu.x + adr) & 0xFF);
+	uint16_t adr2 = (uint16_t) (state_get_mem(state, (uint16_t) tmp)
+				    | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);
+	uint8_t val   = state_get_mem(state, adr2);
+	state_set_mem(state, (uint16_t) val, state->cpu.a);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 2);
+};
+
+void sta_indirect_y(State *state, uint8_t adr) {
+	uint8_t tmp   = state_get_mem(state, (uint16_t) (state->cpu.y + adr) & 0xFF);
+	uint16_t adr2 = (uint16_t) (state_get_mem(state, (uint16_t) tmp)
+				    | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);
+	uint8_t val   = state_get_mem(state, adr2);
+	state_set_mem(state, (uint16_t) val, state->cpu.a);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 2);
+};
 
 void stx_impl(State *state, uint8_t val) {
-	// Store X register in memory
-	state_set_mem(state, val, state->cpu.x);
+	puts("unimplemented");
 }
 
 ZERO_PAGE(stx);
@@ -64,8 +101,7 @@ ZERO_PAGE_Y(stx);
 ABSOLUTE(stx);
 
 void sty_impl(State *state, uint8_t val) {
-	// Store Y register in memory
-	state_set_mem(state, val, state->cpu.y);
+	puts("unimplemented");
 }
 
 ZERO_PAGE(sty);
