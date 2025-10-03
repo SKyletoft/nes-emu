@@ -40,7 +40,7 @@ impl Default for Ppu {
 			data: Default::default(),
 			scanline: Default::default(),
 			dot: Default::default(),
-			frame: Default::default(),
+			frame: 1,
 			vram: [0; _],
 			oam: Oam::zeroed(),
 			palettes: Palettes([Palette([NesColour::DarkGrey; 4]); 8]),

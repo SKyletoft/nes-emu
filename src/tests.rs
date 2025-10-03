@@ -851,8 +851,13 @@ fn fceux_log(state: &State) -> String {
 
 	let width = (0xFF - s) as usize;
 
+	let frames = state.ppu.frame;
+	let cycles = state.cycles;
+
 	let mut out = format!(
-		"A:{:02X} X:{:02X} Y:{:02X} S:{:02X} {} {:width$}${:04X}: {:<9}",
+		"f{:<5} c{:<10} A:{:02X} X:{:02X} Y:{:02X} S:{:02X} {} {:width$}${:04X}: {:<9}",
+		frames,
+		cycles,
 		a,
 		x,
 		y,
