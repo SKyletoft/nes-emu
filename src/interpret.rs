@@ -70,6 +70,7 @@ impl State {
 		let ppu = Ppu::default();
 		let bus = 0;
 		let current_texture = drawing::empty_bitmap();
+		let cycles = 0;
 
 		Self {
 			cpu,
@@ -79,6 +80,7 @@ impl State {
 			bus,
 			output_texture,
 			current_texture,
+			cycles,
 		}
 	}
 
