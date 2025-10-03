@@ -20,6 +20,7 @@ pub struct State {
 	pub bus: u8,
 	pub output_texture: Arc<Mutex<Bitmap>>,
 	pub current_texture: Bitmap,
+	pub cycles: u64,
 }
 
 #[unsafe(no_mangle)]
@@ -41,6 +42,7 @@ pub unsafe fn state_step_ppu(ptr: *mut State) {
 
 #[unsafe(no_mangle)]
 pub unsafe fn state_step_ppu_many(ptr: *mut State, times: u32) {
+	unsafe { (&mut *ptr) }.cycles += times as u64;
 	for _ in 0..(times * 3) {
 		unsafe {
 			state_step_ppu(ptr);
