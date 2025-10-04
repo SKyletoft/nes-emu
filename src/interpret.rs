@@ -105,7 +105,8 @@ impl State {
 		inst.evaluate(self);
 	}
 
-	fn read_ppu(&self, adr: u16) -> u8 {
+	fn read_ppu_pure(&self, adr: u16) -> u8 {
+		println!("stealth-reading ppu at {adr:04X} ({:02X})", self.ppu.status.into_bits());
 		match adr % 8 {
 			0 => self.bus,
 			1 => self.bus,
@@ -115,12 +116,25 @@ impl State {
 				(status & 0b1110_0000) | (bus & 0b0001_1111)
 			}
 			3 => self.bus,
-			4 => self.ppu.oam_data.into(),
+			4 => self.ppu.oam_data,
 			5 => self.bus,
 			6 => self.bus,
-			7 => self.ppu.data.into(),
+			7 => self.ppu.data,
 			_ => unreachable!(),
 		}
+	}
+
+	fn read_ppu(&mut self, adr: u16) -> u8 {
+		println!("reading ppu at {adr:04X}");
+		let res = self.read_ppu_pure(adr);
+		match adr % 8 {
+			2 => {
+				self.ppu.status.set_vblank(false);
+				println!("cleared vblank by reading");
+			}
+			_ => unreachable!(),
+		}
+		res
 	}
 
 	fn write_ppu(&mut self, adr: u16, val: u8) {
@@ -141,7 +155,7 @@ impl State {
 		match adr {
 			0x0000..0x0800 => self.ram[adr as usize],
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize],
-			0x2000..0x4000 => self.read_ppu(adr),
+			0x2000..0x4000 => self.read_ppu_pure(adr),
 			0x4000..0x4018 => todo!(),
 			0x4018..0x4020 => todo!(),
 			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
@@ -149,7 +163,14 @@ impl State {
 	}
 
 	pub fn mem(&mut self, adr: u16) -> u8 {
-		let res = self.mem_pure(adr);
+		let res = match adr {
+			0x0000..0x0800 => self.ram[adr as usize],
+			0x0800..0x2000 => self.ram[(adr % 2048) as usize],
+			0x2000..0x4000 => self.read_ppu(adr),
+			0x4000..0x4018 => todo!(),
+			0x4018..0x4020 => todo!(),
+			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
+		};
 		self.bus = res;
 		res
 	}
@@ -167,16 +188,19 @@ impl State {
 	}
 
 	pub fn set_vblank(&mut self) {
-		if self.ppu.ctrl.nmi_enable() {
-			self.ppu.status.checked_set_vblank(true).unwrap();
+		println!("vblank!");
+		if self.ppu.ctrl.nmi_enable() {}
+		if self.ppu.cycles > 27384 {
+			self.ppu.status.set_vblank(true);
 		}
 	}
 
 	pub fn step_ppu(&mut self) {
+		println!("{} {} {}", self.ppu.scanline, self.ppu.dot, self.ppu.cycles);
 		self.ppu.cycles += 1;
 
 		if (0..240).contains(&self.ppu.scanline) && (0..255).contains(&self.ppu.dot) {
-			let mut sprites: [Sprite; 64] = self.ppu.oam.into();
+			let mut sprites: [Sprite; 64] = self.ppu.oam;
 
 			// Stable sort: Primarily by x, then by prio, lastly by index.
 			sprites.sort_by(|l, r| {
@@ -193,8 +217,12 @@ impl State {
 				.unwrap_or_else(|| self.ppu.background_get_colour());
 			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour;
 		}
-		if self.ppu.scanline == 240 {
+		if self.ppu.scanline == 241 && self.ppu.dot == 0 {
 			self.set_vblank();
+		}
+		if self.ppu.scanline == 0 && self.ppu.dot == 0 && self.ppu.status.vblank() {
+			println!("Cleared vblank by waiting");
+			self.ppu.status.set_vblank(false);
 		}
 		self.ppu.dot += 1;
 		self.ppu.scanline += self.ppu.dot / 341;
