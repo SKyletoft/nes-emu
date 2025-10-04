@@ -225,7 +225,7 @@ impl State {
 				.unwrap_or_else(|| self.ppu.background_get_colour());
 			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour;
 		}
-		if self.ppu.scanline == 241 && self.ppu.dot == 0 {
+		if self.ppu.scanline == 240 && self.ppu.dot == 0 {
 			self.set_vblank();
 		}
 		if self.ppu.scanline == 0 && self.ppu.dot == 0 && self.ppu.status.vblank() {
