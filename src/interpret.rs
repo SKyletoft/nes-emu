@@ -198,7 +198,6 @@ impl State {
 	}
 
 	pub fn step_ppu(&mut self) {
-		println!("{} {} {}", self.ppu.scanline, self.ppu.dot, self.ppu.cycles);
 		self.ppu.cycles += 1;
 
 		if (0..240).contains(&self.ppu.scanline) && (0..255).contains(&self.ppu.dot) {
