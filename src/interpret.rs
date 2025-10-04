@@ -10,6 +10,8 @@ use crate::{
 	ppu::{Ppu, Sprite},
 };
 
+pub const PPU_STARTUP_TIME: u64 = 2500;
+
 // REMEMBER TO REFLECT ANY CHANGES IN `cpu.h`
 #[repr(C)]
 pub struct State {
@@ -198,6 +200,11 @@ impl State {
 	}
 
 	pub fn step_ppu(&mut self) {
+		// Fceux does this, doesn't seem to be accurate, but I'm using fceux as my reference behaviour.
+		if self.cycles <= PPU_STARTUP_TIME {
+			return;
+		}
+
 		self.ppu.cycles += 1;
 
 		if (0..240).contains(&self.ppu.scanline) && (0..255).contains(&self.ppu.dot) {
