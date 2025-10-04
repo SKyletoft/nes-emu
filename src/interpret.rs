@@ -42,9 +42,11 @@ pub unsafe fn state_step_ppu(ptr: *mut State) {
 
 #[unsafe(no_mangle)]
 pub unsafe fn state_step_ppu_many(ptr: *mut State, times: u32) {
-	unsafe { (&mut *ptr) }.cycles += times as u64;
-	for _ in 0..(times * 3) {
+	for _ in 0..times {
+		unsafe { (&mut *ptr) }.cycles += 1;
 		unsafe {
+			state_step_ppu(ptr);
+			state_step_ppu(ptr);
 			state_step_ppu(ptr);
 		}
 	}
