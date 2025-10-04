@@ -123,8 +123,18 @@ impl State {
 		}
 	}
 
-	fn write_ppu(&self, _adr: u16, _val: u8) {
-		todo!()
+	fn write_ppu(&mut self, adr: u16, val: u8) {
+		match adr % 8 {
+			0 => self.ppu.ctrl.set_bits(val),
+			1 => self.ppu.mask.set_bits(val),
+			2 => {}
+			3 => self.ppu.oam_adr = val,
+			4 => self.ppu.oam_data = val,
+			5 => todo!(),
+			6 => todo!(),
+			7 => self.ppu.data = val,
+			_ => unreachable!(),
+		}
 	}
 
 	pub(crate) fn mem_pure(&self, adr: u16) -> u8 {
