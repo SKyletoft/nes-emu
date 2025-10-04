@@ -853,7 +853,6 @@ fn fceux_log(state: &State) -> String {
 
 	let frames = state.ppu.frame;
 	let cycles = state.cycles;
-	assert!(cycles.checked_mul(3).is_none() || cycles * 3 == state.ppu.cycles); // Implication operator when?
 
 	let mut out = format!(
 		"f{:<5} c{:<10} A:{:02X} X:{:02X} Y:{:02X} S:{:02X} {} {:width$}${:04X}: {:<9}",
@@ -878,8 +877,11 @@ macro_rules! make_log_test {
 	($name:ident, $game:expr, $log:expr) => {
 		#[test]
 		fn $name() {
-			use std::fs::File;
-			use std::io::{BufRead, BufReader};
+			use crate::interpret::PPU_STARTUP_TIME;
+			use std::{
+				fs::File,
+				io::{BufRead, BufReader},
+			};
 
 			let buffer = std::fs::read($game).unwrap();
 			let game = Mapper::parse_ines(buffer).unwrap();
@@ -896,6 +898,18 @@ macro_rules! make_log_test {
 					ours, line,
 					"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n{debug_state}"
 				);
+				let cycles = state.cycles;
+				assert!(
+					{
+						cycles < PPU_STARTUP_TIME
+							|| (cycles - PPU_STARTUP_TIME).checked_mul(3).is_none()
+							|| (cycles - PPU_STARTUP_TIME) * 3 == state.ppu.cycles
+					},
+					"{cycles} {:?} {} {}",
+					(cycles - PPU_STARTUP_TIME).checked_mul(3),
+					(cycles - PPU_STARTUP_TIME) * 3,
+					state.ppu.cycles
+				); // Implication operator when?
 				state.next();
 			}
 		}
