@@ -45,7 +45,7 @@ impl Default for Ppu {
 			cycles: 0,
 			vram: [0; _],
 			oam: Oam::zeroed(),
-			palettes: Palettes([Palette([NesColour::DarkGrey; 4]); 8]),
+			palettes: [Palette([NesColour::DarkGrey; 4]); 8],
 		}
 	}
 }
@@ -69,6 +69,10 @@ impl Ppu {
 
 	pub fn background_get_colour(&self) -> Colour {
 		NesColour::White.into()
+	}
+
+	pub fn raw_palettes(&self) -> &[u8; 64] {
+		unsafe { std::mem::transmute::<&[Palette; 8], &[u8; 64]>(&self.palettes) }
 	}
 }
 
@@ -169,20 +173,12 @@ pub struct SpriteAttributes {
 
 type Oam = [Sprite; 64];
 
-#[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Into)]
-pub struct Palettes([Palette; 8]);
-
-impl Palettes {
-	pub fn as_raw_bytes(&self) -> &[u8; 64] {
-		const _: () = {
-			assert!(size_of::<Palettes>() == 32);
-			assert!(size_of::<Palette>() == 4);
-			assert!(align_of::<Palette>() >= align_of::<u8>());
-		};
-		unsafe { std::mem::transmute(self) }
-	}
-}
+type Palettes = [Palette; 8];
+const _: () = {
+	assert!(size_of::<Palettes>() == 32);
+	assert!(size_of::<Palette>() == 4);
+	assert!(align_of::<Palette>() >= align_of::<u8>());
+};
 
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Into)]

@@ -279,7 +279,7 @@ impl Mapper {
 				0x0000..=0x1FFF => chr_rom.get(adr as usize).copied(),
 				0x2000..=0x3EFF => ppu.vram.get(adr as usize & 0x07FF).copied(),
 				0x3F00..=0x3FFF => {
-					let palettes_raw: &[u8] = ppu.palettes.as_raw_bytes();
+					let palettes_raw = ppu.raw_palettes();
 					palettes_raw.get((adr & 0x1F) as usize).copied()
 				}
 				_ => None,
