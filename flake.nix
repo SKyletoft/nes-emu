@@ -21,6 +21,7 @@
 					llvmPackages_21.clang-tools
 
 					fceux # For comparison
+					mesen
 				];
 				buildInputs = with pkgs; [
 					clang
