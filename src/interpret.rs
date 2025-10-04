@@ -110,7 +110,10 @@ impl State {
 	}
 
 	fn read_ppu_pure(&self, adr: u16) -> u8 {
-		println!("stealth-reading ppu at {adr:04X} ({:02X})", self.ppu.status.into_bits());
+		println!(
+			"stealth-reading ppu at {adr:04X} ({:02X})",
+			self.ppu.status.into_bits()
+		);
 		match adr % 8 {
 			0 => self.bus,
 			1 => self.bus,
