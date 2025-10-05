@@ -39,8 +39,8 @@ impl Default for Ppu {
 			scroll: Default::default(),
 			adr: Default::default(),
 			data: Default::default(),
-			scanline: Default::default(),
-			dot: Default::default(),
+			scanline: 0,
+			dot: 27, // I dunno, ask the Mesen devs why.
 			frame: 1,
 			cycles: 0,
 			vram: [0; _],

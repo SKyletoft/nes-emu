@@ -74,7 +74,7 @@ impl State {
 		let ppu = Ppu::default();
 		let bus = 0;
 		let current_texture = drawing::empty_bitmap();
-		let cycles = 0;
+		let cycles = 8;
 
 		Self {
 			cpu,
@@ -203,11 +203,6 @@ impl State {
 	}
 
 	pub fn step_ppu(&mut self) {
-		// Fceux does this, doesn't seem to be accurate, but I'm using fceux as my reference behaviour.
-		if self.cycles <= PPU_STARTUP_TIME {
-			return;
-		}
-
 		self.ppu.cycles += 1;
 
 		if (0..240).contains(&self.ppu.scanline) && (0..255).contains(&self.ppu.dot) {
