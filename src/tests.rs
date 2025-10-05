@@ -322,7 +322,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		}
 		Inst::LdaAbsolute(adr) => {
 			let mem = state.mem_pure(adr.into());
-			write!(f, "LDA ${:04X} = #${:02X}", adr, mem)
+			write!(f, "LDA ${:04X} = ${:02X}", adr, mem)
 		}
 		Inst::LdaAbsoluteX(adr) => {
 			let mem = state.mem_pure(adr.into());
@@ -753,7 +753,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		}
 		Inst::StaAbsolute(x) => {
 			let mem = state.mem_pure(x.into());
-			write!(f, "STA ${:04X} = #${:02X}", x, mem)
+			write!(f, "STA ${:04X} = ${:02X}", x, mem)
 		}
 		Inst::StaAbsoluteX(unaligned_u16) => {
 			let adr = unaligned_u16;
@@ -822,62 +822,37 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 	}
 }
 
-#[cfg(test)]
-fn fceux_log(state: &State) -> String {
-	let cpu::Cpu {
-		a, x, y, s, p, pc, ..
-	} = state.cpu;
-	let inst = state.next_inst();
-
-	// fceux flag order: N V - B D I Z C
+fn mesen_log(state: &State) -> String {
+	let cpu::Cpu { a, x, y, s, p, pc } = state.cpu;
+	let stack_depth = (0xFF - s) as usize / 2;
+	let inst = {
+		let mut s = String::new();
+		for _ in 0..stack_depth {
+			s.push(' ');
+		}
+		print_instruction(state, &mut s).unwrap();
+		s
+	};
 	let n = if p.n() { 'N' } else { 'n' };
 	let v = if p.v() { 'V' } else { 'v' };
-	let u = 'u'; // always unused/reserved
-	let b = if p.b() { 'B' } else { 'b' };
 	let d = if p.d() { 'D' } else { 'd' };
 	let i = if p.i() { 'I' } else { 'i' };
 	let z = if p.z() { 'Z' } else { 'z' };
 	let c = if p.c() { 'C' } else { 'c' };
+	let scanline = state.ppu.scanline;
+	let dot = state.ppu.dot;
+	let frame = state.ppu.frame;
+	let cycle = state.cycles;
 
-	let byte_str = {
-		let mut s = String::new();
-		for offset in 0..inst.len() {
-			let mem = state.mem_pure(state.cpu.pc + offset as u16);
-			write!(&mut s, "{mem:02X} ").unwrap();
-		}
-		s.pop();
-		s
-	};
-
-	let width = (0xFF - s) as usize;
-
-	let frames = state.ppu.frame;
-	let cycles = state.cycles;
-
-	let mut out = format!(
-		"f{:<5} c{:<10} A:{:02X} X:{:02X} Y:{:02X} S:{:02X} {} {:width$}${:04X}: {:<9}",
-		frames,
-		cycles,
-		a,
-		x,
-		y,
-		s,
-		format!("{n}{v}{u}{b}{d}{i}{z}{c}"),
-		"",
-		pc,
-		byte_str,
-	);
-
-	print_instruction(state, &mut out).unwrap();
-
-	out
+	format!(
+		"{pc:4X}  {inst:<32} A:{a:02X} X:{x:02X} Y:{y:02X} S:{s:02X} P:{n}{v}--{d}{i}{z}{c} V:{scanline:<3} H:{dot:<3} Fr:{frame} Cycle:{cycle}",
+	)
 }
 
 macro_rules! make_log_test {
 	($name:ident, $game:expr, $log:expr) => {
 		#[test]
 		fn $name() {
-			use crate::interpret::PPU_STARTUP_TIME;
 			use std::{
 				fs::File,
 				io::{BufRead, BufReader},
@@ -892,24 +867,12 @@ macro_rules! make_log_test {
 			for (i, line) in reader.lines().enumerate() {
 				let i = i + 1;
 				let line = line.unwrap();
-				let ours = fceux_log(&state);
+				let ours = mesen_log(&state);
 				let debug_state = crate::display(&state);
 				assert_eq!(
 					ours, line,
 					"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n{debug_state}"
 				);
-				let cycles = state.cycles;
-				assert!(
-					{
-						cycles < PPU_STARTUP_TIME
-							|| (cycles - PPU_STARTUP_TIME).checked_mul(3).is_none()
-							|| (cycles - PPU_STARTUP_TIME) * 3 == state.ppu.cycles
-					},
-					"{cycles} {:?} {} {}",
-					(cycles - PPU_STARTUP_TIME).checked_mul(3),
-					(cycles - PPU_STARTUP_TIME) * 3,
-					state.ppu.cycles
-				); // Implication operator when?
 				state.next();
 			}
 		}
@@ -917,7 +880,7 @@ macro_rules! make_log_test {
 }
 
 make_log_test!(
-	fceux_log_2,
+	mesen_log_1,
 	"non-free/SMB1.nes",
-	"reference-logs/SMB1-2.log"
+	"reference-logs/SMB1-Mesen.txt"
 );
