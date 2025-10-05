@@ -3,20 +3,72 @@
 
 // C-implementations of NES instructions
 
-void lda_impl(State *state, uint8_t val) {
+inline void lda_impl(State *state, uint8_t val) {
 	state->cpu.a   = val;
 	state->cpu.p.Z = (uint8_t) (0 == state->cpu.a);
 	state->cpu.p.N = (uint8_t) ((state->cpu.a & 0x80) >> 7);
 }
 
-IMMEDIATE(lda);
-ZERO_PAGE(lda);
-ZERO_PAGE_X(lda);
-ABSOLUTE(lda);
-ABSOLUTE_X(lda);
-ABSOLUTE_Y(lda);
-INDIRECT_X(lda);
-INDIRECT_Y(lda);
+void lda_immediate(State *state, uint8_t val) {
+	lda_impl(state, val);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 2);
+};
+
+void lda_zero_page(State *state, uint8_t offset) {
+	uint8_t val = state_get_mem(state, (uint16_t) offset);
+	lda_impl(state, val);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 3);
+};
+
+void lda_zero_page_x(State *state, uint8_t offset) {
+	uint8_t val = state_get_mem(state, ((uint16_t) state->cpu.x + (uint16_t) offset) & 0xFF);
+	lda_impl(state, val);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 4);
+};
+
+void lda_absolute(State *state, uint16_t adr) {
+	uint8_t val = state_get_mem(state, adr);
+	lda_impl(state, val);
+	state->cpu.pc += 3;
+	state_step_ppu_many(state, 4);
+};
+
+void lda_absolute_x(State *state, uint16_t adr) {
+	uint8_t val = state_get_mem(state, (uint16_t) state->cpu.x + adr);
+	lda_impl(state, val);
+	state->cpu.pc += 3;
+	state_step_ppu_many(state, 3);
+};
+
+void lda_absolute_y(State *state, uint16_t adr) {
+	uint8_t val = state_get_mem(state, (uint16_t) state->cpu.y + adr);
+	lda_impl(state, val);
+	state->cpu.pc += 3;
+	state_step_ppu_many(state, 3);
+};
+
+void lda_indirect_x(State *state, uint8_t adr) {
+	uint8_t tmp   = state_get_mem(state, (uint16_t) (state->cpu.x + adr) & 0xFF);
+	uint16_t adr2 = (uint16_t) (state_get_mem(state, (uint16_t) tmp)
+				    | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);
+	uint8_t val   = state_get_mem(state, adr2);
+	lda_impl(state, val);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 2);
+};
+
+void lda_indirect_y(State *state, uint8_t adr) {
+	uint8_t tmp   = state_get_mem(state, (uint16_t) (state->cpu.y + adr) & 0xFF);
+	uint16_t adr2 = (uint16_t) (state_get_mem(state, (uint16_t) tmp)
+				    | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);
+	uint8_t val   = state_get_mem(state, adr2);
+	lda_impl(state, val);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 2);
+};
 
 void ldx_impl(State *state, uint8_t val) {
 	state->cpu.x   = val;
