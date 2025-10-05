@@ -230,10 +230,16 @@ impl State {
 			println!("Cleared vblank by waiting");
 			self.ppu.status.set_vblank(false);
 		}
+
 		self.ppu.dot += 1;
 		self.ppu.scanline += self.ppu.dot / 341;
 		self.ppu.dot %= 341;
-		self.ppu.frame += (self.ppu.scanline / 262) as u64;
 		self.ppu.scanline %= 262;
+
+		// Why frames count from the start of vblank and not the start of frames, I don't
+		// know. Again, matching Mesen's behaviour.
+		if self.ppu.dot == 0 && self.ppu.scanline == 240 {
+			self.ppu.frame += 1;
+		}
 	}
 }
