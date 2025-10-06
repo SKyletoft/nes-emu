@@ -50,6 +50,12 @@ impl From<&UnalignedU16> for u16 {
 	}
 }
 
+impl UnalignedU16 {
+	pub fn as_u16(self) -> u16 {
+		self.into()
+	}
+}
+
 // Auto-generated NES CPU instruction set
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
