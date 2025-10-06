@@ -92,21 +92,41 @@ void sta_indirect_y(State *state, uint8_t adr) {
 	state_step_ppu_many(state, 2);
 };
 
-void stx_impl(State *state, uint8_t val) {
-	puts("unimplemented");
-}
+void stx_zero_page(State *state, uint8_t offset) {
+	state_set_mem(state, (uint16_t) offset, state->cpu.x);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 3);
+};
 
-ZERO_PAGE(stx);
-ZERO_PAGE_Y(stx);
-ABSOLUTE(stx);
+void stx_zero_page_y(State *state, uint8_t offset) {
+	state_set_mem(state, ((uint16_t) state->cpu.y + (uint16_t) offset) & 0xFF, state->cpu.x);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 4);
+};
 
-void sty_impl(State *state, uint8_t val) {
-	puts("unimplemented");
-}
+void stx_absolute(State *state, uint16_t adr) {
+	state_set_mem(state, adr, state->cpu.x);
+	state->cpu.pc += 3;
+	state_step_ppu_many(state, 4);
+};
 
-ZERO_PAGE(sty);
-ZERO_PAGE_X(sty);
-ABSOLUTE(sty);
+void sty_zero_page(State *state, uint8_t offset) {
+	state_set_mem(state, (uint16_t) offset, state->cpu.y);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 3);
+};
+
+void sty_zero_page_x(State *state, uint8_t offset) {
+	state_set_mem(state, ((uint16_t) state->cpu.x + (uint16_t) offset) & 0xFF, state->cpu.y);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 4);
+};
+
+void sty_absolute(State *state, uint16_t adr) {
+	state_set_mem(state, adr, state->cpu.y);
+	state->cpu.pc += 3;
+	state_step_ppu_many(state, 4);
+};
 
 void tax(State *state) {
 	state->cpu.x   = state->cpu.a;
