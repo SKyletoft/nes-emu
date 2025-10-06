@@ -223,7 +223,8 @@ impl State {
 				.unwrap_or_else(|| self.ppu.background_get_colour());
 			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour;
 		}
-		if self.ppu.scanline == 240 && self.ppu.dot == 0 {
+		if self.ppu.scanline == 241 && self.ppu.dot == 0 {
+			println!("Set vblank!");
 			self.set_vblank();
 		}
 		if self.ppu.scanline == 0 && self.ppu.dot == 0 && self.ppu.status.vblank() {
@@ -234,12 +235,15 @@ impl State {
 		self.ppu.dot += 1;
 		self.ppu.scanline += self.ppu.dot / 341;
 		self.ppu.dot %= 341;
-		self.ppu.scanline %= 262;
+		if self.ppu.scanline == 261 {
+			self.ppu.scanline = -1;
+		}
 
 		// Why frames count from the start of vblank and not the start of frames, I don't
 		// know. Again, matching Mesen's behaviour.
 		if self.ppu.dot == 0 && self.ppu.scanline == 240 {
 			self.ppu.frame += 1;
+			println!("Frame!");
 		}
 	}
 }
