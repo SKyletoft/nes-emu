@@ -1,6 +1,5 @@
 #include "interface.h"
 #include <stdint.h>
-#include <stdio.h>
 
 // C-implementations of NES instructions
 
@@ -73,24 +72,24 @@ void sta_absolute_y(State *state, uint16_t adr) {
 };
 
 void sta_indirect_x(State *state, uint8_t adr) {
-	uint8_t tmp   = state_get_mem(state, (uint16_t) (state->cpu.x + adr) & 0xFF);
-	uint16_t adr2 = (uint16_t) (state_get_mem(state, (uint16_t) tmp)
-				    | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);
-	uint8_t val   = state_get_mem(state, adr2);
-	state_set_mem(state, (uint16_t) val, state->cpu.a);
+	uint8_t zp    = (adr + state->cpu.x) & 0xFF;
+	uint8_t lo    = state_get_mem(state, zp);
+	uint8_t hi    = state_get_mem(state, (zp + 1) & 0xFF);
+	uint16_t addr = (uint16_t) (lo | (hi << 8));
+	state_set_mem(state, addr, state->cpu.a);
 	state->cpu.pc += 2;
 	state_step_ppu_many(state, 6);
-};
+}
 
 void sta_indirect_y(State *state, uint8_t adr) {
-	uint8_t tmp   = state_get_mem(state, (uint16_t) (state->cpu.y + adr) & 0xFF);
-	uint16_t adr2 = (uint16_t) (state_get_mem(state, (uint16_t) tmp)
-				    | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);
-	uint8_t val   = state_get_mem(state, adr2);
-	state_set_mem(state, (uint16_t) val, state->cpu.a);
+	uint8_t lo    = state_get_mem(state, adr);
+	uint8_t hi    = state_get_mem(state, (adr + 1) & 0xFF);
+	uint16_t base = (uint16_t) (lo | (hi << 8));
+	uint16_t addr = base + state->cpu.y;
+	state_set_mem(state, addr, state->cpu.a);
 	state->cpu.pc += 2;
 	state_step_ppu_many(state, 6);
-};
+}
 
 void stx_zero_page(State *state, uint8_t offset) {
 	state_set_mem(state, (uint16_t) offset, state->cpu.x);
