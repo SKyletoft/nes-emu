@@ -822,12 +822,19 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "STA ${:04X},Y = #${:02X}", adr, mem)
 		}
 		Inst::StaIndirectX(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "STA (${:02X}),X = ${:02X}", adr, mem)
+			let target = u16::from_le_bytes([
+				state.mem_pure((adr + state.cpu.x) as u16),
+				state.mem_pure((adr + state.cpu.x + 1) as u16),
+			]);
+			let mem = state.mem_pure(target);
+			write!(f, "STA (${adr:02X}),X [${target:04X}] = ${mem:02X}")
 		}
 		Inst::StaIndirectY(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "STA (${:02X}),Y = ${:02X}", adr, mem)
+			let target =
+				u16::from_le_bytes([state.mem_pure(adr as u16), state.mem_pure(adr as u16 + 1)])
+					+ state.cpu.y as u16;
+			let mem = state.mem_pure(target);
+			write!(f, "STA (${adr:02X}),Y [${target:04X}] = ${mem:02X}")
 		}
 		Inst::StaZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
