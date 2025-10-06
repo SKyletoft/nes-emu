@@ -18,8 +18,8 @@ pub struct Ppu {
 	pub adr: Adr,
 	pub data: u8,
 
-	pub scanline: u16,
-	pub dot: u16,
+	pub scanline: i16,
+	pub dot: i16,
 	pub frame: u64,
 	pub cycles: u64,
 	pub vram: Vram,
@@ -52,14 +52,14 @@ impl Default for Ppu {
 
 impl Ppu {
 	pub fn sprite_is_visible_x(&self, sprite: &Sprite) -> bool {
-		self.dot <= sprite.x as u16 && (sprite.x as u16) < self.dot + self.sprite_width()
+		self.dot <= sprite.x as i16 && (sprite.x as i16) < self.dot + self.sprite_width()
 	}
 
 	pub fn sprite_is_visible_y(&self, sprite: &Sprite) -> bool {
-		self.scanline <= sprite.y as u16 && (sprite.y as u16) < self.scanline + 8
+		self.scanline <= sprite.y as i16 && (sprite.y as i16) < self.scanline + 8
 	}
 
-	fn sprite_width(&self) -> u16 {
+	fn sprite_width(&self) -> i16 {
 		if self.ctrl.sprite_size() { 16 } else { 8 }
 	}
 
