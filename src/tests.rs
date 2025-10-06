@@ -93,9 +93,30 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "ASL ${:02X},X = #${:02X}", adr, mem)
 		}
 		Inst::AxsImmediate(val) => write!(f, "AXS #${:02X}", val),
-		Inst::Bcc(offset) => write!(f, "BCC ${:02X}", offset),
-		Inst::Bcs(offset) => write!(f, "BCS ${:02X}", offset),
-		Inst::Beq(offset) => write!(f, "BEQ ${:02X}", offset),
+		Inst::Bcc(offset) => {
+			let target = state
+				.cpu
+				.pc
+				.wrapping_add(2)
+				.wrapping_add(offset as i8 as i16 as u16);
+			write!(f, "BCC ${:04X}", target)
+		}
+		Inst::Bcs(offset) => {
+			let target = state
+				.cpu
+				.pc
+				.wrapping_add(2)
+				.wrapping_add(offset as i8 as i16 as u16);
+			write!(f, "BCS ${:04X}", target)
+		}
+		Inst::Beq(offset) => {
+			let target = state
+				.cpu
+				.pc
+				.wrapping_add(2)
+				.wrapping_add(offset as i8 as i16 as u16);
+			write!(f, "BEQ ${:04X}", target)
+		}
 		Inst::BitAbsolute(adr) => {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "BIT ${:04X} = #${:02X}", adr, mem)
@@ -104,18 +125,47 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "BIT ${:02X} = #${:02X}", adr, mem)
 		}
-		Inst::Bmi(offset) => write!(f, "BMI ${:02X}", offset),
-		Inst::Bne(offset) => write!(f, "BNE ${:02X}", offset),
-		Inst::Bpl(offset) => write!(
-			f,
-			"BPL ${:02X}",
-			(offset as u16)
-				.wrapping_add(state.cpu.pc)
-				.wrapping_add(instruction.len() as u16)
-		),
+		Inst::Bmi(offset) => {
+			let target = state
+				.cpu
+				.pc
+				.wrapping_add(2)
+				.wrapping_add(offset as i8 as i16 as u16);
+			write!(f, "BMI ${:04X}", target)
+		}
+		Inst::Bne(offset) => {
+			let target = state
+				.cpu
+				.pc
+				.wrapping_add(2)
+				.wrapping_add(offset as i8 as i16 as u16);
+			write!(f, "BNE ${:04X}", target)
+		}
+		Inst::Bpl(offset) => {
+			let target = state
+				.cpu
+				.pc
+				.wrapping_add(2)
+				.wrapping_add(offset as i8 as i16 as u16);
+			write!(f, "BPL ${:04X}", target)
+		}
 		Inst::Brk => write!(f, "BRK"),
-		Inst::Bvc(offset) => write!(f, "BVC ${:02X}", offset),
-		Inst::Bvs(offset) => write!(f, "BVS ${:02X}", offset),
+		Inst::Bvc(offset) => {
+			let target = state
+				.cpu
+				.pc
+				.wrapping_add(2)
+				.wrapping_add(offset as i8 as i16 as u16);
+			write!(f, "BVC ${:04X}", target)
+		}
+		Inst::Bvs(offset) => {
+			let target = state
+				.cpu
+				.pc
+				.wrapping_add(2)
+				.wrapping_add(offset as i8 as i16 as u16);
+			write!(f, "BVS ${:04X}", target)
+		}
 		Inst::Clc => write!(f, "CLC"),
 		Inst::Cld => write!(f, "CLD"),
 		Inst::Cli => write!(f, "CLI"),
