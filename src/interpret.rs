@@ -47,7 +47,10 @@ pub unsafe fn state_set_mem(ptr: *mut State, adr: u16, val: u8) {
 		0x2000..0x4000 => state.write_ppu(adr, val),
 		0x4000..0x4018 => todo!("PPU registers"),
 		0x4018..0x4020 => todo!("PPU registers"),
-		0x4020..=0xFFFF => state.rom.set_cpu(adr, val).expect("Invalid address for ROM"),
+		0x4020..=0xFFFF => state
+			.rom
+			.set_cpu(adr, val)
+			.expect("Invalid address for ROM"),
 	}
 }
 
