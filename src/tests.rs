@@ -873,7 +873,6 @@ macro_rules! make_log_test {
 					ours, line,
 					"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n{debug_state}"
 				);
-				println!("{:X?}", state.next_inst());
 				state.next();
 			}
 		}

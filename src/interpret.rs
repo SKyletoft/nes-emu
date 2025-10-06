@@ -110,10 +110,6 @@ impl State {
 	}
 
 	fn read_ppu_pure(&self, adr: u16) -> u8 {
-		println!(
-			"stealth-reading ppu at {adr:04X} ({:02X})",
-			self.ppu.status.into_bits()
-		);
 		match adr % 8 {
 			0 => self.bus,
 			1 => self.bus,
@@ -132,12 +128,10 @@ impl State {
 	}
 
 	fn read_ppu(&mut self, adr: u16) -> u8 {
-		println!("reading ppu at {adr:04X}");
 		let res = self.read_ppu_pure(adr);
 		match adr % 8 {
 			2 => {
 				self.ppu.status.set_vblank(false);
-				println!("cleared vblank by reading");
 			}
 			_ => unreachable!(),
 		}
@@ -195,7 +189,6 @@ impl State {
 	}
 
 	pub fn set_vblank(&mut self) {
-		println!("vblank!");
 		if self.ppu.ctrl.nmi_enable() {}
 		self.ppu.status.set_vblank(true);
 	}
@@ -222,11 +215,9 @@ impl State {
 			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour;
 		}
 		if self.ppu.scanline == 241 && self.ppu.dot == 0 {
-			println!("Set vblank!");
 			self.set_vblank();
 		}
 		if self.ppu.scanline == 0 && self.ppu.dot == 0 && self.ppu.status.vblank() {
-			println!("Cleared vblank by waiting");
 			self.ppu.status.set_vblank(false);
 		}
 
@@ -241,7 +232,6 @@ impl State {
 		// know. Again, matching Mesen's behaviour.
 		if self.ppu.dot == 0 && self.ppu.scanline == 240 {
 			self.ppu.frame += 1;
-			println!("Frame!");
 		}
 	}
 }
