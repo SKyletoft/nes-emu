@@ -177,14 +177,20 @@ void rti(State *state) {
 	state->cpu.s += 1;
 	state->cpu.p.raw = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
 	state->cpu.s += 1;
-	state->cpu.pc = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
+	state->cpu.pc =
+	    (uint16_t) ((state_get_mem(state, (uint16_t) (state->cpu.s + 0x100))
+			 | state_get_mem(state, (uint16_t) (state->cpu.s + 0x100 + 1)) << 8)
+			+ 1);
 	state_step_ppu_many(state, 2);
 }
 
 void rts(State *state) {
 	state->cpu.s += 1;
-	state->cpu.pc = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
-	state_step_ppu_many(state, 2);
+	state->cpu.pc =
+	    (uint16_t) ((state_get_mem(state, (uint16_t) (state->cpu.s + 0x100))
+			 | state_get_mem(state, (uint16_t) (state->cpu.s + 0x100 + 1)) << 8)
+			+ 1);
+	state_step_ppu_many(state, 6);
 }
 
 void nop([[maybe_unused]] State *state) {
