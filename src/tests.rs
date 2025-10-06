@@ -823,15 +823,15 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		}
 		Inst::StaIndirectX(adr) => {
 			let mem = state.mem_pure(adr as u16);
-			write!(f, "STA (${:02X}),X = #${:02X}", adr, mem)
+			write!(f, "STA (${:02X}),X = ${:02X}", adr, mem)
 		}
 		Inst::StaIndirectY(adr) => {
 			let mem = state.mem_pure(adr as u16);
-			write!(f, "STA (${:02X}),Y = #${:02X}", adr, mem)
+			write!(f, "STA (${:02X}),Y = ${:02X}", adr, mem)
 		}
 		Inst::StaZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
-			write!(f, "STA ${:02X} = #${:02X}", adr, mem)
+			write!(f, "STA ${:02X} = ${:02X}", adr, mem)
 		}
 		Inst::StaZeroPageX(adr) => {
 			let mem = state.mem_pure(adr as u16);
@@ -844,7 +844,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		}
 		Inst::StxZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
-			write!(f, "STX ${:02X} = #${:02X}", adr, mem)
+			write!(f, "STX ${:02X} = ${:02X}", adr, mem)
 		}
 		Inst::StxZeroPageY(adr) => {
 			let mem = state.mem_pure(adr as u16);
