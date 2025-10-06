@@ -28,13 +28,27 @@ pub struct State {
 #[unsafe(no_mangle)]
 pub unsafe fn state_get_mem(ptr: *mut State, adr: u16) -> u8 {
 	let state = unsafe { &mut *ptr };
-	state.mem(adr)
+	match adr {
+		0x0000..0x0800 => state.ram[adr as usize],
+		0x0800..0x2000 => state.ram[(adr % 2048) as usize],
+		0x2000..0x4000 => state.read_ppu_pure(adr),
+		0x4000..0x4018 => todo!("PPU registers"),
+		0x4018..0x4020 => todo!("PPU registers"),
+		0x4020..=0xFFFF => state.rom.get_cpu(adr).expect("Invalid address for ROM"),
+	}
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn state_set_mem(ptr: *mut State, adr: u16, val: u8) {
 	let state = unsafe { &mut *ptr };
-	state.set_mem(adr, val);
+	match adr {
+		0x0000..0x0800 => state.ram[adr as usize] = val,
+		0x0800..0x2000 => state.ram[(adr % 2048) as usize] = val,
+		0x2000..0x4000 => state.write_ppu(adr, val),
+		0x4000..0x4018 => todo!("PPU registers"),
+		0x4018..0x4020 => todo!("PPU registers"),
+		0x4020..=0xFFFF => state.rom.set_cpu(adr, val).expect("Invalid address for ROM"),
+	}
 }
 
 #[unsafe(no_mangle)]
@@ -157,8 +171,8 @@ impl State {
 			0x0000..0x0800 => self.ram[adr as usize],
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize],
 			0x2000..0x4000 => self.read_ppu_pure(adr),
-			0x4000..0x4018 => todo!(),
-			0x4018..0x4020 => todo!(),
+			0x4000..0x4018 => todo!("PPU registers"),
+			0x4018..0x4020 => todo!("PPU registers"),
 			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
 		}
 	}
@@ -168,8 +182,8 @@ impl State {
 			0x0000..0x0800 => self.ram[adr as usize],
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize],
 			0x2000..0x4000 => self.read_ppu(adr),
-			0x4000..0x4018 => todo!(),
-			0x4018..0x4020 => todo!(),
+			0x4000..0x4018 => todo!("PPU registers"),
+			0x4018..0x4020 => todo!("PPU registers"),
 			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
 		};
 		self.bus = res;
@@ -181,8 +195,8 @@ impl State {
 			0x0000..0x0800 => self.ram[adr as usize] = val,
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize] = val,
 			0x2000..0x4000 => self.write_ppu(adr, val),
-			0x4000..0x4018 => todo!(),
-			0x4018..0x4020 => todo!(),
+			0x4000..0x4018 => todo!("PPU registers"),
+			0x4018..0x4020 => todo!("PPU registers"),
 			0x4020..=0xFFFF => self.rom.set_cpu(adr, val).expect("Invalid address for ROM"),
 		}
 		self.bus = val;
