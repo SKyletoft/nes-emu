@@ -63,33 +63,33 @@ void sta_absolute(State *state, uint16_t adr) {
 void sta_absolute_x(State *state, uint16_t adr) {
 	state_set_mem(state, (uint16_t) state->cpu.x + adr, state->cpu.a);
 	state->cpu.pc += 3;
-	state_step_ppu_many(state, 3);
+	state_step_ppu_many(state, 5);
 };
 
 void sta_absolute_y(State *state, uint16_t adr) {
 	state_set_mem(state, (uint16_t) state->cpu.y + adr, state->cpu.a);
 	state->cpu.pc += 3;
-	state_step_ppu_many(state, 3);
+	state_step_ppu_many(state, 5);
 };
 
 void sta_indirect_x(State *state, uint8_t adr) {
 	uint8_t tmp   = state_get_mem(state, (uint16_t) (state->cpu.x + adr) & 0xFF);
 	uint16_t adr2 = (uint16_t) (state_get_mem(state, (uint16_t) tmp)
-	                            | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);
+				    | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);
 	uint8_t val   = state_get_mem(state, adr2);
 	state_set_mem(state, (uint16_t) val, state->cpu.a);
 	state->cpu.pc += 2;
-	state_step_ppu_many(state, 2);
+	state_step_ppu_many(state, 6);
 };
 
 void sta_indirect_y(State *state, uint8_t adr) {
 	uint8_t tmp   = state_get_mem(state, (uint16_t) (state->cpu.y + adr) & 0xFF);
 	uint16_t adr2 = (uint16_t) (state_get_mem(state, (uint16_t) tmp)
-	                            | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);
+				    | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);
 	uint8_t val   = state_get_mem(state, adr2);
 	state_set_mem(state, (uint16_t) val, state->cpu.a);
 	state->cpu.pc += 2;
-	state_step_ppu_many(state, 2);
+	state_step_ppu_many(state, 6);
 };
 
 void stx_zero_page(State *state, uint8_t offset) {
