@@ -163,5 +163,5 @@ void jsr(State *state, uint16_t adr) {
 
 	// Jump to subroutine
 	state->cpu.pc = adr;
-	state_step_ppu_many(state, 2);
+	state_step_ppu_many(state, 6);
 }
