@@ -30,8 +30,9 @@ void lda_zero_page_x(State *state, uint8_t offset) {
 };
 
 void lda_absolute(State *state, uint16_t adr) {
-	state_step_ppu_many(state, 4);
+	state_step_ppu_many(state, 3);
 	uint8_t val    = state_get_mem(state, adr);
+	state_step_ppu_many(state, 1);
 	state->cpu.a   = val;
 	state->cpu.p.Z = (uint8_t) (0 == state->cpu.a);
 	state->cpu.p.N = (uint8_t) ((state->cpu.a & 0x80) >> 7);
