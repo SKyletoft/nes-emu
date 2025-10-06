@@ -212,7 +212,7 @@ impl State {
 				.find(|sprite| self.ppu.sprite_is_visible_x(sprite))
 				.map(|s| self.ppu.sprite_get_colour(s))
 				.unwrap_or_else(|| self.ppu.background_get_colour());
-			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour;
+			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour.into();
 		}
 		if self.ppu.scanline == 241 && self.ppu.dot == 0 {
 			self.set_vblank();

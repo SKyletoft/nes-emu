@@ -63,12 +63,12 @@ impl Ppu {
 		if self.ctrl.sprite_size() { 16 } else { 8 }
 	}
 
-	pub fn sprite_get_colour(&self, sprite: &Sprite) -> Colour {
-		NesColour::Black.into()
+	pub fn sprite_get_colour(&self, sprite: &Sprite) -> NesColour {
+		NesColour::Black
 	}
 
-	pub fn background_get_colour(&self) -> Colour {
-		NesColour::White.into()
+	pub fn background_get_colour(&self) -> NesColour {
+		NesColour::White
 	}
 
 	pub fn raw_palettes(&self) -> &[u8; 64] {
