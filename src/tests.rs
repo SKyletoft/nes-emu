@@ -326,7 +326,13 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		}
 		Inst::LdaAbsoluteX(adr) => {
 			let mem = state.mem_pure(adr.into());
-			write!(f, "LDA ${:04X},X = #${:02X}", adr, mem)
+			write!(
+				f,
+				"LDA ${:04X},X [${:04X}] = ${:02X}",
+				adr,
+				adr.as_u16() + state.cpu.x as u16,
+				mem
+			)
 		}
 		Inst::LdaAbsoluteY(adr) => {
 			let mem = state.mem_pure(adr.into());
