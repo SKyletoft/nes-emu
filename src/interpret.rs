@@ -232,6 +232,8 @@ impl State {
 		// know. Again, matching Mesen's behaviour.
 		if self.ppu.dot == 0 && self.ppu.scanline == 240 {
 			self.ppu.frame += 1;
+			let mut texture = self.output_texture.lock().unwrap();
+			std::mem::swap(&mut self.current_texture, &mut texture);
 		}
 	}
 }
