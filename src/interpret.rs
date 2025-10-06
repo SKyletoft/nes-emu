@@ -197,9 +197,7 @@ impl State {
 	pub fn set_vblank(&mut self) {
 		println!("vblank!");
 		if self.ppu.ctrl.nmi_enable() {}
-		if self.cycles > 29658 {
-			self.ppu.status.set_vblank(true);
-		}
+		self.ppu.status.set_vblank(true);
 	}
 
 	pub fn step_ppu(&mut self) {
