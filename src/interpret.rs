@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::{
 	apu::Apu,
+	controller::Controller,
 	cpu::{Cpu, P},
 	drawing::{self, Bitmap},
 	inst::Inst,
@@ -19,6 +20,8 @@ pub struct State {
 	pub cpu: Cpu,
 	pub ppu: Ppu,
 	pub apu: Apu,
+	pub controller1: Controller,
+	pub controller2: Controller,
 	pub rom: Box<Mapper>,
 	pub ram: [u8; 2048],
 	pub bus: u8,
@@ -74,6 +77,8 @@ impl State {
 
 		let ram = [0; 2048];
 		let ppu = Ppu::default();
+		let controller1 = Controller::new();
+		let controller2 = Controller::new();
 		let bus = 0;
 		let current_texture = drawing::empty_bitmap();
 		let cycles = 8;
@@ -87,6 +92,8 @@ impl State {
 			output_texture,
 			current_texture,
 			cycles,
+			controller1,
+			controller2,
 		}
 	}
 

@@ -1,4 +1,5 @@
 mod apu;
+mod controller;
 mod cpu;
 mod drawing;
 mod evaluate_instruction;
