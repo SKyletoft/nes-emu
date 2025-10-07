@@ -31,24 +31,24 @@ pub struct State {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe fn state_get_mem(ptr: *mut State, adr: u16) -> u8 {
+pub unsafe extern "C" fn state_get_mem(ptr: *mut State, adr: u16) -> u8 {
 	let state = unsafe { &mut *ptr };
 	state.mem(adr)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe fn state_set_mem(ptr: *mut State, adr: u16, val: u8) {
+pub unsafe extern "C" fn state_set_mem(ptr: *mut State, adr: u16, val: u8) {
 	let state = unsafe { &mut *ptr };
 	state.set_mem(adr, val);
 }
 
 #[unsafe(no_mangle)]
-pub unsafe fn state_step_ppu(ptr: *mut State) {
+pub unsafe extern "C" fn state_step_ppu(ptr: *mut State) {
 	unsafe { &mut *ptr }.step_ppu();
 }
 
 #[unsafe(no_mangle)]
-pub unsafe fn state_step_ppu_many(ptr: *mut State, times: u32) {
+pub unsafe extern "C" fn state_step_ppu_many(ptr: *mut State, times: u32) {
 	for _ in 0..times {
 		unsafe { (&mut *ptr) }.cycles += 1;
 		unsafe {
