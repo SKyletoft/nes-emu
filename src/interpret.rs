@@ -161,6 +161,31 @@ impl State {
 		}
 	}
 
+	pub fn write_apu(&mut self, addr: u16, val: u8) {
+		match addr {
+			0x4000 => self.apu.pulse1.sweep = val,
+			0x4001 => self.apu.pulse1.timer_low = val,
+			0x4002 => self.apu.pulse1.timer_high = val,
+			0x4003 => self.apu.pulse1.control = val,
+			0x4004 => self.apu.pulse2.sweep = val,
+			0x4005 => self.apu.pulse2.timer_low = val,
+			0x4006 => self.apu.pulse2.timer_high = val,
+			0x4007 => self.apu.pulse2.control = val,
+			0x4008 => self.apu.triangle.timer_low = val,
+			0x4009 => self.apu.triangle.timer_high = val,
+			0x400A => self.apu.triangle.control = val,
+			0x400C => self.apu.noise.timer_low = val,
+			0x400D => self.apu.noise.timer_high = val,
+			0x400E => self.apu.noise.control = val,
+			0x4010 => self.apu.dmc.timer_low = val,
+			0x4011 => self.apu.dmc.timer_high = val,
+			0x4012 => self.apu.dmc.control = val,
+			0x4015 => self.apu.status = val,
+			0x4017 => self.apu.frame_counter = val,
+			_ => {}
+		}
+	}
+
 	pub(crate) fn mem_pure(&self, adr: u16) -> u8 {
 		match adr {
 			0x0000..0x0800 => self.ram[adr as usize],
