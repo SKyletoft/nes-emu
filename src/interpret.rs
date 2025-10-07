@@ -76,6 +76,7 @@ impl State {
 		};
 
 		let ram = [0; 2048];
+		let apu = Apu::default();
 		let ppu = Ppu::default();
 		let controller1 = Controller::new();
 		let controller2 = Controller::new();
@@ -92,6 +93,7 @@ impl State {
 			output_texture,
 			current_texture,
 			cycles,
+			apu,
 			controller1,
 			controller2,
 		}
@@ -191,14 +193,11 @@ impl State {
 			0x0000..0x0800 => self.ram[adr as usize],
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize],
 			0x2000..0x4000 => self.read_ppu_pure(adr),
-			0x4000..0x4018 => {
-				/* Audio stuff */
-				0
-			}
-			0x4018..0x4020 => {
-				/* Audio + Controller stuff */
-				0
-			}
+			0x4000..0x4015 => self.bus,
+			0x4015..0x4018 => self.apu.status,
+			0x4016 => self.controller1.into_bits(),
+			0x4017 => self.controller2.into_bits(),
+			0x4018..0x4020 => panic!("Cpu test mode is disabled"),
 			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
 		}
 	}
@@ -208,14 +207,11 @@ impl State {
 			0x0000..0x0800 => self.ram[adr as usize],
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize],
 			0x2000..0x4000 => self.read_ppu(adr),
-			0x4000..0x4018 => {
-				/* Audio stuff */
-				0
-			}
-			0x4018..0x4020 => {
-				/* Audio + Controller stuff */
-				0
-			}
+			0x4000..0x4015 => self.bus,
+			0x4015..0x4018 => self.apu.status,
+			0x4016 => self.controller1.into_bits(),
+			0x4017 => self.controller2.into_bits(),
+			0x4018..0x4020 => panic!("Cpu test mode is disabled"),
 			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
 		};
 		self.bus = res;
