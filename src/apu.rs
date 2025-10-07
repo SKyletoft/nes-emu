@@ -44,10 +44,3 @@ pub struct Apu {
 	pub frame_counter: u8,
 	pub status: u8,
 }
-
-impl Apu {
-	pub fn new() -> Self {
-		Self::default()
-	}
-
-}
