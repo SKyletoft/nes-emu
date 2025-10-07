@@ -48,6 +48,11 @@ pub unsafe extern "C" fn state_step_ppu(ptr: *mut State) {
 }
 
 #[unsafe(no_mangle)]
+pub unsafe extern "C" fn state_set_bus(ptr: *mut State, val: u8) {
+	unsafe { &mut *ptr }.bus = val;
+}
+
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn state_step_ppu_many(ptr: *mut State, times: u32) {
 	for _ in 0..times {
 		unsafe { (&mut *ptr) }.cycles += 1;
