@@ -3,6 +3,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::{
+	apu::Apu,
 	cpu::{Cpu, P},
 	drawing::{self, Bitmap},
 	inst::Inst,
@@ -17,6 +18,7 @@ pub const PPU_STARTUP_TIME: u64 = 2500;
 pub struct State {
 	pub cpu: Cpu,
 	pub ppu: Ppu,
+	pub apu: Apu,
 	pub rom: Box<Mapper>,
 	pub ram: [u8; 2048],
 	pub bus: u8,
@@ -157,8 +159,14 @@ impl State {
 			0x0000..0x0800 => self.ram[adr as usize],
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize],
 			0x2000..0x4000 => self.read_ppu_pure(adr),
-			0x4000..0x4018 => todo!(),
-			0x4018..0x4020 => todo!(),
+			0x4000..0x4018 => {
+				/* Audio stuff */
+				0
+			}
+			0x4018..0x4020 => {
+				/* Audio + Controller stuff */
+				0
+			}
 			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
 		}
 	}
@@ -168,8 +176,14 @@ impl State {
 			0x0000..0x0800 => self.ram[adr as usize],
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize],
 			0x2000..0x4000 => self.read_ppu(adr),
-			0x4000..0x4018 => todo!(),
-			0x4018..0x4020 => todo!(),
+			0x4000..0x4018 => {
+				/* Audio stuff */
+				0
+			}
+			0x4018..0x4020 => {
+				/* Audio + Controller stuff */
+				0
+			}
 			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
 		};
 		self.bus = res;
@@ -181,8 +195,8 @@ impl State {
 			0x0000..0x0800 => self.ram[adr as usize] = val,
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize] = val,
 			0x2000..0x4000 => self.write_ppu(adr, val),
-			0x4000..0x4018 => { /* Audio stuff */ },
-			0x4018..0x4020 => { /* Audio + Controller stuff */ },
+			0x4000..0x4018 => { /* Audio stuff */ }
+			0x4018..0x4020 => { /* Audio + Controller stuff */ }
 			0x4020..=0xFFFF => self.rom.set_cpu(adr, val).expect("Invalid address for ROM"),
 		}
 		self.bus = val;
