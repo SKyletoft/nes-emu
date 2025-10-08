@@ -32,7 +32,7 @@ fn display(state: &State) -> String {
 	let v = p.v() as u8;
 	let n = p.n() as u8;
 
-	let inst = state.next_inst();
+	let inst = state.next_inst_pure();
 
 	let ppu::Ppu {
 		ctrl,

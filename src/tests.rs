@@ -3,7 +3,7 @@ use std::fmt::{self, Write};
 use crate::{cpu, drawing, inst::Inst, interpret::State, nes_file::Mapper};
 
 fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
-	let instruction = state.next_inst();
+	let instruction = state.next_inst_pure();
 	match instruction {
 		Inst::AdcAbsolute(adr) => {
 			let mem = state.mem_pure(adr.into());
@@ -930,6 +930,7 @@ macro_rules! make_log_test {
 			for (i, line) in reader.lines().enumerate() {
 				let i = i + 1;
 				let line = line.unwrap();
+				let _ = state.next_inst();
 				let ours = mesen_log(&state);
 				let debug_state = crate::display(&state);
 				assert_eq!(

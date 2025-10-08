@@ -107,7 +107,19 @@ impl State {
 		}
 	}
 
-	pub fn next_inst(&self) -> Inst {
+	pub fn next_inst(&mut self) -> Inst {
+		let code = [
+			self.mem_pure(self.cpu.pc),
+			self.mem_pure(self.cpu.pc + 1),
+			self.mem_pure(self.cpu.pc + 2),
+		];
+		let res: Inst = code.into();
+		// To set the open bus
+		let _ = self.mem(self.cpu.pc - 1 + res.len() as u16);
+		res
+	}
+
+	pub fn next_inst_pure(&self) -> Inst {
 		let code = [
 			self.mem_pure(self.cpu.pc),
 			self.mem_pure(self.cpu.pc + 1),
