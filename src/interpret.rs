@@ -248,7 +248,10 @@ impl State {
 			0x4018..0x4020 => { /* Audio + Controller stuff */ }
 			0x4020..=0xFFFF => self.rom.set_cpu(adr, val).expect("Invalid address for ROM"),
 		}
-		self.cpu_bus = val;
+		// Writing to CPU-internal registers doesn't set the bus.
+		if adr != 0x4015 {
+			self.cpu_bus = val;
+		}
 	}
 
 	pub fn set_vblank(&mut self) {
