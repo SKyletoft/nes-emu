@@ -24,7 +24,7 @@ pub struct State {
 	pub controller2: Controller,
 	pub rom: Box<Mapper>,
 	pub ram: [u8; 2048],
-	pub bus: u8,
+	pub cpu_bus: u8,
 	pub output_texture: Arc<Mutex<Bitmap>>,
 	pub current_texture: Bitmap,
 	pub cycles: u64,
@@ -49,7 +49,7 @@ pub unsafe extern "C" fn state_step_ppu(ptr: *mut State) {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn state_set_bus(ptr: *mut State, val: u8) {
-	unsafe { &mut *ptr }.bus = val;
+	unsafe { &mut *ptr }.cpu_bus = val;
 }
 
 #[unsafe(no_mangle)]
@@ -85,7 +85,7 @@ impl State {
 		let ppu = Ppu::default();
 		let controller1 = Controller::new();
 		let controller2 = Controller::new();
-		let bus = 0;
+		let cpu_bus = 0;
 		let current_texture = drawing::empty_bitmap();
 		let cycles = 8;
 
@@ -94,7 +94,7 @@ impl State {
 			ppu,
 			rom,
 			ram,
-			bus,
+			cpu_bus,
 			output_texture,
 			current_texture,
 			cycles,
@@ -198,7 +198,7 @@ impl State {
 			0x0000..0x0800 => self.ram[adr as usize],
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize],
 			0x2000..0x4000 => self.read_ppu_pure(adr),
-			0x4000..0x4015 => self.bus,
+			0x4000..0x4015 => self.cpu_bus,
 			0x4015..0x4018 => self.apu.status,
 			0x4016 => self.controller1.into_bits(),
 			0x4017 => self.controller2.into_bits(),
@@ -212,14 +212,14 @@ impl State {
 			0x0000..0x0800 => self.ram[adr as usize],
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize],
 			0x2000..0x4000 => self.read_ppu(adr),
-			0x4000..0x4015 => self.bus,
+			0x4000..0x4015 => self.cpu_bus,
 			0x4015..0x4018 => self.apu.status,
 			0x4016 => self.controller1.into_bits(),
 			0x4017 => self.controller2.into_bits(),
 			0x4018..0x4020 => panic!("Cpu test mode is disabled"),
 			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
 		};
-		self.bus = res;
+		self.cpu_bus = res;
 		res
 	}
 
@@ -232,7 +232,7 @@ impl State {
 			0x4018..0x4020 => { /* Audio + Controller stuff */ }
 			0x4020..=0xFFFF => self.rom.set_cpu(adr, val).expect("Invalid address for ROM"),
 		}
-		self.bus = val;
+		self.cpu_bus = val;
 	}
 
 	pub fn set_vblank(&mut self) {
