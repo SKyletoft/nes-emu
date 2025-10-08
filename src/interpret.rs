@@ -25,6 +25,7 @@ pub struct State {
 	pub rom: Box<Mapper>,
 	pub ram: [u8; 2048],
 	pub cpu_bus: u8,
+	pub ppu_bus: u8,
 	pub output_texture: Arc<Mutex<Bitmap>>,
 	pub current_texture: Bitmap,
 	pub cycles: u64,
@@ -86,6 +87,7 @@ impl State {
 		let controller1 = Controller::new();
 		let controller2 = Controller::new();
 		let cpu_bus = 0;
+		let ppu_bus = 0;
 		let current_texture = drawing::empty_bitmap();
 		let cycles = 8;
 
@@ -95,6 +97,7 @@ impl State {
 			rom,
 			ram,
 			cpu_bus,
+			ppu_bus,
 			output_texture,
 			current_texture,
 			cycles,
@@ -127,17 +130,17 @@ impl State {
 
 	fn read_ppu_pure(&self, adr: u16) -> u8 {
 		match adr % 8 {
-			0 => self.bus,
-			1 => self.bus,
+			0 => self.ppu_bus,
+			1 => self.ppu_bus,
 			2 => {
 				let status: u8 = self.ppu.status.into();
-				let bus = self.bus;
+				let bus = self.ppu_bus;
 				(status & 0b1110_0000) | (bus & 0b0001_1111)
 			}
-			3 => self.bus,
+			3 => self.ppu_bus,
 			4 => self.ppu.oam_data,
-			5 => self.bus,
-			6 => self.bus,
+			5 => self.ppu_bus,
+			6 => self.ppu_bus,
 			7 => self.ppu.data,
 			_ => unreachable!(),
 		}
@@ -155,6 +158,7 @@ impl State {
 	}
 
 	fn write_ppu(&mut self, adr: u16, val: u8) {
+		self.ppu_bus = val;
 		match adr % 8 {
 			0 => self.ppu.ctrl.set_bits(val),
 			1 => self.ppu.mask.set_bits(val),
