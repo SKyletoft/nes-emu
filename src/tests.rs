@@ -119,11 +119,11 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		}
 		Inst::BitAbsolute(adr) => {
 			let mem = state.mem_pure(adr.into());
-			write!(f, "BIT ${:04X} = #${:02X}", adr, mem)
+			write!(f, "BIT ${:04X} = ${:02X}", adr, mem)
 		}
 		Inst::BitZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
-			write!(f, "BIT ${:02X} = #${:02X}", adr, mem)
+			write!(f, "BIT ${:02X} = ${:02X}", adr, mem)
 		}
 		Inst::Bmi(offset) => {
 			let target = state
@@ -817,9 +817,10 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "STA ${:04X},X = #${:02X}", adr, mem)
 		}
 		Inst::StaAbsoluteY(unaligned_u16) => {
-			let adr = unaligned_u16;
-			let mem = state.mem_pure(adr.into());
-			write!(f, "STA ${:04X},Y = #${:02X}", adr, mem)
+			let adr = unaligned_u16.as_u16();
+			let target = adr + state.cpu.y as u16;
+			let mem = state.mem_pure(target);
+			write!(f, "STA ${adr:04X},Y [${target:04X}] = ${mem:02X}")
 		}
 		Inst::StaIndirectX(adr) => {
 			let target = u16::from_le_bytes([
