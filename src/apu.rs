@@ -92,7 +92,7 @@ pub struct Dmc {
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, Pod, Zeroable)]
 pub struct Apu {
 	pub pulse1: Pulse,
 	pub pulse2: Pulse,
@@ -101,10 +101,23 @@ pub struct Apu {
 	pub dmc: Dmc,
 	pub frame_counter: u8,
 	pub status: Status,
+	pub _unused: u16,
+}
+
+impl Apu {
+	pub fn registers_as_raw_bytes_mut(&mut self) -> &mut [u8; 0x14] {
+		const _:  () = {
+			assert!(0x14 < 0x18);
+			assert!(size_of::<Apu>() == 0x18);
+		};
+		let full_thing: &mut [u8; 0x18] = bytemuck::cast_mut(self);
+		let prefix: &mut [u8; 0x14] = (&mut full_thing[..0x14]).try_into().expect("0x14 < 0x18");
+		prefix
+	}
 }
 
 #[bitfield(u8)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Zeroable)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Zeroable, Pod)]
 pub struct Status {
 	#[bits(1)]
 	dmc_interrupt: bool,
