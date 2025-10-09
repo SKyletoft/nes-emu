@@ -57,7 +57,7 @@ pub struct Noise {
 	#[bits(4)]
 	volume_envelope: u8,
 	#[bits(8)]
-	__: u8, // padding
+	__: u8,
 	#[bits(1)]
 	mode: bool,
 	#[bits(3)]
