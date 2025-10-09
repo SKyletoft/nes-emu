@@ -156,5 +156,5 @@ impl Apu {
 		self.status.0 &= 0b1110_0000;
 		self.status.0 |= new_status.into_bits();
 	}
-	pub fn read_status(&mut self, val: u8) {}
+	pub fn read_status(&mut self) {}
 }
