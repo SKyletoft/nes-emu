@@ -232,6 +232,7 @@ impl State {
 			0x0000..0x0800 => self.ram[adr as usize] = val,
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize] = val,
 			0x2000..0x4000 => self.write_ppu(adr, val),
+			0x4000..0x4014 | 0x4015 | 0x4017 => self.write_apu(adr, val),
 			0x4000..0x4018 => { /* Audio stuff */ }
 			0x4018..0x4020 => { /* Audio + Controller stuff */ }
 			0x4020..=0xFFFF => self.rom.set_cpu(adr, val).expect("Invalid address for ROM"),
