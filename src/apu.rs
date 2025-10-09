@@ -125,7 +125,7 @@ pub struct Status {
 }
 
 impl Apu {
-	fn write_status(&mut self, val: u8) {
+	pub fn write_status(&mut self, val: u8) {
 		let new_status = Status::from_bits(val & 0b0001_1111);
 		if !new_status.noise_active() {
 			self.noise.set_length_counter_load(0);
@@ -143,5 +143,5 @@ impl Apu {
 		self.status.0 &= 0b1110_0000;
 		self.status.0 |= new_status.into_bits();
 	}
-	fn read_status(&mut self, val: u8) {}
+	pub fn read_status(&mut self, val: u8) {}
 }
