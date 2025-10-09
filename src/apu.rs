@@ -127,17 +127,18 @@ pub struct Status {
 impl Apu {
 	fn write_status(&mut self, val: u8) {
 		let new_status = Status::from_bits(val & 0b0001_1111);
-
-		// The status register is used to enable and disable individual channels, control the DMC, and can read the status of length counters and APU interrupts.
-		// $4015 write	---D NT21	Enable DMC (D), noise (N), triangle (T), and pulse channels (2/1)
-
-		//     Writing a zero to any of the channel enable bits (NT21) will silence that channel and halt its length counter.
-		//     If the DMC bit is clear, the DMC bytes remaining will be set to 0 and the DMC will silence when it empties.
-		//     If the DMC bit is set, the DMC sample will be restarted only if its bytes remaining is 0. If there are bits remaining in the 1-byte sample buffer, these will finish playing before the next sample is fetched.
-		//     Writing to this register clears the DMC interrupt flag.
-		//     Power-up and reset have the effect of writing $00, silencing all channels.
-
-		if !new_status.noise_active() {}
+		if !new_status.noise_active() {
+			self.noise.set_length_counter_load(0);
+		}
+		if !new_status.triangle_active() {
+			self.noise.set_length_counter_load(0);
+		}
+		if !new_status.pulse1_active() {
+			self.pulse1.set_length_counter_load(0);
+		}
+		if !new_status.pulse2_active() {
+			self.pulse2.set_length_counter_load(0);
+		}
 
 		self.status.0 &= 0b1110_0000;
 		self.status.0 |= new_status.into_bits();
