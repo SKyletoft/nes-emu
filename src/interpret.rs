@@ -160,6 +160,7 @@ impl State {
 
 	fn read_ppu(&mut self, adr: u16) -> u8 {
 		let res = self.read_ppu_pure(adr);
+		self.ppu_bus = res;
 		match adr % 8 {
 			2 => {
 				self.ppu.status.set_vblank(false);
