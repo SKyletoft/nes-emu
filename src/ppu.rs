@@ -15,8 +15,8 @@ pub struct Ppu {
 	pub oam_adr: u8,
 	pub oam_data: u8,
 	pub scroll: Scroll,
-	pub adr: Adr,
-	pub data: u8,
+	pub adr: u16,
+	pub adr_writer: AdrWriter,
 
 	pub scanline: i16,
 	pub dot: i16,
@@ -38,7 +38,7 @@ impl Default for Ppu {
 			oam_data: Default::default(),
 			scroll: Default::default(),
 			adr: Default::default(),
-			data: Default::default(),
+			adr_writer: Default::default(),
 			scanline: 0,
 			dot: 27, // I dunno, ask the Mesen devs why.
 			frame: 1,
@@ -99,6 +99,12 @@ pub struct Ctrl {
 	nmi_enable: bool,
 }
 
+impl Ctrl {
+	pub fn vram_increment_value(&self) -> u16 {
+		if self.vram_increment() { 32 } else { 1 }
+	}
+}
+
 #[bitfield(u8)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Mask {
@@ -140,11 +146,22 @@ pub struct Scroll {
 	pub y: u8,
 }
 
-#[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
-pub struct Adr {
-	high: u8,
-	low: u8,
+pub struct AdrWriter(Option<u8>);
+
+impl AdrWriter {
+	pub fn write(&mut self, x: u8) -> Option<u16> {
+		match self.0 {
+			Some(y) => {
+				self.0 = None;
+				Some(u16::from_be_bytes([y, x]))
+			}
+			None => {
+				self.0 = Some(x & 0b0011_1111);
+				None
+			}
+		}
+	}
 }
 
 #[repr(C)]

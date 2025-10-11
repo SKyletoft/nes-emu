@@ -182,7 +182,11 @@ impl State {
 			3 => self.ppu.oam_adr = val,
 			4 => self.ppu.oam_data = val,
 			5 => todo!(),
-			6 => todo!(),
+			6 => {
+				if let Some(vram_adr) = self.ppu.adr_writer.write(val) {
+					self.ppu.adr = vram_adr;
+				}
+			}
 			7 => {
 				self.rom
 					.set_ppu(adr, &mut self.ppu, val)
