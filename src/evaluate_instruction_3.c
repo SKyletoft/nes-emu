@@ -66,7 +66,7 @@ void lda_indirect_x(State *state, uint8_t adr) {
 	state->cpu.p.Z = (uint8_t) (0 == state->cpu.a);
 	state->cpu.p.N = (uint8_t) ((state->cpu.a & 0x80) >> 7);
 	state->cpu.pc += 2;
-	state_step_ppu_many(state, 2);
+	state_step_ppu_many(state, 6);
 };
 
 void lda_indirect_y(State *state, uint8_t adr) {
@@ -78,7 +78,9 @@ void lda_indirect_y(State *state, uint8_t adr) {
 	state->cpu.p.Z = (uint8_t) (0 == state->cpu.a);
 	state->cpu.p.N = (uint8_t) ((state->cpu.a & 0x80) >> 7);
 	state->cpu.pc += 2;
-	state_step_ppu_many(state, 2);
+
+	bool page_crossed = (adr2 & 0xFF00) != (tmp & 0xFF00);
+	state_step_ppu_many(state, page_crossed ? 6 : 5);
 };
 
 void ldx_impl(State *state, uint8_t val) {
