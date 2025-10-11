@@ -390,12 +390,28 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		}
 		Inst::LdaImmediate(val) => write!(f, "LDA #${:02X}", val),
 		Inst::LdaIndirectX(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "LDA (${:02X},X) = ${:02X}", adr, mem)
+			let zp_addr = adr.wrapping_add(state.cpu.x);
+			let lo = state.mem_pure(zp_addr as u16);
+			let hi = state.mem_pure(zp_addr.wrapping_add(1) as u16);
+			let eff_addr = u16::from_le_bytes([lo, hi]);
+			let mem = state.mem_pure(eff_addr);
+			write!(
+				f,
+				"LDA (${:02X},X) ${:02X} ${:04X} = ${:02X}",
+				adr, zp_addr, eff_addr, mem
+			)
 		}
 		Inst::LdaIndirectY(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "LDA (${:02X}),Y = ${:02X}", adr, mem)
+			let lo = state.mem_pure(adr as u16);
+			let hi = state.mem_pure(adr.wrapping_add(1) as u16);
+			let base = u16::from_le_bytes([lo, hi]);
+			let eff_addr = base.wrapping_add(state.cpu.y as u16);
+			let mem = state.mem_pure(eff_addr);
+			write!(
+				f,
+				"LDA (${:02X}),Y [${:04X}] = ${:02X}",
+				adr, eff_addr, mem
+			)
 		}
 		Inst::LdaZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
