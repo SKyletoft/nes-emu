@@ -83,17 +83,50 @@ void lda_indirect_y(State *state, uint8_t adr) {
 	state_step_ppu_many(state, page_crossed ? 6 : 5);
 };
 
-void ldx_impl(State *state, uint8_t val) {
+void ldx_immediate(State *state, uint8_t val) {
+	state_step_ppu_many(state, 2);
 	state->cpu.x   = val;
 	state->cpu.p.Z = (uint8_t) (0 == state->cpu.x);
 	state->cpu.p.N = (uint8_t) ((state->cpu.x & 0x80) >> 7);
+	state->cpu.pc += 2;
 }
 
-IMMEDIATE(ldx);
-ZERO_PAGE(ldx);
-ZERO_PAGE_Y(ldx);
-ABSOLUTE(ldx);
-ABSOLUTE_Y(ldx);
+void ldx_zero_page(State *state, uint8_t offset) {
+	uint8_t val    = state_get_mem(state, (uint16_t) offset);
+	state->cpu.x   = val;
+	state->cpu.p.Z = (uint8_t) (0 == state->cpu.x);
+	state->cpu.p.N = (uint8_t) ((state->cpu.x & 0x80) >> 7);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 3);
+}
+
+void ldx_zero_page_y(State *state, uint8_t offset) {
+	uint8_t val  = state_get_mem(state, ((uint16_t) state->cpu.y + (uint16_t) offset) & 0xFF);
+	state->cpu.x = val;
+	state->cpu.p.Z = (uint8_t) (0 == state->cpu.x);
+	state->cpu.p.N = (uint8_t) ((state->cpu.x & 0x80) >> 7);
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 4);
+}
+
+void ldx_absolute(State *state, uint16_t adr) {
+	state_step_ppu_many(state, 3);
+	uint8_t val    = state_get_mem(state, adr);
+	state_step_ppu_many(state, 1);
+	state->cpu.x   = val;
+	state->cpu.p.Z = (uint8_t) (0 == state->cpu.x);
+	state->cpu.p.N = (uint8_t) ((state->cpu.x & 0x80) >> 7);
+	state->cpu.pc += 3;
+}
+
+void ldx_absolute_y(State *state, uint16_t adr) {
+	uint8_t val    = state_get_mem(state, (uint16_t) state->cpu.y + adr);
+	state->cpu.x   = val;
+	state->cpu.p.Z = (uint8_t) (0 == state->cpu.x);
+	state->cpu.p.N = (uint8_t) ((state->cpu.x & 0x80) >> 7);
+	state->cpu.pc += 3;
+	state_step_ppu_many(state, 4);
+}
 
 void ldy_impl(State *state, uint8_t val) {
 	state->cpu.y   = val;
