@@ -824,10 +824,15 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			let mem = state.mem_pure(x.into());
 			write!(f, "STA ${:04X} = ${:02X}", x, mem)
 		}
-		Inst::StaAbsoluteX(unaligned_u16) => {
-			let adr = unaligned_u16;
+		Inst::StaAbsoluteX(adr) => {
 			let mem = state.mem_pure(adr.into());
-			write!(f, "STA ${:04X},X = ${:02X}", adr, mem)
+			write!(
+				f,
+				"STA ${:04X},X [${:04X}] = ${:02X}",
+				adr,
+				adr.as_u16() + state.cpu.x as u16,
+				mem
+			)
 		}
 		Inst::StaAbsoluteY(unaligned_u16) => {
 			let adr = unaligned_u16.as_u16();
