@@ -153,10 +153,7 @@ impl State {
 			4 => self.ppu.oam_data,
 			5 => self.ppu_bus,
 			6 => self.ppu_bus,
-			7 => self
-				.rom
-				.get_ppu(adr, &self.ppu)
-				.expect("All PPU reads should be inbounds?"),
+			7 => self.ppu.data_cache,
 			_ => unreachable!(),
 		}
 	}
@@ -167,6 +164,12 @@ impl State {
 		match adr % 8 {
 			2 => {
 				self.ppu.status.set_vblank(false);
+			}
+			7 => {
+				self.ppu.data_cache = self
+					.rom
+					.get_ppu(self.ppu.adr, &self.ppu)
+					.expect("Ppu data adr should always be inbounds");
 			}
 			_ => unreachable!(),
 		}

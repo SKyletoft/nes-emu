@@ -24,7 +24,7 @@ pub struct Ppu {
 	pub cycles: u64,
 	pub vram: Vram,
 	pub oam: Oam,
-	pub bus: u8,
+	pub data_cache: u8,
 
 	pub palettes: Palettes,
 }
@@ -46,7 +46,7 @@ impl Default for Ppu {
 			cycles: 0,
 			vram: [0; _],
 			oam: Oam::zeroed(),
-			bus: Default::default(),
+			data_cache: Default::default(),
 			palettes: [Palette([NesColour::DarkGrey; 4]); 8],
 		}
 	}
