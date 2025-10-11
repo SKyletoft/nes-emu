@@ -129,7 +129,7 @@ void iny(State *state) {
 
 void jmp_absolute(State *state, uint16_t adr) {
 	state->cpu.pc = adr;
-	state_step_ppu_many(state, 4);
+	state_step_ppu_many(state, 3);
 }
 
 void jmp_indirect(State *state, uint16_t adr) {
@@ -137,7 +137,7 @@ void jmp_indirect(State *state, uint16_t adr) {
 	uint16_t low_byte  = state_get_mem(state, adr);
 	uint16_t high_byte = state_get_mem(state, adr + 1);
 	state->cpu.pc      = (uint16_t) ((high_byte << 8) | low_byte);
-	state_step_ppu_many(state, 2);
+	state_step_ppu_many(state, 5);
 }
 
 void jsr(State *state, uint16_t adr) {
