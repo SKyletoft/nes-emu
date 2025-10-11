@@ -152,14 +152,14 @@ pub struct Scroll {
 pub struct AdrWriter(Option<u8>);
 
 impl AdrWriter {
-	pub fn write(&mut self, x: u8) -> Option<u16> {
+	pub fn write(&mut self, x: u8) -> Option<(u8, u8)> {
 		match self.0 {
 			Some(y) => {
 				self.0 = None;
-				Some(u16::from_be_bytes([y, x]))
+				Some((y, x))
 			}
 			None => {
-				self.0 = Some(x & 0b0011_1111);
+				self.0 = Some(x);
 				None
 			}
 		}

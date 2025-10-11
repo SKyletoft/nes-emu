@@ -9,7 +9,7 @@ use crate::{
 	drawing::{self, Bitmap},
 	inst::Inst,
 	nes_file::Mapper,
-	ppu::{Ppu, Sprite},
+	ppu::{AdrWriter, Ppu, Scroll, Sprite},
 };
 
 pub const PPU_STARTUP_TIME: u64 = 2500;
@@ -164,6 +164,7 @@ impl State {
 		match adr % 8 {
 			2 => {
 				self.ppu.status.set_vblank(false);
+				self.ppu.adr_writer = AdrWriter::default();
 			}
 			7 => {
 				self.ppu.data_cache = self
@@ -184,10 +185,14 @@ impl State {
 			2 => {}
 			3 => self.ppu.oam_adr = val,
 			4 => self.ppu.oam_data = val,
-			5 => todo!(),
+			5 => {
+				if let Some((x, y)) = self.ppu.adr_writer.write(val) {
+					self.ppu.scroll = Scroll { x, y };
+				}
+			}
 			6 => {
-				if let Some(vram_adr) = self.ppu.adr_writer.write(val) {
-					self.ppu.adr = vram_adr;
+				if let Some((hi, lo)) = self.ppu.adr_writer.write(val) {
+					self.ppu.adr = u16::from_be_bytes([hi, lo]) & 0b0011_1111;
 				}
 			}
 			7 => {
