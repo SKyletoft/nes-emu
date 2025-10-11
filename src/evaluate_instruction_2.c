@@ -100,16 +100,16 @@ ABSOLUTE_Y(eor);
 INDIRECT_X(eor);
 INDIRECT_Y(eor);
 
-void inc_impl(State *state, uint8_t val) {
-	val++;
+void inc_impl(State *state, uint8_t *val) {
+	(*val)++;
 	state->cpu.p.Z = 0 == val;
-	state->cpu.p.N = (val & 0x80) >> 7;
+	state->cpu.p.N = (*val & 0x80) >> 7;
 }
 
-ZERO_PAGE(inc);
-ZERO_PAGE_X(inc);
-ABSOLUTE(inc);
-ABSOLUTE_X(inc);
+ZERO_PAGE_RMW(inc);
+ZERO_PAGE_X_RMW(inc);
+ABSOLUTE_RMW(inc);
+ABSOLUTE_X_RMW(inc);
 
 void inx(State *state) {
 	state->cpu.x++;
