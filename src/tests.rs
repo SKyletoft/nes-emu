@@ -407,11 +407,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			let base = u16::from_le_bytes([lo, hi]);
 			let eff_addr = base.wrapping_add(state.cpu.y as u16);
 			let mem = state.mem_pure(eff_addr);
-			write!(
-				f,
-				"LDA (${:02X}),Y [${:04X}] = ${:02X}",
-				adr, eff_addr, mem
-			)
+			write!(f, "LDA (${:02X}),Y [${:04X}] = ${:02X}", adr, eff_addr, mem)
 		}
 		Inst::LdaZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
@@ -426,8 +422,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "LDX ${:04X} = ${:02X}", adr, mem)
 		}
 		Inst::LdxAbsoluteY(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "LDX ${:04X},Y = ${:02X}", adr, mem)
+			let eff_addr = adr.as_u16().wrapping_add(state.cpu.y as u16);
+			let mem = state.mem_pure(eff_addr);
+			write!(f, "LDX ${:04X},Y [${:04X}] = ${:02X}", adr, eff_addr, mem)
 		}
 		Inst::LdxImmediate(val) => write!(f, "LDX #${:02X}", val),
 		Inst::LdxZeroPage(adr) => {
