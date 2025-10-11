@@ -153,7 +153,10 @@ impl State {
 			4 => self.ppu.oam_data,
 			5 => self.ppu_bus,
 			6 => self.ppu_bus,
-			7 => self.ppu.data,
+			7 => self
+				.rom
+				.get_ppu(adr, &self.ppu)
+				.expect("All PPU reads should be inbounds?"),
 			_ => unreachable!(),
 		}
 	}
@@ -180,7 +183,12 @@ impl State {
 			4 => self.ppu.oam_data = val,
 			5 => todo!(),
 			6 => todo!(),
-			7 => self.ppu.data = val,
+			7 => {
+				self.rom
+					.set_ppu(adr, &mut self.ppu, val)
+					.expect("All PPU writes should be inbounds");
+				self.ppu.adr = (self.ppu.adr + self.ppu.ctrl.vram_increment_value()) & 0b0011_1111;
+			}
 			_ => unreachable!(),
 		}
 	}
