@@ -255,7 +255,7 @@ impl State {
 			0x2000..0x4000 => self.write_ppu(adr, val),
 			0x4000..0x4014 | 0x4015 | 0x4017 => self.write_apu(adr, val),
 			0x4014 => self.dma_transfer(val),
-			0x4016 | 0x401 => todo!("Joystick strobe?"),
+			0x4016 => {},
 			0x4018..0x4020 => panic!("Cpu test mode is disabled"),
 			0x4020..=0xFFFF => self.rom.set_cpu(adr, val).expect("Invalid address for ROM"),
 		}
