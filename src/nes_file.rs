@@ -289,8 +289,22 @@ impl Mapper {
 		}
 	}
 
-	pub fn set_ppu(&mut self, _adr: u16, _val: u8) -> Option<()> {
-		todo!()
+	pub fn set_ppu(&mut self, adr: u16, ppu: &mut Ppu, val: u8) -> Option<()> {
+		match self {
+			Mapper::NROM256 {
+				prg_ram,
+				prg_rom,
+				chr_rom,
+			} => match adr {
+				0x0000..=0x1FFF | 0x3F00..=0x3FFF => Some(()),
+				0x2000..=0x3EFF => {
+					*ppu.vram.get_mut(adr as usize & 0x07FF).unwrap() = val;
+					Some(())
+				}
+				_ => None,
+			},
+			_ => todo!(),
+		}
 	}
 }
 
