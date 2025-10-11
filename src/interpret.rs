@@ -254,8 +254,9 @@ impl State {
 			0x0800..0x2000 => self.ram[(adr % 2048) as usize] = val,
 			0x2000..0x4000 => self.write_ppu(adr, val),
 			0x4000..0x4014 | 0x4015 | 0x4017 => self.write_apu(adr, val),
-			0x4000..0x4018 => { /* Audio stuff */ }
-			0x4018..0x4020 => { /* Audio + Controller stuff */ }
+			0x4014 => self.dma_transfer(val),
+			0x4016 | 0x401 => todo!("Joystick strobe?"),
+			0x4018..0x4020 => panic!("Cpu test mode is disabled"),
 			0x4020..=0xFFFF => self.rom.set_cpu(adr, val).expect("Invalid address for ROM"),
 		}
 		// Writing to CPU-internal registers doesn't set the bus.
@@ -264,8 +265,48 @@ impl State {
 		}
 	}
 
+	fn dma_transfer(&mut self, page: u8) {
+		if self.cycles % 2 == 1 {
+			self.cycles += 2;
+			for _ in 0..6 {
+				self.step_ppu();
+			}
+		} else {
+			self.cycles += 1;
+			for _ in 0..3 {
+				self.step_ppu();
+			}
+		}
+		for (from, to) in (0..256).map(|i| (((page as u16) << 8) | i, i as usize)) {
+			let val = self.mem(from);
+			self.cycles += 1;
+			for _ in 0..3 {
+				self.step_ppu();
+			}
+
+			let buf: &mut [u8] = bytemuck::cast_slice_mut(&mut self.ppu.oam);
+			buf[to] = val;
+			self.cycles += 1;
+			for _ in 0..3 {
+				self.step_ppu();
+			}
+		}
+	}
+
 	pub fn set_vblank(&mut self) {
-		if self.ppu.ctrl.nmi_enable() {}
+		if self.ppu.ctrl.nmi_enable() {
+			let hi = self.mem(0xFFFB);
+			let lo = self.mem(0xFFFA);
+			self.set_mem(0xFF + self.cpu.s as u16, self.cpu.pc as u8);
+			self.set_mem(0xFE + self.cpu.s as u16, (self.cpu.pc >> 8) as u8);
+			self.set_mem(0xFD + self.cpu.s as u16, self.cpu.p.into_bits());
+			self.cpu.pc = u16::from_be_bytes([hi, lo]);
+			self.cpu.s = self.cpu.s.wrapping_sub(3);
+			self.cycles += 7;
+			for _ in 0..21 {
+				self.step_ppu();
+			}
+		}
 		self.ppu.status.set_vblank(true);
 	}
 
@@ -290,18 +331,18 @@ impl State {
 				.unwrap_or_else(|| self.ppu.background_get_colour());
 			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour.into();
 		}
-		if self.ppu.scanline == 241 && self.ppu.dot == 0 {
-			self.set_vblank();
-		}
-		if self.ppu.scanline == 0 && self.ppu.dot == 0 && self.ppu.status.vblank() {
-			self.ppu.status.set_vblank(false);
-		}
-
 		self.ppu.dot += 1;
 		self.ppu.scanline += self.ppu.dot / 341;
 		self.ppu.dot %= 341;
 		if self.ppu.scanline == 261 {
 			self.ppu.scanline = -1;
+		}
+
+		if self.ppu.scanline == 241 && self.ppu.dot == 2 {
+			self.set_vblank();
+		}
+		if self.ppu.scanline == 0 && self.ppu.dot == 0 && self.ppu.status.vblank() {
+			self.ppu.status.set_vblank(false);
 		}
 
 		// Why frames count from the start of vblank and not the start of frames, I don't
