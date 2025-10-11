@@ -16,7 +16,7 @@ pub struct Ppu {
 	pub oam_data: u8,
 	pub scroll: Scroll,
 	pub adr: u16,
-	pub adr_writer: AdrWriter,
+	pub double_writer: DoubleWriter,
 
 	pub scanline: i16,
 	pub dot: i16,
@@ -39,7 +39,7 @@ impl Default for Ppu {
 			oam_data: Default::default(),
 			scroll: Default::default(),
 			adr: Default::default(),
-			adr_writer: Default::default(),
+			double_writer: Default::default(),
 			scanline: 0,
 			dot: 27, // I dunno, ask the Mesen devs why.
 			frame: 1,
@@ -149,9 +149,9 @@ pub struct Scroll {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
-pub struct AdrWriter(Option<u8>);
+pub struct DoubleWriter(Option<u8>);
 
-impl AdrWriter {
+impl DoubleWriter {
 	pub fn write(&mut self, x: u8) -> Option<(u8, u8)> {
 		match self.0 {
 			Some(y) => {
