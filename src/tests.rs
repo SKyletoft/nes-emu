@@ -17,7 +17,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "ADC ${:04X},Y = ${:02X}", adr, mem)
 		}
-		Inst::AdcImmediate(val) => write!(f, "ADC ${:02X}", val),
+		Inst::AdcImmediate(val) => write!(f, "ADC #${:02X}", val),
 		Inst::AdcIndirectX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "ADC (${:02X}),X = ${:02X}", adr, mem)
@@ -340,7 +340,18 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "ISC ${:02X},X = ${:02X}", adr, mem)
 		}
 		Inst::JmpAbsolute(adr) => write!(f, "JMP ${:04X}", adr),
-		Inst::JmpIndirect(adr) => write!(f, "JMP (${:04X})", adr),
+		Inst::JmpIndirect(adr) => {
+			let adr = adr.as_u16();
+			let lo = state.mem_pure(adr);
+			let hi = if adr & 0xFF == 0xFF {
+				state.mem_pure(adr & 0xFF00)
+			} else {
+				state.mem_pure(adr + 1)
+			};
+			let res = u16::from_be_bytes([hi, lo]);
+			let mem = state.mem_pure(res);
+			write!(f, "JMP (${adr:04X}) [${res:04X}] = ${mem:02X}")
+		}
 		Inst::Jsr(adr) => write!(f, "JSR ${:04X}", adr),
 		Inst::LASAbsoluteY(adr) => {
 			let mem = state.mem_pure(adr.into());
@@ -376,18 +387,14 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "LDA ${:04X} = ${:02X}", adr, mem)
 		}
 		Inst::LdaAbsoluteX(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(
-				f,
-				"LDA ${:04X},X [${:04X}] = ${:02X}",
-				adr,
-				adr.as_u16() + state.cpu.x as u16,
-				mem
-			)
+			let res = adr.as_u16() + state.cpu.x as u16;
+			let mem = state.mem_pure(res);
+			write!(f, "LDA ${adr:04X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::LdaAbsoluteY(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "LDA ${:04X},Y = ${:02X}", adr, mem)
+			let res = adr.as_u16() + state.cpu.y as u16;
+			let mem = state.mem_pure(res);
+			write!(f, "LDA ${adr:04X},Y [${res:04X}] = ${mem:02X}")
 		}
 		Inst::LdaImmediate(val) => write!(f, "LDA #${:02X}", val),
 		Inst::LdaIndirectX(adr) => {
