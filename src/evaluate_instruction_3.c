@@ -70,16 +70,16 @@ void lda_indirect_x(State *state, uint8_t adr) {
 };
 
 void lda_indirect_y(State *state, uint8_t adr) {
-	uint8_t tmp    = state_get_mem(state, (uint16_t) (state->cpu.y + adr) & 0xFF);
-	uint16_t adr2  = (uint16_t) (state_get_mem(state, (uint16_t) tmp)
-                                    | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);
+	uint16_t adr2 = (uint16_t) (state_get_mem(state, (uint16_t) adr)
+	                            | state_get_mem(state, (uint16_t) (adr + 1) & 0xFF) << 8)
+	              + (uint16_t) state->cpu.y;
 	uint8_t val    = state_get_mem(state, adr2);
 	state->cpu.a   = val;
 	state->cpu.p.Z = (uint8_t) (0 == state->cpu.a);
 	state->cpu.p.N = (uint8_t) ((state->cpu.a & 0x80) >> 7);
 	state->cpu.pc += 2;
 
-	bool page_crossed = (adr2 & 0xFF00) != (tmp & 0xFF00);
+	bool page_crossed = adr == 0xFF;
 	state_step_ppu_many(state, page_crossed ? 6 : 5);
 };
 

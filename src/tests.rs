@@ -405,10 +405,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		Inst::LdaIndirectY(adr) => {
 			let lo = state.mem_pure(adr as u16);
 			let hi = state.mem_pure(adr.wrapping_add(1) as u16);
-			let base = u16::from_le_bytes([lo, hi]);
-			let eff_addr = base.wrapping_add(state.cpu.y as u16);
-			let mem = state.mem_pure(eff_addr);
-			write!(f, "LDA (${:02X}),Y [${:04X}] = ${:02X}", adr, eff_addr, mem)
+			let res = u16::from_le_bytes([lo, hi]).wrapping_add(state.cpu.y as u16);
+			let mem = state.mem_pure(res);
+			write!(f, "LDA (${adr:02X}),Y [${res:04X}] = ${mem:02X}")
 		}
 		Inst::LdaZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
