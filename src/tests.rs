@@ -650,9 +650,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "ROR ${:04X} = ${:02X}", adr, mem)
 		}
 		Inst::RorAbsoluteX(unaligned_u16) => {
-			let adr = unaligned_u16;
-			let mem = state.mem_pure(adr.into());
-			write!(f, "ROR ${:04X},X = ${:02X}", adr, mem)
+			let adr = unaligned_u16.as_u16() + state.cpu.x as u16;
+			let mem = state.mem_pure(adr);
+			write!(f, "ROR ${unaligned_u16:04X},X [${adr:04X}] = ${mem:02X}")
 		}
 		Inst::RorAccumulator => write!(f, "ROR A"),
 		Inst::RorZeroPage(adr) => {
