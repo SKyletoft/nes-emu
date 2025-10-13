@@ -50,8 +50,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "AND ${:04X} = ${:02X}", adr, mem)
 		}
 		Inst::AndAbsoluteX(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "AND ${:04X},X = ${:02X}", adr, mem)
+			let res = adr.as_u16() + state.cpu.x as u16;
+			let mem = state.mem_pure(res);
+			write!(f, "AND ${adr:04X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::AndAbsoluteY(adr) => {
 			let mem = state.mem_pure(adr.into());
