@@ -400,6 +400,8 @@ impl State {
 		let s8 = self.mem_pure(0x01F7);
 		let s9 = self.mem_pure(0x01F6);
 
+		let cycles = self.cycles;
+
 		writeln!(&mut out, "┌─CPU───────────────────────────┐").unwrap();
 		writeln!(
 			&mut out,
@@ -411,6 +413,7 @@ impl State {
 			"│ P:{n}{v}{u}{b}{d}{i}{z}{c} bus:{cbus:04X}, {pbus:04X}     │"
 		)
 		.unwrap();
+		writeln!(&mut out, "│ Cycles: {cycles:<10}            │").unwrap();
 		writeln!(&mut out, "├─Stack─────────────────────────┤").unwrap();
 		writeln!(
 			&mut out,
