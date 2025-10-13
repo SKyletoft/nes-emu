@@ -14,7 +14,7 @@ pub struct P {
 	d: bool,
 	#[bits(1)]
 	b: bool,
-	#[bits(1)]
+	#[bits(1, default = true, access = ro)]
 	u: bool,
 	#[bits(1)]
 	v: bool,
