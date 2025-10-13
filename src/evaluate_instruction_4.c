@@ -178,10 +178,9 @@ void rti(State *state) {
 	state->cpu.p.raw = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
 	state->cpu.s += 2;
 	state->cpu.pc =
-	    (uint16_t) ((state_get_mem(state, (uint16_t) (state->cpu.s + 0x100 - 1))
-	                 | state_get_mem(state, (uint16_t) (state->cpu.s + 0x100)) << 8)
-	                + 1);
-	state_step_ppu_many(state, 2);
+	    (uint16_t) (state_get_mem(state, (uint16_t) (state->cpu.s + 0x100 - 1))
+	                | state_get_mem(state, (uint16_t) (state->cpu.s + 0x100)) << 8);
+	state_step_ppu_many(state, 6);
 }
 
 void rts(State *state) {
