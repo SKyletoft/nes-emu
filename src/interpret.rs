@@ -389,16 +389,16 @@ impl State {
 
 		let mut out = String::new();
 
-		let s0 = self.mem_pure(0xFF);
-		let s1 = self.mem_pure(0xFE);
-		let s2 = self.mem_pure(0xFD);
-		let s3 = self.mem_pure(0xFC);
-		let s4 = self.mem_pure(0xFB);
-		let s5 = self.mem_pure(0xFA);
-		let s6 = self.mem_pure(0xF9);
-		let s7 = self.mem_pure(0xF8);
-		let s8 = self.mem_pure(0xF7);
-		let s9 = self.mem_pure(0xF6);
+		let s0 = self.mem_pure(0x01FF);
+		let s1 = self.mem_pure(0x01FE);
+		let s2 = self.mem_pure(0x01FD);
+		let s3 = self.mem_pure(0x01FC);
+		let s4 = self.mem_pure(0x01FB);
+		let s5 = self.mem_pure(0x01FA);
+		let s6 = self.mem_pure(0x01F9);
+		let s7 = self.mem_pure(0x01F8);
+		let s8 = self.mem_pure(0x01F7);
+		let s9 = self.mem_pure(0x01F6);
 
 		writeln!(&mut out, "┌─CPU───────────────────────────┐").unwrap();
 		writeln!(
