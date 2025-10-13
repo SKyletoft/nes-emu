@@ -187,6 +187,8 @@ void pla(State *state) {
 	state->cpu.s += 1;
 	state->cpu.a = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
 	state->cpu.pc += 1;
+	state->cpu.p.Z = 0 == state->cpu.a;
+	state->cpu.p.N = (state->cpu.a & 0x80) >> 7;
 	state_step_ppu_many(state, 4);
 }
 
