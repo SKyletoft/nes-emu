@@ -24,13 +24,14 @@ fn display(state: &State) -> String {
 		a, x, y, s, p, pc, ..
 	} = state.cpu;
 
-	let c = p.c() as u8;
-	let z = p.z() as u8;
-	let i = p.i() as u8;
-	let d = p.d() as u8;
-	let b = p.b() as u8;
-	let v = p.v() as u8;
-	let n = p.n() as u8;
+	let n = if p.n() { 'N' } else { 'n' };
+	let v = if p.v() { 'V' } else { 'v' };
+	let d = if p.d() { 'D' } else { 'd' };
+	let i = if p.i() { 'I' } else { 'i' };
+	let z = if p.z() { 'Z' } else { 'z' };
+	let c = if p.c() { 'C' } else { 'c' };
+	let cbus = state.cpu_bus;
+	let pbus = state.ppu_bus;
 
 	let inst = state.next_inst_pure();
 
@@ -52,7 +53,11 @@ fn display(state: &State) -> String {
 		"│ A:{a:02X} X:{x:02X} Y:{y:02X} SP:{s:02X} pc:{pc:04X} │"
 	)
 	.unwrap();
-	writeln!(&mut out, "│ C:{c} Z:{z} I:{i} D:{d} B:{b} V:{v} N:{n}  │").unwrap();
+	writeln!(
+		&mut out,
+		"│ P:{n}{v}--{d}{i}{z}{c} bus:{cbus:04X}, {pbus:04X}    │"
+	)
+	.unwrap();
 	writeln!(&mut out, "├─PPU──────────────────────────┤").unwrap();
 	writeln!(
 		&mut out,

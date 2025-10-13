@@ -84,8 +84,8 @@ impl State {
 		let ram = [0; 2048];
 		let apu = Apu::default();
 		let ppu = Ppu::default();
-		let controller1 = Controller::new();
-		let controller2 = Controller::new();
+		let controller1 = Controller::default();
+		let controller2 = Controller::default();
 		let cpu_bus = 0;
 		let ppu_bus = 0;
 		let current_texture = drawing::empty_bitmap();
@@ -225,8 +225,8 @@ impl State {
 			0x2000..0x4000 => self.read_ppu_pure(adr),
 			0x4000..0x4015 => self.cpu_bus,
 			0x4015 => (self.apu.status.into_bits() & 0b1101_1111) | (self.cpu_bus & 0b0010_0000),
-			0x4016 => self.controller1.into_bits(),
-			0x4017 => self.controller2.into_bits(),
+			0x4016 => (self.controller1.read_pure() & 0b0000_0111) | (self.cpu_bus & 0b1111_1000),
+			0x4017 => (self.controller2.read_pure() & 0b0000_0111) | (self.cpu_bus & 0b1111_1000),
 			0x4018..0x4020 => panic!("Cpu test mode is disabled"),
 			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
 		}
@@ -239,8 +239,8 @@ impl State {
 			0x2000..0x4000 => self.read_ppu(adr),
 			0x4000..0x4015 => self.cpu_bus,
 			0x4015 => (self.apu.status.into_bits() & 0b1101_1111) | (self.cpu_bus & 0b0010_0000),
-			0x4016 => self.controller1.into_bits(),
-			0x4017 => self.controller2.into_bits(),
+			0x4016 => (self.controller1.read() & 0b0000_0111) | (self.cpu_bus & 0b1111_1000),
+			0x4017 => (self.controller2.read() & 0b0000_0111) | (self.cpu_bus & 0b1111_1000),
 			0x4018..0x4020 => panic!("Cpu test mode is disabled"),
 			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
 		};
@@ -255,7 +255,10 @@ impl State {
 			0x2000..0x4000 => self.write_ppu(adr, val),
 			0x4000..0x4014 | 0x4015 | 0x4017 => self.write_apu(adr, val),
 			0x4014 => self.dma_transfer(val),
-			0x4016 => {},
+			0x4016 => {
+				self.controller1.write(val);
+				self.controller2.write(val);
+			}
 			0x4018..0x4020 => panic!("Cpu test mode is disabled"),
 			0x4020..=0xFFFF => self.rom.set_cpu(adr, val).expect("Invalid address for ROM"),
 		}

@@ -171,7 +171,8 @@ INDIRECT_Y(ora);
 void pha(State *state) {
 	state_set_mem(state, (uint16_t) (state->cpu.s + 0x100), state->cpu.a);
 	state->cpu.s -= 1;
-	state_step_ppu_many(state, 2);
+	state->cpu.pc += 1;
+	state_step_ppu_many(state, 3);
 }
 
 void php(State *state) {
@@ -179,21 +180,21 @@ void php(State *state) {
 	state_set_mem(state, (uint16_t) (state->cpu.s + 0x100), val);
 	state->cpu.s -= 1;
 	state->cpu.pc += 1;
-	state_step_ppu_many(state, 2);
+	state_step_ppu_many(state, 3);
 }
 
 void pla(State *state) {
 	state->cpu.s += 1;
 	state->cpu.a = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
 	state->cpu.pc += 1;
-	state_step_ppu_many(state, 2);
+	state_step_ppu_many(state, 4);
 }
 
 void plp(State *state) {
 	state->cpu.s += 1;
 	state->cpu.p.raw = state_get_mem(state, (uint16_t) (state->cpu.s + 0x100));
 	state->cpu.pc += 1;
-	state_step_ppu_many(state, 2);
+	state_step_ppu_many(state, 4);
 }
 
 void rol_impl(State *state, uint8_t *val) {

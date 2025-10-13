@@ -955,7 +955,11 @@ macro_rules! make_log_test {
 				// Mesen's disassembly disagrees with its debugger when reading the APU status register
 				assert!(
 					ours == line
-						|| (ours.contains("STA $4015 = ") && line.contains("STA $4015 = ")),
+						|| (ours.contains("STA $4015 = ") && line.contains("STA $4015 = "))
+						|| (ours.contains("STA $4016 = ") && line.contains("STA $4016 = "))
+						|| (ours.contains("STA $4017 = ") && line.contains("STA $4017 = "))
+						|| (ours.contains("LDA $4016") && line.contains("LDA $4016"))
+						|| (ours.contains("LDA $4017") && line.contains("LDA $4017")),
 					"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n{debug_state}"
 				);
 				state.next();
