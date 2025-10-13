@@ -970,6 +970,12 @@ macro_rules! make_log_test {
 						|| (ours.contains("LDA $4017") && line.contains("LDA $4017")),
 					"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n{debug_state}"
 				);
+				if state.cycles == 116745 {
+					assert_eq!(state.mem_pure(0x01FF), 0x80, "\n{}", state.display());
+					assert_eq!(state.mem_pure(0x01FE), 0x57, "\n{}", state.display());
+					assert_eq!(state.mem_pure(0x01FD), 0xA5, "\n{}", state.display());
+					println!("Stack check passed");
+				}
 				state.next();
 			}
 		}
