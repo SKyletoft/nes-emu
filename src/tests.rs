@@ -963,7 +963,13 @@ macro_rules! make_log_test {
 						|| (ours.contains("STA $4017 = ") && line.contains("STA $4017 = "))
 						|| (ours.contains("LDA $4016") && line.contains("LDA $4016"))
 						|| (ours.contains("LDA $4017") && line.contains("LDA $4017")),
-					"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n{debug_state}"
+					"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n       {}\n{debug_state}",
+					ours.chars()
+						.zip(line.chars())
+						.map(|(l, r)| if l == r { ' ' } else { '^' })
+						.chain(std::iter::repeat('^'))
+						.take(ours.len().max(line.len()))
+						.collect::<String>()
 				);
 				if state.cycles == 116745 {
 					assert_eq!(state.mem_pure(0x01FF), 0x80, "\n{}", state.display());
