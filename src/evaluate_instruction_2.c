@@ -58,16 +58,16 @@ IMMEDIATE(cpy);
 ZERO_PAGE(cpy);
 ABSOLUTE(cpy);
 
-void dec_impl(State *state, uint8_t val) {
-	val--;
+void dec_impl(State *state, uint8_t* val) {
+	(*val)--;
 	state->cpu.p.Z = 0 == val;
-	state->cpu.p.N = (val & 0x80) >> 7;
+	state->cpu.p.N = (*val & 0x80) >> 7;
 }
 
-ZERO_PAGE(dec);
-ZERO_PAGE_X(dec);
-ABSOLUTE(dec);
-ABSOLUTE_X(dec);
+ZERO_PAGE_RMW(dec);
+ZERO_PAGE_X_RMW(dec);
+ABSOLUTE_RMW(dec);
+ABSOLUTE_X_RMW(dec);
 
 void dex(State *state) {
 	state->cpu.x--;

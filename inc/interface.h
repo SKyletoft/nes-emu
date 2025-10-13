@@ -90,6 +90,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 		fn##_impl(state, &val);                                                          \
 		state_set_mem(state, (uint16_t) offset, val);                                    \
 		state->cpu.pc += 2;                                                              \
+		state_step_ppu_many(state, 5);                                                   \
 	}
 
 #define ZERO_PAGE_X(fn)                                                                          \
@@ -108,7 +109,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 		fn##_impl(state, &val);                                                          \
 		state_set_mem(state, (uint16_t) offset, val);                                    \
 		state->cpu.pc += 2;                                                              \
-		state_step_ppu_many(state, 5);                                                   \
+		state_step_ppu_many(state, 6);                                                   \
 	}
 
 #define ZERO_PAGE_Y(fn)                                                                          \
