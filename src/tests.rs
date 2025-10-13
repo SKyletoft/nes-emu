@@ -98,7 +98,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 				.cpu
 				.pc
 				.wrapping_add(2)
-				.wrapping_add(offset as i8 as i16 as u16);
+				.wrapping_add(offset as i16 as u16);
 			write!(f, "BCC ${:04X}", target)
 		}
 		Inst::Bcs(offset) => {
@@ -106,7 +106,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 				.cpu
 				.pc
 				.wrapping_add(2)
-				.wrapping_add(offset as i8 as i16 as u16);
+				.wrapping_add(offset as i16 as u16);
 			write!(f, "BCS ${:04X}", target)
 		}
 		Inst::Beq(offset) => {
@@ -114,7 +114,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 				.cpu
 				.pc
 				.wrapping_add(2)
-				.wrapping_add(offset as i8 as i16 as u16);
+				.wrapping_add(offset as i16 as u16);
 			write!(f, "BEQ ${:04X}", target)
 		}
 		Inst::BitAbsolute(adr) => {
@@ -130,7 +130,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 				.cpu
 				.pc
 				.wrapping_add(2)
-				.wrapping_add(offset as i8 as i16 as u16);
+				.wrapping_add(offset as i16 as u16);
 			write!(f, "BMI ${:04X}", target)
 		}
 		Inst::Bne(offset) => {
@@ -138,7 +138,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 				.cpu
 				.pc
 				.wrapping_add(2)
-				.wrapping_add(offset as i8 as i16 as u16);
+				.wrapping_add(offset as i16 as u16);
 			write!(f, "BNE ${:04X}", target)
 		}
 		Inst::Bpl(offset) => {
@@ -146,7 +146,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 				.cpu
 				.pc
 				.wrapping_add(2)
-				.wrapping_add(offset as i8 as i16 as u16);
+				.wrapping_add(offset as i16 as u16);
 			write!(f, "BPL ${:04X}", target)
 		}
 		Inst::Brk => write!(f, "BRK"),
@@ -155,7 +155,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 				.cpu
 				.pc
 				.wrapping_add(2)
-				.wrapping_add(offset as i8 as i16 as u16);
+				.wrapping_add(offset as i16 as u16);
 			write!(f, "BVC ${:04X}", target)
 		}
 		Inst::Bvs(offset) => {
@@ -163,7 +163,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 				.cpu
 				.pc
 				.wrapping_add(2)
-				.wrapping_add(offset as i8 as i16 as u16);
+				.wrapping_add(offset as i16 as u16);
 			write!(f, "BVS ${:04X}", target)
 		}
 		Inst::Clc => write!(f, "CLC"),

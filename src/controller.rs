@@ -85,6 +85,6 @@ impl Controller {
 				LatchState::One => {}
 			}
 		}
-		val as u8
+		val
 	}
 }
