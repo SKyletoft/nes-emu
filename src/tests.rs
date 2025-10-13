@@ -724,9 +724,10 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "SBC ${:04X},X = ${:02X}", adr, mem)
 		}
 		Inst::SbcAbsoluteY(unaligned_u16) => {
-			let adr = unaligned_u16;
-			let mem = state.mem_pure(adr.into());
-			write!(f, "SBC ${:04X},Y = ${:02X}", adr, mem)
+			let adr = unaligned_u16.as_u16();
+			let res = adr + state.cpu.y as u16;
+			let mem = state.mem_pure(res);
+			write!(f, "SBC ${adr:04X},Y [${res:04X}] = ${mem:02X}")
 		}
 		Inst::SbcImmediate(val) => write!(f, "SBC ${:02X}", val),
 		Inst::SbcImmediate2(val) => write!(f, "SBC ${:02X}", val),
