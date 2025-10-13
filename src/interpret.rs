@@ -300,9 +300,9 @@ impl State {
 		if self.ppu.ctrl.nmi_enable() {
 			let hi = self.mem(0xFFFB);
 			let lo = self.mem(0xFFFA);
-			self.set_mem(0xFF + self.cpu.s as u16, self.cpu.pc as u8);
-			self.set_mem(0xFE + self.cpu.s as u16, (self.cpu.pc >> 8) as u8);
-			self.set_mem(0xFD + self.cpu.s as u16, self.cpu.p.into_bits());
+			self.set_mem(0x0100 + self.cpu.s as u16, (self.cpu.pc >> 8) as u8);
+			self.set_mem(0x00FF + self.cpu.s as u16, self.cpu.pc as u8);
+			self.set_mem(0x00FE + self.cpu.s as u16, self.cpu.p.into_bits());
 			self.cpu.pc = u16::from_be_bytes([hi, lo]);
 			self.cpu.s = self.cpu.s.wrapping_sub(3);
 			self.cycles += 7;
