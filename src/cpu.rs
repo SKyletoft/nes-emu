@@ -15,7 +15,7 @@ pub struct P {
 	#[bits(1)]
 	b: bool,
 	#[bits(1)]
-	_unused: bool,
+	u: bool,
 	#[bits(1)]
 	v: bool,
 	#[bits(1)]

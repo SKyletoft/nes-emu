@@ -17,68 +17,6 @@ use drawing::Bitmap;
 use interpret::State;
 use nes_file::Mapper;
 
-fn display(state: &State) -> String {
-	use std::fmt::Write;
-
-	let cpu::Cpu {
-		a, x, y, s, p, pc, ..
-	} = state.cpu;
-
-	let n = if p.n() { 'N' } else { 'n' };
-	let v = if p.v() { 'V' } else { 'v' };
-	let d = if p.d() { 'D' } else { 'd' };
-	let i = if p.i() { 'I' } else { 'i' };
-	let z = if p.z() { 'Z' } else { 'z' };
-	let c = if p.c() { 'C' } else { 'c' };
-	let cbus = state.cpu_bus;
-	let pbus = state.ppu_bus;
-
-	let inst = state.next_inst_pure();
-
-	let ppu::Ppu {
-		ctrl,
-		mask,
-		status,
-		scanline,
-		dot,
-		..
-	} = state.ppu;
-	let frame = state.ppu.frame % 10000;
-
-	let mut out = String::new();
-
-	writeln!(&mut out, "┌─CPU──────────────────────────┐").unwrap();
-	writeln!(
-		&mut out,
-		"│ A:{a:02X} X:{x:02X} Y:{y:02X} SP:{s:02X} pc:{pc:04X} │"
-	)
-	.unwrap();
-	writeln!(
-		&mut out,
-		"│ P:{n}{v}--{d}{i}{z}{c} bus:{cbus:04X}, {pbus:04X}    │"
-	)
-	.unwrap();
-	writeln!(&mut out, "├─PPU──────────────────────────┤").unwrap();
-	writeln!(
-		&mut out,
-		"│ line:{scanline:03} dot:{dot:03} frame: {frame:04} │"
-	)
-	.unwrap();
-	writeln!(
-		&mut out,
-		"│ ctrl:{:02X} mask:{:02X} status:{:02X}    │",
-		ctrl.into_bits(),
-		mask.into_bits(),
-		status.into_bits()
-	)
-	.unwrap();
-	writeln!(&mut out, "└──────────────────────────────┘").unwrap();
-	writeln!(&mut out, "Next: {inst:X?}").unwrap();
-	writeln!(&mut out).unwrap();
-
-	out
-}
-
 fn emulation_loop(shared_texture: Arc<Mutex<Bitmap>>) {
 	let path = std::env::args()
 		.nth(1)
@@ -91,8 +29,7 @@ fn emulation_loop(shared_texture: Arc<Mutex<Bitmap>>) {
 	// let mut buf = String::new();
 	loop {
 		system_state.next();
-
-		print!("{}", display(&system_state));
+		print!("{}", system_state.display());
 		// buf.clear();
 		// std::io::stdin().read_line(&mut buf).unwrap();
 	}

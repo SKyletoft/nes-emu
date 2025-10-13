@@ -356,4 +356,85 @@ impl State {
 			std::mem::swap(&mut self.current_texture, &mut texture);
 		}
 	}
+
+	pub fn display(&self) -> String {
+		use std::fmt::Write;
+
+		let crate::cpu::Cpu {
+			a, x, y, s, p, pc, ..
+		} = self.cpu;
+
+		let n = if p.n() { 'N' } else { 'n' };
+		let v = if p.v() { 'V' } else { 'v' };
+		let d = if p.d() { 'D' } else { 'd' };
+		let i = if p.i() { 'I' } else { 'i' };
+		let z = if p.z() { 'Z' } else { 'z' };
+		let c = if p.c() { 'C' } else { 'c' };
+		let b = if p.b() { '+' } else { '-' };
+		let u = if p.u() { '+' } else { '-' };
+		let cbus = self.cpu_bus;
+		let pbus = self.ppu_bus;
+
+		let inst = self.next_inst_pure();
+
+		let crate::ppu::Ppu {
+			ctrl,
+			mask,
+			status,
+			scanline,
+			dot,
+			..
+		} = self.ppu;
+		let frame = self.ppu.frame % 10000;
+
+		let mut out = String::new();
+
+		let s0 = self.mem_pure(0xFF);
+		let s1 = self.mem_pure(0xFE);
+		let s2 = self.mem_pure(0xFD);
+		let s3 = self.mem_pure(0xFC);
+		let s4 = self.mem_pure(0xFB);
+		let s5 = self.mem_pure(0xFA);
+		let s6 = self.mem_pure(0xF9);
+		let s7 = self.mem_pure(0xF8);
+		let s8 = self.mem_pure(0xF7);
+		let s9 = self.mem_pure(0xF6);
+
+		writeln!(&mut out, "┌─CPU───────────────────────────┐").unwrap();
+		writeln!(
+			&mut out,
+			"│ A:{a:02X} X:{x:02X} Y:{y:02X} SP:{s:02X} pc:{pc:04X}  │"
+		)
+		.unwrap();
+		writeln!(
+			&mut out,
+			"│ P:{n}{v}{u}{b}{d}{i}{z}{c} bus:{cbus:04X}, {pbus:04X}     │"
+		)
+		.unwrap();
+		writeln!(&mut out, "├─Stack─────────────────────────┤").unwrap();
+		writeln!(
+			&mut out,
+			"│ {s0:02X},{s1:02X},{s2:02X},{s3:02X},{s4:02X},{s5:02X},{s6:02X},{s7:02X},{s8:02X},{s9:02X} │"
+		)
+		.unwrap();
+		writeln!(&mut out, "├─PPU───────────────────────────┤").unwrap();
+		writeln!(
+			&mut out,
+			"│ line:{scanline:03} dot:{dot:03} frame: {frame:04}  │"
+		)
+		.unwrap();
+		writeln!(
+			&mut out,
+			"│ ctrl:{:02X} mask:{:02X} status:{:02X}     │",
+			ctrl.into_bits(),
+			mask.into_bits(),
+			status.into_bits()
+		)
+		.unwrap();
+		writeln!(&mut out, "└───────────────────────────────┘").unwrap();
+		writeln!(&mut out, "Next: {inst:X?}").unwrap();
+		writeln!(&mut out).unwrap();
+
+		out
+	}
 }
