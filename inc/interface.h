@@ -80,3 +80,31 @@ void state_set_mem(State *state, uint16_t adr, uint8_t val);
 void state_check_interrupt(State *state);
 void state_step_ppu(State *state);
 void state_step_ppu_many(State *state, uint32_t times);
+
+/* ------------------------------------------------------------------
+ * Macro definitions for instruction handlers
+ * ------------------------------------------------------------------ */
+
+/* These macros are used in the C source files to generate
+ * instruction handler functions.  The original project
+ * defined them in a separate header that was omitted.
+ * For the purposes of compiling the current code base,
+ * we provide minimal definitions that expand to empty
+ * bodies.  The actual implementation of the handlers
+ * is provided elsewhere in the C source files.
+ */
+
+#define IMMEDIATE(name)          /* empty */
+#define ZERO_PAGE(name)          /* empty */
+#define ZERO_PAGE_X(name)        /* empty */
+#define ABSOLUTE(name)           /* empty */
+#define ABSOLUTE_X(name)         /* empty */
+#define ABSOLUTE_Y(name)         /* empty */
+#define INDIRECT_X(name)         /* empty */
+#define INDIRECT_Y(name)         /* empty */
+#define ACCUMULATOR(name)        /* empty */
+#define ZERO_PAGE_RMW(name)      /* empty */
+#define ZERO_PAGE_X_RMW(name)    /* empty */
+#define ABSOLUTE_RMW(name)       /* empty */
+#define ABSOLUTE_X_RMW(name)     /* empty */
+#define ABSOLUTE_Y_RMW(name)     /* empty */
