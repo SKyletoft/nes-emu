@@ -94,17 +94,17 @@ void state_step_ppu_many(State *state, uint32_t times);
  * is provided elsewhere in the C source files.
  */
 
-#define IMMEDIATE(name)          /* empty */
-#define ZERO_PAGE(name)          /* empty */
-#define ZERO_PAGE_X(name)        /* empty */
-#define ABSOLUTE(name)           /* empty */
-#define ABSOLUTE_X(name)         /* empty */
-#define ABSOLUTE_Y(name)         /* empty */
-#define INDIRECT_X(name)         /* empty */
-#define INDIRECT_Y(name)         /* empty */
-#define ACCUMULATOR(name)        /* empty */
-#define ZERO_PAGE_RMW(name)      /* empty */
-#define ZERO_PAGE_X_RMW(name)    /* empty */
-#define ABSOLUTE_RMW(name)       /* empty */
-#define ABSOLUTE_X_RMW(name)     /* empty */
-#define ABSOLUTE_Y_RMW(name)     /* empty */
+#define IMMEDIATE(name)       /* empty */
+#define ZERO_PAGE(name)       /* empty */
+#define ZERO_PAGE_X(name)     /* empty */
+#define ABSOLUTE(name)        /* empty */
+#define ABSOLUTE_X(name)      /* empty */
+#define ABSOLUTE_Y(name)      /* empty */
+#define INDIRECT_X(name)      /* empty */
+#define INDIRECT_Y(name)      /* empty */
+#define ACCUMULATOR(name)     /* empty */
+#define ZERO_PAGE_RMW(name)   /* empty */
+#define ZERO_PAGE_X_RMW(name) /* empty */
+#define ABSOLUTE_RMW(name)    /* empty */
+#define ABSOLUTE_X_RMW(name)  /* empty */
+#define ABSOLUTE_Y_RMW(name)  /* empty */
