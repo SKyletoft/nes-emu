@@ -359,7 +359,7 @@ impl State {
 				.take(8)
 				.find(|sprite| self.ppu.sprite_is_visible_x(sprite))
 				.map(|s| self.ppu.sprite_get_colour(s))
-				.unwrap_or_else(|| self.ppu.background_get_colour());
+				.unwrap_or_else(|| self.ppu.background_get_colour()));
 			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour.into();
 		}
 		self.ppu.dot += 1;
@@ -409,6 +409,7 @@ impl State {
 		let c = if p.c() { 'C' } else { 'c' };
 		let b = if p.b() { '+' } else { '-' };
 		let u = if p.u() { '+' } else { '-' };
+		let b = if p.b() { '+' } else { '-' };
 		let cbus = self.cpu_bus;
 		let pbus = self.ppu_bus;
 

@@ -1,4 +1,8 @@
 #include <stdint.h>
+#include <stdalign.h>
+
+// Ensure consistent struct layout
+#pragma pack(push, 1)
 
 typedef union {
 	struct {
@@ -7,7 +11,7 @@ typedef union {
 		uint8_t I       : 1;
 		uint8_t D       : 1;
 		uint8_t B       : 1;
-		uint8_t _unused : 1;
+		uint8_t _unused   : 1;
 		uint8_t V       : 1;
 		uint8_t N       : 1;
 	};
@@ -57,6 +61,8 @@ typedef struct {
 	Bitmap current_texture;
 } State;
 
+#pragma pack(pop)
+
 uint8_t state_get_mem(State *state, uint16_t adr);
 void state_set_mem(State *state, uint16_t adr, uint8_t val);
 void state_check_interrupt(State *state);
@@ -67,14 +73,14 @@ void state_step_ppu_many(State *state, uint32_t times);
 	void fn##_accumulator(State *state) {                                                    \
 		fn##_impl(state, &state->cpu.a);                                                 \
 		state->cpu.pc += 1;                                                              \
-		state_step_ppu_many(state, 2);                                                   \
+		state_step_ppu_many(state, 2);                                                       \
 	}
 
 #define IMMEDIATE(fn)                                                                            \
 	void fn##_immediate(State *state, uint8_t val) {                                         \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 2;                                                              \
-		state_step_ppu_many(state, 2);                                                   \
+		state_step_ppu_many(state, 2);                                                       \
 	}
 
 #define ZERO_PAGE(fn)                                                                            \
@@ -82,16 +88,16 @@ void state_step_ppu_many(State *state, uint32_t times);
 		uint8_t val = state_get_mem(state, (uint16_t) offset);                           \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 2;                                                              \
-		state_step_ppu_many(state, 3);                                                   \
+		state_step_ppu_many(state, 3);                                                       \
 	}
 
 #define ZERO_PAGE_RMW(fn)                                                                        \
 	void fn##_zero_page(State *state, uint8_t offset) {                                      \
-		uint8_t val = state_get_mem(state, (uint16_t) offset);                           \
+		uint8_t val = state_get_mem(state, (uint16_t) offset);                               \
 		fn##_impl(state, &val);                                                          \
-		state_set_mem(state, (uint16_t) offset, val);                                    \
+		state_set_mem(state, (uint16_t) offset, val);                                        \
 		state->cpu.pc += 2;                                                              \
-		state_step_ppu_many(state, 5);                                                   \
+		state_step_ppu_many(state, 5);                                                       \
 	}
 
 #define ZERO_PAGE_X(fn)                                                                          \
@@ -100,7 +106,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 		    state_get_mem(state, ((uint16_t) state->cpu.x + (uint16_t) offset) & 0xFF);  \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 2;                                                              \
-		state_step_ppu_many(state, 4);                                                   \
+		state_step_ppu_many(state, 4);                                                       \
 	}
 
 #define ZERO_PAGE_X_RMW(fn)                                                                      \
@@ -110,7 +116,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 		fn##_impl(state, &val);                                                          \
 		state_set_mem(state, (uint16_t) offset, val);                                    \
 		state->cpu.pc += 2;                                                              \
-		state_step_ppu_many(state, 6);                                                   \
+		state_step_ppu_many(state, 6);                                                       \
 	}
 
 #define ZERO_PAGE_Y(fn)                                                                          \
@@ -119,7 +125,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 		    state_get_mem(state, ((uint16_t) state->cpu.y + (uint16_t) offset) & 0xFF);  \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 2;                                                              \
-		state_step_ppu_many(state, 4);                                                   \
+		state_step_ppu_many(state, 4);                                                       \
 	}
 
 #define ABSOLUTE(fn)                                                                             \
