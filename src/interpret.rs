@@ -369,6 +369,14 @@ impl State {
 			self.ppu.scanline = -1;
 		}
 
+		// Dot crawl
+		if self.ppu.scanline == -1
+			&& self.ppu.dot == 339
+			&& (self.ppu.mask.show_bg() || self.ppu.mask.show_spr())
+		{
+			self.ppu.dot = 340;
+		}
+
 		if self.ppu.scanline == 241 && self.ppu.dot == 6 {
 			self.interrupt_requested = InterruptTiming::Ready;
 			self.ppu.status.set_vblank(true);
