@@ -968,7 +968,6 @@ macro_rules! make_log_test {
 						|| (ours.contains("STA $4016 = ") && line.contains("STA $4016 = "))
 						|| (ours.contains("STA $4017 = ") && line.contains("STA $4017 = "))
 						|| (ours.contains("STA $2007 = ") && line.contains("STA $2007 = "))
-						|| (ours.contains("LDA $2007 = ") && line.contains("LDA $2007 = "))
 						|| (ours.contains("LDA $4016") && line.contains("LDA $4016"))
 						|| (ours.contains("LDA $4017") && line.contains("LDA $4017")),
 					"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n       {}\n{debug_state}",
