@@ -369,7 +369,7 @@ impl State {
 			self.ppu.scanline = -1;
 		}
 
-		if self.ppu.scanline == 241 && self.ppu.dot == 3 {
+		if self.ppu.scanline == 241 && self.ppu.dot == 6 {
 			self.interrupt_requested = InterruptTiming::Ready;
 			self.ppu.status.set_vblank(true);
 		}
