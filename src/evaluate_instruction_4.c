@@ -5,11 +5,12 @@
 
 void sbc_impl(State *state, uint8_t val) {
 	uint16_t res = (uint16_t) state->cpu.a - (uint16_t) val - (uint16_t) (1 - state->cpu.p.C);
+	uint16_t a   = state->cpu.a;
+	uint16_t val16 = val;
 
 	state->cpu.p.C = res < 256;
 	state->cpu.p.Z = 0 == (uint8_t) res;
-	state->cpu.p.V =
-	    ((res ^ (uint16_t) state->cpu.a) & (res ^ (uint16_t) val) & (uint16_t) 0x80) != 0;
+	state->cpu.p.V = ((res ^ a) & (res ^ ~val16) & 0x80) != 0;
 	state->cpu.p.N = (res & 0x80) >> 7;
 	state->cpu.a   = (uint8_t) res;
 }
