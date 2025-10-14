@@ -70,7 +70,7 @@ impl Mapper {
 			b'S',
 			0x1A,
 			prg_size,
-			_chr_size,
+			chr_size,
 			flags_6,
 			flags_7,
 			_,
@@ -90,7 +90,7 @@ impl Mapper {
 		assert!(!trainer_present); // Not really, but please error early when I hit a game with one.
 		let trainer_offset = if trainer_present { 512 } else { 0 };
 		let prg_offset = 16 + trainer_offset;
-		let _chr_offset = prg_offset + (*prg_size as usize * 16 * 1024);
+		let chr_offset = prg_offset + (*prg_size as usize * 16 * 1024);
 		let mapper_type = (*flags_7 & 0xF0) | *flags_6 >> 4;
 
 		match mapper_type {
@@ -141,10 +141,11 @@ impl Mapper {
 					prg_rom: [0; _],
 					chr_rom: [0; _],
 				});
-				let Mapper::NROM256 { prg_rom: rom, .. } = &mut *mapper else {
+				let Mapper::NROM256 { prg_rom: file_prg_rom, chr_rom: file_chr_rom, .. } = &mut *mapper else {
 					unreachable!()
 				};
-				rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
+				file_prg_rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
+				file_chr_rom.copy_from_slice(&buffer[chr_offset..chr_offset + 8 * 1024]);
 				Ok(mapper)
 			}
 			0 => bail!("Wrong amount of prg_roms for an NROM"),
