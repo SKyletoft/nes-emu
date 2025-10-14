@@ -29,6 +29,7 @@ pub struct State {
 	pub output_texture: Arc<Mutex<Bitmap>>,
 	pub current_texture: Bitmap,
 	pub cycles: u64,
+	pub interrupt_requested: bool,
 }
 
 #[unsafe(no_mangle)]
@@ -45,7 +46,11 @@ pub unsafe extern "C" fn state_set_mem(ptr: *mut State, adr: u16, val: u8) {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn state_step_ppu(ptr: *mut State) {
-	unsafe { &mut *ptr }.step_ppu();
+	let state = unsafe { &mut *ptr };
+	state.cycles += 1;
+	state.step_ppu();
+	state.step_ppu();
+	state.step_ppu();
 }
 
 #[unsafe(no_mangle)]
@@ -55,13 +60,23 @@ pub unsafe extern "C" fn state_set_bus(ptr: *mut State, val: u8) {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn state_step_ppu_many(ptr: *mut State, times: u32) {
+	let state = unsafe { &mut *ptr };
 	for _ in 0..times {
-		unsafe { (&mut *ptr) }.cycles += 1;
-		unsafe {
-			state_step_ppu(ptr);
-			state_step_ppu(ptr);
-			state_step_ppu(ptr);
-		}
+		state.cycles += 1;
+		state.step_ppu();
+		state.step_ppu();
+		state.step_ppu();
+	}
+	if state.interrupt_requested {
+		state.set_vblank();
+	}
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn state_check_interrupt(ptr: *mut State) {
+	let state = unsafe { &mut *ptr };
+	if state.interrupt_requested {
+		state.set_vblank();
 	}
 }
 
@@ -90,6 +105,7 @@ impl State {
 		let ppu_bus = 0;
 		let current_texture = drawing::empty_bitmap();
 		let cycles = 8;
+		let interrupt_requested = false;
 
 		Self {
 			cpu,
@@ -104,6 +120,7 @@ impl State {
 			apu,
 			controller1,
 			controller2,
+			interrupt_requested,
 		}
 	}
 
@@ -311,7 +328,7 @@ impl State {
 				self.step_ppu();
 			}
 		}
-		self.ppu.status.set_vblank(true);
+		self.interrupt_requested = false;
 	}
 
 	pub fn step_ppu(&mut self) {
@@ -343,7 +360,8 @@ impl State {
 		}
 
 		if self.ppu.scanline == 241 && self.ppu.dot == 2 {
-			self.set_vblank();
+			self.interrupt_requested = true;
+			self.ppu.status.set_vblank(true);
 		}
 		if self.ppu.scanline == 0 && self.ppu.dot == 0 && self.ppu.status.vblank() {
 			self.ppu.status.set_vblank(false);

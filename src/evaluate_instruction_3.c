@@ -4,11 +4,11 @@
 // C-implementations of NES instructions
 
 void lda_immediate(State *state, uint8_t val) {
-	state_step_ppu_many(state, 2);
 	state->cpu.a   = val;
 	state->cpu.p.Z = (uint8_t) (0 == state->cpu.a);
 	state->cpu.p.N = (uint8_t) ((state->cpu.a & 0x80) >> 7);
 	state->cpu.pc += 2;
+	state_step_ppu_many(state, 2);
 };
 
 void lda_zero_page(State *state, uint8_t offset) {
@@ -30,13 +30,16 @@ void lda_zero_page_x(State *state, uint8_t offset) {
 };
 
 void lda_absolute(State *state, uint16_t adr) {
-	state_step_ppu_many(state, 3);
-	uint8_t val = state_get_mem(state, adr);
-	state_step_ppu_many(state, 1);
+	state_step_ppu(state);
+	state_step_ppu(state);
+	state_step_ppu(state);
+	uint8_t val    = state_get_mem(state, adr);
 	state->cpu.a   = val;
 	state->cpu.p.Z = (uint8_t) (0 == state->cpu.a);
 	state->cpu.p.N = (uint8_t) ((state->cpu.a & 0x80) >> 7);
 	state->cpu.pc += 3;
+	state_step_ppu(state);
+	state_check_interrupt(state);
 };
 
 void lda_absolute_x(State *state, uint16_t adr) {
@@ -115,12 +118,12 @@ void ldx_zero_page_y(State *state, uint8_t offset) {
 
 void ldx_absolute(State *state, uint16_t adr) {
 	state_step_ppu_many(state, 3);
-	uint8_t val = state_get_mem(state, adr);
-	state_step_ppu_many(state, 1);
+	uint8_t val    = state_get_mem(state, adr);
 	state->cpu.x   = val;
 	state->cpu.p.Z = (uint8_t) (0 == state->cpu.x);
 	state->cpu.p.N = (uint8_t) ((state->cpu.x & 0x80) >> 7);
 	state->cpu.pc += 3;
+	state_step_ppu_many(state, 1);
 }
 
 void ldx_absolute_y(State *state, uint16_t adr) {

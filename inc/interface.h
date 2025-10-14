@@ -59,6 +59,7 @@ typedef struct {
 
 uint8_t state_get_mem(State *state, uint16_t adr);
 void state_set_mem(State *state, uint16_t adr, uint8_t val);
+void state_check_interrupt(State *state);
 void state_step_ppu(State *state);
 void state_step_ppu_many(State *state, uint32_t times);
 
