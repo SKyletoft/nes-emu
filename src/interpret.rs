@@ -359,7 +359,7 @@ impl State {
 				.take(8)
 				.find(|sprite| self.ppu.sprite_is_visible_x(sprite))
 				.map(|s| self.ppu.sprite_get_colour(s))
-				.unwrap_or_else(|| self.ppu.background_get_colour()));
+				.unwrap_or_else(|| self.ppu.background_get_colour());
 			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour.into();
 		}
 		self.ppu.dot += 1;
@@ -456,7 +456,7 @@ impl State {
 		)
 		.unwrap();
 		writeln!(&mut out, "│ Cycles: {cycles:<10}            │").unwrap();
-		writeln!(&mut out, "├─Stack─────────────────────────┤").unwrap();
+		writeln!(&mut out, "├─Stack────────────────────────┤").unwrap();
 		writeln!(
 			&mut out,
 			"│ {s0:02X},{s1:02X},{s2:02X},{s3:02X},{s4:02X},{s5:02X},{s6:02X},{s7:02X},{s8:02X},{s9:02X} │"
