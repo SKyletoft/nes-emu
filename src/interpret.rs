@@ -14,6 +14,12 @@ use crate::{
 
 pub const PPU_STARTUP_TIME: u64 = 2500;
 
+pub enum InterruptTiming {
+	Clear,
+	Waiting,
+	Ready,
+}
+
 // REMEMBER TO REFLECT ANY CHANGES IN `cpu.h`
 #[repr(C)]
 pub struct State {
@@ -29,7 +35,7 @@ pub struct State {
 	pub output_texture: Arc<Mutex<Bitmap>>,
 	pub current_texture: Bitmap,
 	pub cycles: u64,
-	pub interrupt_requested: bool,
+	pub interrupt_requested: InterruptTiming,
 }
 
 #[unsafe(no_mangle)]
@@ -67,17 +73,13 @@ pub unsafe extern "C" fn state_step_ppu_many(ptr: *mut State, times: u32) {
 		state.step_ppu();
 		state.step_ppu();
 	}
-	if state.interrupt_requested {
-		state.set_vblank();
-	}
+	state.check_interrupt();
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn state_check_interrupt(ptr: *mut State) {
 	let state = unsafe { &mut *ptr };
-	if state.interrupt_requested {
-		state.set_vblank();
-	}
+	state.check_interrupt();
 }
 
 impl State {
@@ -105,7 +107,7 @@ impl State {
 		let ppu_bus = 0;
 		let current_texture = drawing::empty_bitmap();
 		let cycles = 8;
-		let interrupt_requested = false;
+		let interrupt_requested = InterruptTiming::Clear;
 
 		Self {
 			cpu,
@@ -328,7 +330,15 @@ impl State {
 				self.step_ppu();
 			}
 		}
-		self.interrupt_requested = false;
+		self.interrupt_requested = InterruptTiming::Clear;
+	}
+
+	pub fn check_interrupt(&mut self) {
+		match self.interrupt_requested {
+			InterruptTiming::Clear => {}
+			InterruptTiming::Waiting => self.interrupt_requested = InterruptTiming::Ready,
+			InterruptTiming::Ready => self.set_vblank(),
+		}
 	}
 
 	pub fn step_ppu(&mut self) {
@@ -359,8 +369,8 @@ impl State {
 			self.ppu.scanline = -1;
 		}
 
-		if self.ppu.scanline == 241 && self.ppu.dot == 2 {
-			self.interrupt_requested = true;
+		if self.ppu.scanline == 241 && self.ppu.dot == 3 {
+			self.interrupt_requested = InterruptTiming::Ready;
 			self.ppu.status.set_vblank(true);
 		}
 		if self.ppu.scanline == 0 && self.ppu.dot == 0 && self.ppu.status.vblank() {
