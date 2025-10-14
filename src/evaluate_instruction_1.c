@@ -105,7 +105,7 @@ void bne(State *state, int8_t offset) {
 	bool taken        = !state->cpu.p.Z;
 	uint16_t new_pc   = old_pc + 2 + (taken ? (uint16_t) offset : 0);
 	bool page_crossed = ((old_pc + 2) & 0xFF00) != (new_pc & 0xFF00);
-	uint8_t cycles    = 2 + (taken ? 1 : 0) + (page_crossed ? 1 : 0);
+	uint8_t cycles    = 2 + taken + page_crossed;
 	state->cpu.pc     = new_pc;
 	state_step_ppu_many(state, cycles);
 }
