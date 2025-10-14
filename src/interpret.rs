@@ -433,6 +433,7 @@ impl State {
 
 		let cache = self.ppu.data_cache;
 		let ppu_adr = self.ppu.adr;
+		let ppu_cycles = self.ppu.cycles;
 
 		writeln!(&mut out, "┌─CPU───────────────────────────┐").unwrap();
 		writeln!(
@@ -471,6 +472,7 @@ impl State {
 			"│ cache:{cache:02X} adr:{ppu_adr:04X}             │",
 		)
 		.unwrap();
+		writeln!(&mut out, "│ Cycles: {ppu_cycles:<10}            │").unwrap();
 		writeln!(&mut out, "└───────────────────────────────┘").unwrap();
 		writeln!(&mut out, "Next: {inst:X?}").unwrap();
 		writeln!(&mut out).unwrap();
