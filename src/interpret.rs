@@ -217,7 +217,7 @@ impl State {
 			}
 			7 => {
 				self.rom
-					.set_ppu(adr, &mut self.ppu, val)
+					.set_ppu(self.ppu.adr, &mut self.ppu, val)
 					.expect("All PPU writes should be inbounds");
 				self.ppu.adr = (self.ppu.adr + self.ppu.ctrl.vram_increment_value()) & 0b0011_1111;
 			}
