@@ -13,7 +13,7 @@ use crate::{
 };
 
 pub const PPU_STARTUP_TIME: u64 = 2500;
-
+const PPUADDR_MASK: u16 = (1 << 14) - 1;
 pub enum InterruptTiming {
 	Clear,
 	Waiting,
@@ -190,7 +190,7 @@ impl State {
 					.rom
 					.get_ppu(self.ppu.adr, &self.ppu)
 					.expect("Ppu data adr should always be inbounds");
-				self.ppu.adr = (self.ppu.adr + self.ppu.ctrl.vram_increment_value()) & 0b0011_1111;
+				self.ppu.adr = (self.ppu.adr + self.ppu.ctrl.vram_increment_value()) & PPUADDR_MASK;
 			}
 			_ => unreachable!(),
 		}
@@ -212,14 +212,14 @@ impl State {
 			}
 			6 => {
 				if let Some((hi, lo)) = self.ppu.double_writer.write(val) {
-					self.ppu.adr = u16::from_be_bytes([hi, lo]) & 0b0011_1111;
+					self.ppu.adr = u16::from_be_bytes([hi, lo]) & PPUADDR_MASK;
 				}
 			}
 			7 => {
 				self.rom
 					.set_ppu(self.ppu.adr, &mut self.ppu, val)
 					.expect("All PPU writes should be inbounds");
-				self.ppu.adr = (self.ppu.adr + self.ppu.ctrl.vram_increment_value()) & 0b0011_1111;
+				self.ppu.adr = (self.ppu.adr + self.ppu.ctrl.vram_increment_value()) & PPUADDR_MASK;
 			}
 			_ => unreachable!(),
 		}
