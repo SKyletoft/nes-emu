@@ -42,11 +42,14 @@ typedef struct {
 		uint8_t low;
 	} adr;
 	uint8_t data;
-
 	uint16_t scanline;
 	uint16_t dot;
 	uint8_t vram[2048];
 	uint8_t oam[256];
+	uint8_t frame;
+	uint8_t cycles;
+	uint8_t data_cache;
+	uint8_t _pad[3];
 } Ppu;
 
 typedef uint8_t Bitmap[240][256];
@@ -81,7 +84,7 @@ void state_check_interrupt(State *state);
 void state_step_ppu(State *state);
 void state_step_ppu_many(State *state, uint32_t times);
 
-/* ------------------------------------------------------------------
+/* ------------------------------------------------------------*
  * Macro definitions for instruction handlers
  * ------------------------------------------------------------------ */
 
