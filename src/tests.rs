@@ -255,8 +255,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "DEC ${:04X} = ${:02X}", adr, mem)
 		}
 		Inst::DecAbsoluteX(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "DEC ${:04X},X = ${:02X}", adr, mem)
+			let res = adr.as_u16() + state.cpu.x as u16;
+			let mem = state.mem_pure(res);
+			write!(f, "DEC ${adr:04X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::DecZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
@@ -451,8 +452,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "LDY ${:04X} = ${:02X}", adr, mem)
 		}
 		Inst::LdyAbsoluteX(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "LDY ${:04X},X = ${:02X}", adr, mem)
+			let res = adr.as_u16() + state.cpu.x as u16;
+			let mem = state.mem_pure(res);
+			write!(f, "LDY ${adr:04X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::LdyImmediate(val) => write!(f, "LDY #${:02X}", val),
 		Inst::LdyZeroPage(adr) => {
