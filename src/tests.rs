@@ -10,12 +10,14 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "ADC ${:04X} = ${:02X}", adr, mem)
 		}
 		Inst::AdcAbsoluteX(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "ADC ${:04X},X = ${:02X}", adr, mem)
+			let res = adr.as_u16() + state.cpu.x as u16;
+			let mem = state.mem_pure(res);
+			write!(f, "ADC ${adr:04X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::AdcAbsoluteY(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "ADC ${:04X},Y = ${:02X}", adr, mem)
+			let res = adr.as_u16() + state.cpu.y as u16;
+			let mem = state.mem_pure(res);
+			write!(f, "ADC ${adr:04X},Y [${res:04X}] = ${mem:02X}")
 		}
 		Inst::AdcImmediate(val) => write!(f, "ADC #${:02X}", val),
 		Inst::AdcIndirectX(adr) => {
@@ -176,12 +178,14 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "CMP ${:04X} = ${:02X}", adr, mem)
 		}
 		Inst::CmpAbsoluteX(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "CMP ${:04X},X = ${:02X}", adr, mem)
+			let res = adr.as_u16() + state.cpu.x as u16;
+			let mem = state.mem_pure(res);
+			write!(f, "CMP ${adr:04X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::CmpAbsoluteY(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "CMP ${:04X},Y = ${:02X}", adr, mem)
+			let res = adr.as_u16() + state.cpu.y as u16;
+			let mem = state.mem_pure(res);
+			write!(f, "CMP ${adr:04X},Y [${res:04X}] = ${mem:02X}")
 		}
 		Inst::CmpImmediate(val) => write!(f, "CMP #${:02X}", val),
 		Inst::CmpIndirectX(adr) => {
@@ -276,7 +280,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "EOR ${:04X},Y = ${:02X}", adr, mem)
 		}
-		Inst::EorImmediate(val) => write!(f, "EOR ${:02X}", val),
+		Inst::EorImmediate(val) => write!(f, "EOR #${:02X}", val),
 		Inst::EorIndirectX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "EOR (${:02X}),X = ${:02X}", adr, mem)
@@ -735,8 +739,8 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			let mem = state.mem_pure(res);
 			write!(f, "SBC ${adr:04X},Y [${res:04X}] = ${mem:02X}")
 		}
-		Inst::SbcImmediate(val) => write!(f, "SBC ${:02X}", val),
-		Inst::SbcImmediate2(val) => write!(f, "SBC ${:02X}", val),
+		Inst::SbcImmediate(val) => write!(f, "SBC #${:02X}", val),
+		Inst::SbcImmediate2(val) => write!(f, "SBC #${:02X}", val),
 		Inst::SbcIndirectX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "SBC (${:02X}),X = ${:02X}", adr, mem)
