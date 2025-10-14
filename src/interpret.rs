@@ -171,6 +171,7 @@ impl State {
 					.rom
 					.get_ppu(self.ppu.adr, &self.ppu)
 					.expect("Ppu data adr should always be inbounds");
+				self.ppu.adr = (self.ppu.adr + self.ppu.ctrl.vram_increment_value()) & 0b0011_1111;
 			}
 			_ => unreachable!(),
 		}
