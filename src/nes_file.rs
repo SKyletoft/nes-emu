@@ -151,6 +151,35 @@ impl Mapper {
 			_ => bail!("Unknown mapper type {mapper_type}"),
 		}
 	}
+
+	pub fn display(&self) {
+		match self {
+			Mapper::NROM256 {
+				prg_ram,
+				prg_rom,
+				chr_rom,
+			} => {
+				println!("PRG:\n        x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xA xB xC xD xE xF");
+				for (idx, line) in prg_rom.chunks(16).enumerate() {
+					print!("{idx:06X}x ");
+					for byte in line {
+						print!("{byte:02X} ");
+					}
+					println!();
+				}
+				println!("\n\nCHR:\n        x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xA xB xC xD xE xF");
+				for (idx, line) in chr_rom.chunks(16).enumerate() {
+					print!("{idx:06X}x ");
+					for byte in line {
+						print!("{byte:02X} ");
+					}
+					println!();
+				}
+			}
+
+			_ => todo!()
+		}
+	}
 }
 
 impl Mapper {
