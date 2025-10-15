@@ -456,7 +456,7 @@ impl State {
 
 		// Fetch attribute byte
 		let attribute_table_base = nametable_adr + 0x3C0;
-		let attribute_addr = attribute_table_base + tile_y * 2 + tile_x / 4;
+		let attribute_addr = attribute_table_base + (tile_y / 4) * 8 + tile_x / 4;
 		let attribute_byte = self
 			.rom
 			.get_ppu(attribute_addr, &self.ppu)
