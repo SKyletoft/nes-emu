@@ -414,14 +414,81 @@ impl State {
 			return NesColour::Black;
 		}
 
-		let x = self.ppu.dot + self.ppu.scroll.x as i16;
-		let y = self.ppu.scanline + self.ppu.scroll.y as i16;
-		let tile_x = x / 8;
-		let tile_y = y / 8;
-		let pixel_x = x % 8;
-		let pixel_y = y % 8;
+		let x = (self.ppu.dot + self.ppu.scroll.x as i16) % 512;
+		let y = (self.ppu.scanline + self.ppu.scroll.y as i16) % 480;
+		let nametable_adr = match (x, y) {
+			(0..256, 0..240) => 0x2000,
+			(256..512, 0..240) => 0x2400,
+			(0..256, 240..480) => 0x2800,
+			(256..512, 240..480) => 0x2C00,
+			(..0, _) | (_, ..0) | (512.., _) | (_, 480..) => panic!("Out of bounds tile access!"),
+		};
 
-		NesColour::White
+		let tile_x = (x % 256 / 8) as u16;
+		let tile_y = (y % 240 / 8) as u16;
+		let pixel_x = (x % 8) as u16;
+		let pixel_y = (y % 8) as u16;
+
+		// Fetch tile index from nametable
+		let tile_id = self
+			.rom
+			.get_ppu(nametable_adr + tile_y * 32 + tile_x, &self.ppu)
+			.expect("Nametable read failed") as u16;
+
+		let pattern_table_base = if self.ppu.ctrl.background_table() {
+			0x1000
+		} else {
+			0x0000
+		};
+
+		let plane0 = self
+			.rom
+			.get_ppu(pattern_table_base + tile_id * 16 + pixel_y, &self.ppu)
+			.expect("Pattern table read failed");
+		let plane1 = self
+			.rom
+			.get_ppu(pattern_table_base + tile_id * 16 + pixel_y + 8, &self.ppu)
+			.expect("Pattern table read failed");
+
+		// Combine bits to get 0-3 palette index
+		let bit = 7 - pixel_x;
+		let tile_palette_index = ((plane1 >> bit) & 1) << 1 | ((plane0 >> bit) & 1);
+
+		// Fetch attribute byte
+		let attribute_table_base = nametable_adr + 0x3C0;
+		let attribute_addr = attribute_table_base + tile_y * 2 + tile_x / 4;
+		let attribute_byte = self
+			.rom
+			.get_ppu(attribute_addr, &self.ppu)
+			.expect("Attribute table read failed");
+
+		// Select correct quadrant (2 bits)
+		let shift = ((tile_y % 4) / 2) * 4 + ((tile_x % 4) / 2) * 2;
+		let attribute_bits = (attribute_byte >> shift) & 0b11;
+
+		// Combine tile bits with attribute to get final 0-15 palette index
+		let palette_index = (attribute_bits << 2) | tile_palette_index;
+
+		// Temporary placeholder palette (replace with full NES palette mapping)
+		let palette = [
+			NesColour::RedDark,
+			NesColour::BlueDark,
+			NesColour::GreenDark,
+			NesColour::YellowDark,
+			NesColour::RedDark,
+			NesColour::BlueDark,
+			NesColour::GreenDark,
+			NesColour::YellowDark,
+			NesColour::RedDark,
+			NesColour::BlueDark,
+			NesColour::GreenDark,
+			NesColour::YellowDark,
+			NesColour::RedDark,
+			NesColour::BlueDark,
+			NesColour::GreenDark,
+			NesColour::YellowDark,
+		];
+		palette[palette_index as usize]
 	}
 
 	pub fn display(&self) -> String {
