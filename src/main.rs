@@ -17,7 +17,7 @@ use drawing::Bitmap;
 use interpret::State;
 use nes_file::Mapper;
 
-fn emulation_loop(shared_texture: Arc<Mutex<Bitmap>>) {
+fn emulation_loop(shared_texture: Arc<Mutex<Box<Bitmap>>>) {
 	let path = std::env::args()
 		.nth(1)
 		.unwrap_or_else(|| "../non-free/SMB1.nes".into());

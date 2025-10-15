@@ -21,11 +21,11 @@ pub fn empty_bitmap() -> Bitmap {
 	[[Colour::default(); _]; _]
 }
 
-pub fn new_bitmap() -> Arc<Mutex<Bitmap>> {
-	Arc::new(Mutex::new(empty_bitmap()))
+pub fn new_bitmap() -> Arc<Mutex<Box<Bitmap>>> {
+	Arc::new(Mutex::new(Box::new(empty_bitmap())))
 }
 
-pub fn sdl_thread(texture_ptr: Arc<Mutex<Bitmap>>) -> Result<(), String> {
+pub fn sdl_thread(texture_ptr: Arc<Mutex<Box<Bitmap>>>) -> Result<(), String> {
 	let sdl_context = sdl2::init()?;
 	let video_subsystem = sdl_context.video()?;
 

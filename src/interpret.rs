@@ -32,8 +32,8 @@ pub struct State {
 	pub ram: [u8; 2048],
 	pub cpu_bus: u8,
 	pub ppu_bus: u8,
-	pub output_texture: Arc<Mutex<Bitmap>>,
-	pub current_texture: Bitmap,
+	pub output_texture: Arc<Mutex<Box<Bitmap>>>,
+	pub current_texture: Box<Bitmap>,
 	pub cycles: u64,
 	pub interrupt_requested: InterruptTiming,
 }
@@ -83,7 +83,7 @@ pub unsafe extern "C" fn state_check_interrupt(ptr: *mut State) {
 }
 
 impl State {
-	pub fn new(rom: Box<Mapper>, output_texture: Arc<Mutex<Bitmap>>) -> Self {
+	pub fn new(rom: Box<Mapper>, output_texture: Arc<Mutex<Box<Bitmap>>>) -> Self {
 		let pc = u16::from_le_bytes([
 			rom.get_cpu(0xFFFC).expect("Cannot read reset vector"),
 			rom.get_cpu(0xFFFD).expect("Cannot read reset vector (2)"),
@@ -105,7 +105,7 @@ impl State {
 		let controller2 = Controller::default();
 		let cpu_bus = 0;
 		let ppu_bus = 0;
-		let current_texture = drawing::empty_bitmap();
+		let current_texture = Box::new(drawing::empty_bitmap());
 		let cycles = 8;
 		let interrupt_requested = InterruptTiming::Clear;
 
