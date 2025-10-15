@@ -9,7 +9,7 @@ use crate::{
 	drawing::{self, Bitmap},
 	inst::Inst,
 	nes_file::Mapper,
-	ppu::{DoubleWriter, Ppu, Scroll, Sprite},
+	ppu::{DoubleWriter, NesColour, Ppu, Scroll, Sprite},
 };
 
 pub const PPU_STARTUP_TIME: u64 = 2500;
@@ -357,7 +357,7 @@ impl State {
 				let sprite_0 = &self.ppu.oam[0];
 				self.ppu.sprite_is_visible_x(sprite_0)
 					&& self.ppu.sprite_is_visible_y(sprite_0)
-					&& self.ppu.sprite_get_colour(sprite_0).is_some()
+					&& self.sprite_get_colour(sprite_0).is_some()
 					&& !self.ppu.sprite_0_fuse
 			};
 			self.ppu.status.set_sprite_0_hit(sprite_0_hit);
@@ -368,8 +368,8 @@ impl State {
 				.filter(|sprite| self.ppu.sprite_is_visible_y(sprite))
 				.take(8)
 				.find(|sprite| self.ppu.sprite_is_visible_x(sprite))
-				.and_then(|s| self.ppu.sprite_get_colour(s))
-				.unwrap_or_else(|| self.ppu.background_get_colour());
+				.and_then(|s| self.sprite_get_colour(s))
+				.unwrap_or_else(|| self.background_get_colour());
 			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour.into();
 		}
 		self.ppu.dot += 1;
@@ -403,6 +403,25 @@ impl State {
 			let mut texture = self.output_texture.lock().unwrap();
 			std::mem::swap(&mut self.current_texture, &mut texture);
 		}
+	}
+
+	pub fn sprite_get_colour(&self, sprite: &Sprite) -> Option<NesColour> {
+		Some(NesColour::Black)
+	}
+
+	pub fn background_get_colour(&self) -> NesColour {
+		if !self.ppu.mask.show_bg() {
+			return NesColour::Black;
+		}
+
+		let x = self.ppu.dot + self.ppu.scroll.x as i16;
+		let y = self.ppu.scanline + self.ppu.scroll.y as i16;
+		let tile_x = x / 8;
+		let tile_y = y / 8;
+		let pixel_x = x % 8;
+		let pixel_y = y % 8;
+
+		NesColour::White
 	}
 
 	pub fn display(&self) -> String {
