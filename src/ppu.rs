@@ -1,5 +1,6 @@
 #![allow(dead_code, unused)]
 
+use anyhow::bail;
 use bitfields::bitfield;
 use bytemuck::{Pod, Zeroable};
 use derive_more::derive::Into;
@@ -252,6 +253,84 @@ pub enum NesColour {
 	GreenPale = 0x3A,
 	SpringPale = 0x3B,
 	CyanPale = 0x3C,
+}
+impl TryFrom<u8> for NesColour {
+	type Error = anyhow::Error;
+
+	fn try_from(value: u8) -> Result<Self, Self::Error> {
+		use NesColour::*;
+		const PALETTE: [NesColour; 64] = [
+			DarkGrey,
+			AzureDark,
+			BlueDark,
+			VioletDark,
+			MagentaDark,
+			RoseDark,
+			RedDark,
+			OrangeDark,
+			YellowDark,
+			ChartreuseDark,
+			GreenDark,
+			SpringDark,
+			CyanDark,
+			DarkGrey,
+			DarkGrey,
+			Black,
+			LightGrey,
+			AzureMed,
+			BlueMed,
+			VioletMed,
+			MagentaMed,
+			RoseMed,
+			RedMed,
+			OrangeMed,
+			YellowMed,
+			ChartreuseMed,
+			GreenMed,
+			SpringMed,
+			CyanMed,
+			DarkGrey,
+			DarkGrey,
+			Black,
+			White,
+			AzureLight,
+			BlueLight,
+			VioletLight,
+			MagentaLight,
+			RoseLight,
+			RedLight,
+			OrangeLight,
+			YellowLight,
+			ChartreuseLight,
+			GreenLight,
+			SpringLight,
+			CyanLight,
+			DarkGrey,
+			DarkGrey,
+			Black,
+			White,
+			AzurePale,
+			BluePale,
+			VioletPale,
+			MagentaPale,
+			RosePale,
+			RedPale,
+			OrangePale,
+			YellowPale,
+			ChartreusePale,
+			GreenPale,
+			SpringPale,
+			CyanPale,
+			DarkGrey,
+			DarkGrey,
+			Black,
+		];
+
+		PALETTE
+			.get(value as usize)
+			.copied()
+			.ok_or_else(|| anyhow::anyhow!("Invalid colour id: 0x{:X}", value))
+	}
 }
 
 // These colours are entirely untrusted and probably just hallucinated.
