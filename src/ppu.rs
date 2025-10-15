@@ -27,6 +27,7 @@ pub struct Ppu {
 	pub data_cache: u8,
 
 	pub palettes: Palettes,
+	pub sprite_0_fuse: bool,
 }
 
 impl Default for Ppu {
@@ -48,6 +49,7 @@ impl Default for Ppu {
 			oam: Oam::zeroed(),
 			data_cache: Default::default(),
 			palettes: [Palette([NesColour::DarkGrey; 4]); 8],
+			sprite_0_fuse: false,
 		}
 	}
 }
