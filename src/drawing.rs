@@ -76,17 +76,9 @@ pub fn sdl_thread(texture_ptr: Arc<Mutex<Box<Bitmap>>>) -> Result<(), String> {
 				.lock()
 				.expect("Mutex poisoned, not dealing with that");
 
-			// Bytemuck can't handle nested arrays?
-			for (src, dst) in texture_ptr
-				.iter()
-				.flat_map(|line| line.iter())
-				.zip(buffer.chunks_exact_mut(4))
-			{
-				dst[0] = src.alpha;
-				dst[1] = src.red;
-				dst[2] = src.green;
-				dst[3] = src.blue;
-			}
+			let texture_buffer: &Bitmap = &texture_ptr;
+			let texture_buffer: &[u8] = bytemuck::cast_slice(texture_buffer);
+			buffer.copy_from_slice(texture_buffer);
 		})?;
 
 		canvas.set_draw_color(sdl2::pixels::Color::BLACK);
