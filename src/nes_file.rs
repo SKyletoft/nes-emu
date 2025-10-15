@@ -141,7 +141,12 @@ impl Mapper {
 					prg_rom: [0; _],
 					chr_rom: [0; _],
 				});
-				let Mapper::NROM256 { prg_rom: file_prg_rom, chr_rom: file_chr_rom, .. } = &mut *mapper else {
+				let Mapper::NROM256 {
+					prg_rom: file_prg_rom,
+					chr_rom: file_chr_rom,
+					..
+				} = &mut *mapper
+				else {
 					unreachable!()
 				};
 				file_prg_rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
@@ -178,7 +183,7 @@ impl Mapper {
 				}
 			}
 
-			_ => todo!()
+			_ => todo!(),
 		}
 	}
 }
