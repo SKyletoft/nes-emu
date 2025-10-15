@@ -65,8 +65,8 @@ impl Ppu {
 		if self.ctrl.sprite_size() { 16 } else { 8 }
 	}
 
-	pub fn sprite_get_colour(&self, sprite: &Sprite) -> NesColour {
-		NesColour::Black
+	pub fn sprite_get_colour(&self, sprite: &Sprite) -> Option<NesColour> {
+		Some(NesColour::Black)
 	}
 
 	pub fn background_get_colour(&self) -> NesColour {
