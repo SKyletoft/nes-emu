@@ -85,8 +85,6 @@ pub fn sdl_thread(texture_ptr: Arc<Mutex<Box<Bitmap>>>) -> Result<(), String> {
 		canvas.clear();
 		canvas.copy(&texture, None, Some(dst))?;
 		canvas.present();
-
-		// std::thread::sleep(Duration::from_millis(16));
 	}
 
 	Ok(())
