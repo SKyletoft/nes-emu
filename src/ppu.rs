@@ -76,16 +76,14 @@ pub type Vram = [u8; 2048];
 #[bitfield(u8)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Ctrl {
-	#[bits(1)]
-	nametable_0: bool,
-	#[bits(1)]
-	nametable_1: bool,
-	#[bits(1)]
-	_unused: bool,
+	#[bits(2)]
+	nametable: u8,
 	#[bits(1)]
 	vram_increment: bool,
 	#[bits(1)]
-	background_table: bool,
+	sprite_pattern_table: bool,
+	#[bits(1)]
+	background_pattern_table: bool,
 	#[bits(1)]
 	sprite_size: bool,
 	#[bits(1)]
