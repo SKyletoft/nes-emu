@@ -509,9 +509,14 @@ impl State {
 		let pixel_x = (x % 8) as u16;
 		let pixel_y = (y % 8) as u16;
 
+		let tile_idx = (tile_y << 5) + tile_x;
+
 		// Fetch tile index from nametable
 		let tile_id = self
 			.rom
+			.get_ppu(nametable_adr + tile_idx, &self.ppu)
+			.expect("Nametable read failed");
+
 		let (plane0, plane1) = self.read_pattern_table(
 			pixel_y as _,
 			tile_id,
