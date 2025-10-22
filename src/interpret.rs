@@ -362,7 +362,9 @@ impl State {
 					&& self.ppu.sprite_is_visible_y(sprite_0)
 					&& self.sprite_get_colour(sprite_0).is_some()
 			};
-			self.ppu.status.set_sprite_0_hit(self.ppu.status.sprite_0_hit() | sprite_0_hit);
+			self.ppu
+				.status
+				.set_sprite_0_hit(self.ppu.status.sprite_0_hit() | sprite_0_hit);
 
 			let colour = sprites
 				.iter()
