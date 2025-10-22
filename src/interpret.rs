@@ -357,13 +357,12 @@ impl State {
 
 			let sprite_0_hit = {
 				let sprite_0 = &self.ppu.oam[0];
-				self.ppu.sprite_is_visible_x(sprite_0)
+				self.ppu.mask.show_spr()
+					&& self.ppu.sprite_is_visible_x(sprite_0)
 					&& self.ppu.sprite_is_visible_y(sprite_0)
 					&& self.sprite_get_colour(sprite_0).is_some()
-					&& !self.ppu.sprite_0_fuse
 			};
-			self.ppu.status.set_sprite_0_hit(sprite_0_hit);
-			self.ppu.sprite_0_fuse |= sprite_0_hit;
+			self.ppu.status.set_sprite_0_hit(self.ppu.status.sprite_0_hit() | sprite_0_hit);
 
 			let colour = sprites
 				.iter()
@@ -379,6 +378,7 @@ impl State {
 		self.ppu.dot %= 341;
 		if self.ppu.scanline == 261 {
 			self.ppu.scanline = -1;
+			self.ppu.status.set_sprite_0_hit(false);
 		}
 
 		// Dot crawl
@@ -401,7 +401,6 @@ impl State {
 		// know. Again, matching Mesen's behaviour.
 		if self.ppu.dot == 0 && self.ppu.scanline == 240 {
 			self.ppu.frame += 1;
-			self.ppu.sprite_0_fuse = false;
 			let mut texture = self.output_texture.lock().unwrap();
 			std::mem::swap(&mut self.current_texture, &mut texture);
 		}
