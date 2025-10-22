@@ -408,7 +408,53 @@ impl State {
 	}
 
 	pub fn sprite_get_colour(&self, sprite: &Sprite) -> Option<NesColour> {
-		Some(NesColour::Black)
+		if !self.ppu.mask.show_spr() {
+			return None;
+		}
+
+		assert!(self.ppu.scroll.x == 0 && self.ppu.scroll.y == 0);
+		let x = (self.ppu.dot + self.ppu.scroll.x as i16) % 512;
+		let y = (self.ppu.scanline + self.ppu.scroll.y as i16) % 480;
+
+		let pixel_x = sprite.x as i16 - x;
+		let pixel_y = sprite.y as i16 - y;
+
+		assert!((0..8).contains(&pixel_x), "{pixel_x}");
+		assert!((0..8).contains(&pixel_y), "{pixel_y}");
+
+		let pixel_x = if sprite.attr.flip_h() {
+			pixel_x
+		} else {
+			7 - pixel_x
+		};
+		let pixel_y = if sprite.attr.flip_v() {
+			pixel_y
+		} else {
+			7 - pixel_y
+		};
+
+		assert!((0..8).contains(&pixel_x), "{pixel_x}");
+		assert!((0..8).contains(&pixel_y), "{pixel_y}");
+
+		let (plane0, plane1) = self.read_pattern_table(
+			pixel_y as _,
+			sprite.tile,
+			self.ppu.ctrl.sprite_pattern_table(),
+		);
+
+		// Combine bits to get 0-3 palette index
+		let bit = pixel_x;
+		let palette_index = ((plane1 >> bit) & 1) << 1 | ((plane0 >> bit) & 1);
+
+		let palette = [
+			None,
+			// Some(NesColour::Black),
+			Some(NesColour::RedLight),
+			Some(NesColour::GreenLight),
+			Some(NesColour::YellowLight),
+		];
+		palette[palette_index as usize]
+		// Some(NesColour::Black)
 	}
 
 	pub fn read_pattern_table(&self, fine_y: u8, tile_id: u8, half: bool) -> (u8, u8) {
