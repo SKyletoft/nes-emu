@@ -29,7 +29,7 @@ fn emulation_loop(shared_texture: Arc<Mutex<Box<Bitmap>>>) {
 	// let mut buf = String::new();
 	loop {
 		system_state.next();
-		print!("{}", system_state.display());
+		// print!("{}", system_state.display());
 		// buf.clear();
 		// std::io::stdin().read_line(&mut buf).unwrap();
 	}
