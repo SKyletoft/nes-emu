@@ -447,14 +447,28 @@ impl State {
 		let bit = pixel_x;
 		let palette_index = ((plane1 >> bit) & 1) << 1 | ((plane0 >> bit) & 1);
 
-		let palette = [
-			None,
-			// Some(NesColour::Black),
-			Some(NesColour::RedLight),
-			Some(NesColour::GreenLight),
-			Some(NesColour::YellowLight),
-		];
-		palette[palette_index as usize]
+		if palette_index == 0 {
+			return None;
+		}
+		let raw_col = self
+			.rom
+			.get_ppu(
+				0x3F00 + sprite.attr.palette() as u16 * 4 + palette_index as u16,
+				&self.ppu,
+			)
+			.expect("Palette RAM must be in-bounds");
+		dbg!(raw_col);
+		let col = NesColour::try_from(raw_col).expect("Game used invalid colour");
+		Some(col)
+
+		// let palette = [
+		//	None,
+		//	// Some(NesColour::Black),
+		//	Some(NesColour::RedLight),
+		//	Some(NesColour::GreenLight),
+		//	Some(NesColour::YellowLight),
+		// ];
+		// palette[palette_index as usize]
 		// Some(NesColour::Black)
 	}
 
