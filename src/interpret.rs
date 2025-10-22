@@ -416,6 +416,7 @@ impl State {
 
 		let x = (self.ppu.dot + self.ppu.scroll.x as i16) % 512;
 		let y = (self.ppu.scanline + self.ppu.scroll.y as i16) % 480;
+		assert!(self.ppu.ctrl.nametable() == 0); // Not really, but I'm not taking this into account yet
 		let nametable_adr = match (x, y) {
 			(0..256, 0..240) => 0x2000,
 			(256..512, 0..240) => 0x2400,
