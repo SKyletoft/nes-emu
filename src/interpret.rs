@@ -12,6 +12,8 @@ use crate::{
 	ppu::{DoubleWriter, NesColour, Ppu, Scroll, Sprite},
 };
 
+use bitfields::bitfield;
+
 pub const PPU_STARTUP_TIME: u64 = 2500;
 const PPUADDR_MASK: u16 = (1 << 14) - 1;
 pub enum InterruptTiming {
@@ -585,4 +587,18 @@ impl State {
 
 		out
 	}
+}
+
+#[bitfield(u16)]
+struct PatternAddress {
+	#[bits(3)]
+	fine_y: u8,
+	#[bits(1)]
+	plane: bool,
+	#[bits(8)]
+	tile_idx: u8,
+	#[bits(1)]
+	half: bool,
+	#[bits(3, default = 0)]
+	__unused: u8,
 }
