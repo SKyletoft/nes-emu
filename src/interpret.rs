@@ -450,26 +450,16 @@ impl State {
 		if palette_index == 0 {
 			return None;
 		}
+		assert!((0..4).contains(&sprite.attr.palette()));
+		assert!((0..4).contains(&palette_index));
+		let col_idx = sprite.attr.palette() as u16 * 4 + palette_index as u16;
+		assert!((0..16).contains(&col_idx));
 		let raw_col = self
 			.rom
-			.get_ppu(
-				0x3F00 + sprite.attr.palette() as u16 * 4 + palette_index as u16,
-				&self.ppu,
-			)
+			.get_ppu(0x3F10 + col_idx, &self.ppu)
 			.expect("Palette RAM must be in-bounds");
-		dbg!(raw_col);
 		let col = NesColour::try_from(raw_col).expect("Game used invalid colour");
 		Some(col)
-
-		// let palette = [
-		//	None,
-		//	// Some(NesColour::Black),
-		//	Some(NesColour::RedLight),
-		//	Some(NesColour::GreenLight),
-		//	Some(NesColour::YellowLight),
-		// ];
-		// palette[palette_index as usize]
-		// Some(NesColour::Black)
 	}
 
 	pub fn read_pattern_table(&self, fine_y: u8, tile_id: u8, half: bool) -> (u8, u8) {
