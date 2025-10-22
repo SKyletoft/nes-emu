@@ -411,6 +411,37 @@ impl State {
 		Some(NesColour::Black)
 	}
 
+	pub fn read_pattern_table(&self, fine_y: u8, tile_id: u8, half: bool) -> (u8, u8) {
+		let plane0 = self
+			.rom
+			.get_ppu(
+				PatternAddressBuilder::new()
+					.with_fine_y(fine_y)
+					.with_plane(false)
+					.with_tile_idx(tile_id)
+					.with_half(half)
+					.build()
+					.into_bits(),
+				&self.ppu,
+			)
+			.expect("Pattern table read failed");
+		let plane1 = self
+			.rom
+			.get_ppu(
+				PatternAddressBuilder::new()
+					.with_fine_y(fine_y)
+					.with_plane(true)
+					.with_tile_idx(tile_id)
+					.with_half(half)
+					.build()
+					.into_bits(),
+				&self.ppu,
+			)
+			.expect("Pattern table read failed");
+
+		(plane0, plane1)
+	}
+
 	pub fn background_get_colour(&self) -> NesColour {
 		if !self.ppu.mask.show_bg() {
 			return NesColour::Black;
@@ -435,23 +466,11 @@ impl State {
 		// Fetch tile index from nametable
 		let tile_id = self
 			.rom
-			.get_ppu(nametable_adr + tile_y * 32 + tile_x, &self.ppu)
-			.expect("Nametable read failed") as u16;
-
-		let pattern_table_base = if self.ppu.ctrl.background_table() {
-			0x1000
-		} else {
-			0x0000
-		};
-
-		let plane0 = self
-			.rom
-			.get_ppu(pattern_table_base + tile_id * 16 + pixel_y, &self.ppu)
-			.expect("Pattern table read failed");
-		let plane1 = self
-			.rom
-			.get_ppu(pattern_table_base + tile_id * 16 + pixel_y + 8, &self.ppu)
-			.expect("Pattern table read failed");
+		let (plane0, plane1) = self.read_pattern_table(
+			pixel_y as _,
+			tile_id,
+			self.ppu.ctrl.background_pattern_table(),
+		);
 
 		// Combine bits to get 0-3 palette index
 		let bit = 7 - pixel_x;
