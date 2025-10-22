@@ -48,7 +48,7 @@ impl Default for Ppu {
 			vram: [0; _],
 			oam: Oam::zeroed(),
 			data_cache: Default::default(),
-			palettes: [Palette([NesColour::DarkGrey; 4]); 8],
+			palettes: [[NesColour::DarkGrey; 4]; 8],
 		}
 	}
 }
@@ -190,9 +190,7 @@ const _: () = {
 	assert!(align_of::<Palette>() >= align_of::<u8>());
 };
 
-#[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Into)]
-pub struct Palette([NesColour; 4]);
+pub type Palette = [NesColour; 4];
 
 #[repr(u8)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Zeroable)]
