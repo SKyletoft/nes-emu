@@ -350,9 +350,11 @@ impl State {
 			let sprite_0_hit = {
 				let sprite_0 = &self.ppu.oam[0];
 				self.ppu.mask.show_spr()
+					&& self.ppu.mask.show_bg()
 					&& self.ppu.sprite_is_visible_x(sprite_0)
 					&& self.ppu.sprite_is_visible_y(sprite_0)
 					&& self.sprite_get_colour(sprite_0).is_some()
+					&& self.background_get_colour().is_some()
 			};
 			self.ppu
 				.status
