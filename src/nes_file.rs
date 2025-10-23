@@ -2,7 +2,7 @@
 
 use anyhow::{Result, bail};
 
-use crate::ppu::Ppu;
+use crate::ppu::{NesColour, Ppu};
 
 // Yeah, yeah, it's huge, but this entire thing is expected to be boxed, so it's fine.
 // #[allow(clippy::large_enum_variant)]
@@ -331,7 +331,13 @@ impl Mapper {
 				prg_rom,
 				chr_rom,
 			} => match adr {
-				0x0000..=0x1FFF | 0x3F00..=0x3FFF => Some(()),
+				0x0000..=0x1FFF => Some(()),
+				0x3F00..=0x3FFF => {
+					let col: NesColour = val.try_into().expect("Writing invalid colour to palette");
+					let adr = adr as usize % 0x20;
+					ppu.palettes[(adr / 4) % 8][adr % 4] = col;
+					Some(())
+				}
 				0x2000..=0x3EFF => {
 					*ppu.vram.get_mut(adr as usize & 0x07FF).unwrap() = val;
 					Some(())
