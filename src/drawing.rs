@@ -6,10 +6,10 @@ use sdl2::{event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect}
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Default, Pod, Zeroable)]
 pub struct Colour {
-	pub alpha: u8,
-	pub red: u8,
-	pub green: u8,
 	pub blue: u8,
+	pub green: u8,
+	pub red: u8,
+	pub alpha: u8,
 }
 
 pub const WIDTH: usize = 256;
