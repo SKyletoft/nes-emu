@@ -367,7 +367,8 @@ impl State {
 				.filter_map(|&s| s)
 				.find(|sprite| self.ppu.sprite_is_visible_x(sprite))
 				.and_then(|s| self.sprite_get_colour(&s))
-				.unwrap_or_else(|| self.background_get_colour());
+				.or_else(|| self.background_get_colour())
+				.unwrap_or(self.ppu.palettes[0][0]);
 			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour.into();
 		}
 		self.ppu.dot += 1;
@@ -509,9 +510,9 @@ impl State {
 		(plane0, plane1)
 	}
 
-	pub fn background_get_colour(&self) -> NesColour {
+	pub fn background_get_colour(&self) -> Option<NesColour> {
 		if !self.ppu.mask.show_bg() {
-			return NesColour::Black;
+			return None;
 		}
 
 		let x = (self.ppu.dot + self.ppu.scroll.x as i16 + self.ppu.ctrl.x_offset()) % 512;
@@ -562,13 +563,14 @@ impl State {
 		// Combine tile bits with attribute to get final 0-15 palette index
 		let col_idx = ((attribute_bits << 2) | tile_palette_index) as u16;
 
-		assert!((0..16).contains(&col_idx));
-		let raw_col = self
-			.rom
-			.get_ppu(0x3F00 + col_idx, &self.ppu)
-			.expect("Palette RAM must be in-bounds");
+		if tile_palette_index == 0 {
+			return None;
+		}
+		assert!((0..4).contains(&tile_palette_index));
+		assert!((0..4).contains(&attribute_bits));
 
-		NesColour::try_from(raw_col).expect("Game used invalid colour")
+		let col = self.ppu.palettes[attribute_bits as usize][tile_palette_index as usize];
+		Some(col)
 	}
 
 	pub fn display(&self) -> String {
