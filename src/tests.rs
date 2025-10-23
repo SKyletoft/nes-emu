@@ -57,8 +57,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "AND ${adr:04X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::AndAbsoluteY(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "AND ${:04X},Y = ${:02X}", adr, mem)
+			let res = adr.as_u16() + state.cpu.y as u16;
+			let mem = state.mem_pure(res);
+			write!(f, "AND ${adr:04X},Y [${res:04X}] = ${mem:02X}")
 		}
 		Inst::AndImmediate(val) => write!(f, "AND #${:02X}", val),
 		Inst::AndIndirectX(adr) => {
@@ -201,8 +202,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "CMP ${:02X} = ${:02X}", adr, mem)
 		}
 		Inst::CmpZeroPageX(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "CMP ${:02X},X = ${:02X}", adr, mem)
+			let res = state.cpu.x.wrapping_add(adr);
+			let mem = state.mem_pure(res as u16);
+			write!(f, "CMP ${adr:02X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::CpxAbsolute(adr) => {
 			let mem = state.mem_pure(adr.into());
@@ -403,15 +405,14 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		}
 		Inst::LdaImmediate(val) => write!(f, "LDA #${:02X}", val),
 		Inst::LdaIndirectX(adr) => {
-			let zp_addr = adr.wrapping_add(state.cpu.x);
-			let lo = state.mem_pure(zp_addr as u16);
-			let hi = state.mem_pure(zp_addr.wrapping_add(1) as u16);
-			let eff_addr = u16::from_le_bytes([lo, hi]);
-			let mem = state.mem_pure(eff_addr);
+			let zp_adr = adr.wrapping_add(state.cpu.x);
+			let lo = state.mem_pure(zp_adr as u16);
+			let hi = state.mem_pure(zp_adr.wrapping_add(1) as u16);
+			let eff_adr = u16::from_le_bytes([lo, hi]);
+			let mem = state.mem_pure(eff_adr);
 			write!(
 				f,
-				"LDA (${:02X},X) ${:02X} ${:04X} = ${:02X}",
-				adr, zp_addr, eff_addr, mem
+				"LDA (${adr:02X},X) ${zp_adr:02X} ${eff_adr:04X} = ${mem:02X}"
 			)
 		}
 		Inst::LdaIndirectY(adr) => {
@@ -426,8 +427,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "LDA ${:02X} = ${:02X}", adr, mem)
 		}
 		Inst::LdaZeroPageX(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "LDA ${:02X},X = ${:02X}", adr, mem)
+			let res = state.cpu.x.wrapping_add(adr) as u16;
+			let mem = state.mem_pure(res);
+			write!(f, "LDA ${adr:02X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::LdxAbsolute(adr) => {
 			let mem = state.mem_pure(adr.into());
@@ -756,8 +758,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "SBC ${:02X} = ${:02X}", adr, mem)
 		}
 		Inst::SbcZeroPageX(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "SBC ${:02X},X = ${:02X}", adr, mem)
+			let res = state.cpu.x.wrapping_add(adr);
+			let mem = state.mem_pure(res as u16);
+			write!(f, "SBC ${adr:02X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::Sec => write!(f, "SEC"),
 		Inst::Sed => write!(f, "SED"),
@@ -869,8 +872,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "STA ${:02X} = ${:02X}", adr, mem)
 		}
 		Inst::StaZeroPageX(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "STA ${:02X},X = ${:02X}", adr, mem)
+			let res = state.cpu.x.wrapping_add(adr);
+			let mem = state.mem_pure(res as u16);
+			write!(f, "STA ${adr:02X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::StxAbsolute(unaligned_u16) => {
 			let adr = unaligned_u16;
