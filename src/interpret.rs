@@ -423,6 +423,8 @@ impl State {
 			self.ppu.frame += 1;
 			let mut texture = self.output_texture.lock().unwrap();
 			std::mem::swap(&mut self.current_texture, &mut texture);
+
+			std::thread::sleep(std::time::Duration::from_millis(16));
 		}
 	}
 
