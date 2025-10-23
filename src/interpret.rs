@@ -514,13 +514,8 @@ impl State {
 			return NesColour::Black;
 		}
 
-		let x = (self.ppu.dot
-			+ self.ppu.scroll.x as i16
-			+ self.ppu.ctrl.x_offset()
-			) % 512;
-		let y = (self.ppu.scanline
-			+ self.ppu.scroll.y as i16
-			+ self.ppu.ctrl.y_offset()) % 480;
+		let x = (self.ppu.dot + self.ppu.scroll.x as i16 + self.ppu.ctrl.x_offset()) % 512;
+		let y = (self.ppu.scanline + self.ppu.scroll.y as i16 + self.ppu.ctrl.y_offset()) % 480;
 		let nametable_adr = match (x, y) {
 			(0..256, 0..240) => 0x2000,
 			(256..512, 0..240) => 0x2400,
