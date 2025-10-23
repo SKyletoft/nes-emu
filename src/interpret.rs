@@ -383,6 +383,7 @@ impl State {
 		if self.ppu.scanline == -1
 			&& self.ppu.dot == 339
 			&& (self.ppu.mask.show_bg() || self.ppu.mask.show_spr())
+			&& self.ppu.frame & 1 != 0
 		{
 			self.ppu.dot = 340;
 		}
