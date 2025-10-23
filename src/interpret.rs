@@ -545,28 +545,15 @@ impl State {
 		let attribute_bits = (attribute_byte >> shift) & 0b11;
 
 		// Combine tile bits with attribute to get final 0-15 palette index
-		let palette_index = (attribute_bits << 2) | tile_palette_index;
+		let col_idx = ((attribute_bits << 2) | tile_palette_index) as u16;
 
-		// Temporary placeholder palette (replace with full NES palette mapping)
-		let palette = [
-			NesColour::RedDark,
-			NesColour::BlueDark,
-			NesColour::GreenDark,
-			NesColour::YellowDark,
-			NesColour::RedLight,
-			NesColour::BlueLight,
-			NesColour::GreenLight,
-			NesColour::YellowLight,
-			NesColour::ChartreuseDark,
-			NesColour::AzureDark,
-			NesColour::OrangeDark,
-			NesColour::MagentaDark,
-			NesColour::ChartreuseLight,
-			NesColour::AzureLight,
-			NesColour::OrangeLight,
-			NesColour::MagentaLight,
-		];
-		palette[palette_index as usize]
+		assert!((0..16).contains(&col_idx));
+		let raw_col = self
+			.rom
+			.get_ppu(0x3F00 + col_idx, &self.ppu)
+			.expect("Palette RAM must be in-bounds");
+
+		NesColour::try_from(raw_col).expect("Game used invalid colour")
 	}
 
 	pub fn display(&self) -> String {
