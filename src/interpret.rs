@@ -428,7 +428,6 @@ impl State {
 			return None;
 		}
 
-		assert!(self.ppu.scroll.x == 0 && self.ppu.scroll.y == 0);
 		let x = (self.ppu.dot + self.ppu.scroll.x as i16) % 512;
 		let y = (self.ppu.scanline + self.ppu.scroll.y as i16) % 480;
 
@@ -513,9 +512,13 @@ impl State {
 			return NesColour::Black;
 		}
 
-		let x = (self.ppu.dot + self.ppu.scroll.x as i16) % 512;
-		let y = (self.ppu.scanline + self.ppu.scroll.y as i16) % 480;
-		assert!(self.ppu.ctrl.nametable() == 0); // Not really, but I'm not taking this into account yet
+		let x = (self.ppu.dot
+			+ self.ppu.scroll.x as i16
+			+ self.ppu.ctrl.x_offset()
+			) % 512;
+		let y = (self.ppu.scanline
+			+ self.ppu.scroll.y as i16
+			+ self.ppu.ctrl.y_offset()) % 480;
 		let nametable_adr = match (x, y) {
 			(0..256, 0..240) => 0x2000,
 			(256..512, 0..240) => 0x2400,

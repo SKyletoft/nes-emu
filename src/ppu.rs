@@ -98,6 +98,14 @@ impl Ctrl {
 	pub fn vram_increment_value(&self) -> u16 {
 		if self.vram_increment() { 32 } else { 1 }
 	}
+
+	pub fn x_offset(&self) -> i16 {
+		if self.nametable() & 1 != 0 { 256 } else { 0 }
+	}
+
+	pub fn y_offset(&self) -> i16 {
+		if self.nametable() & 2 != 0 { 240 } else { 0 }
+	}
 }
 
 #[bitfield(u8)]
