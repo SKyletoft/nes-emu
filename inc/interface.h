@@ -142,11 +142,11 @@ void state_step_ppu_many(State *state, uint32_t times);
 #define ABSOLUTE_X(fn)                                                                           \
 	void fn##_absolute_x(State *state, uint16_t adr) {                                       \
 		uint16_t actual_adr = (uint16_t) state->cpu.x + adr;                             \
-		bool taken          = (actual_adr & 0xFF) == 0;                                  \
+		bool page_crossed   = state->cpu.x + (adr & 0xFF) > 0xFF;                        \
 		uint8_t val         = state_get_mem(state, actual_adr);                          \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 3;                                                              \
-		state_step_ppu_many(state, 4 + taken);                                           \
+		state_step_ppu_many(state, 4 + page_crossed);                                    \
 	}
 
 #define ABSOLUTE_X_RMW(fn)                                                                       \
@@ -161,11 +161,11 @@ void state_step_ppu_many(State *state, uint32_t times);
 #define ABSOLUTE_Y(fn)                                                                           \
 	void fn##_absolute_y(State *state, uint16_t adr) {                                       \
 		uint16_t actual_adr = (uint16_t) state->cpu.y + adr;                             \
-		bool taken          = (actual_adr & 0xFF) == 0;                                  \
+		bool page_crossed   = state->cpu.y + (adr & 0xFF) > 0xFF;                        \
 		uint8_t val         = state_get_mem(state, actual_adr);                          \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 3;                                                              \
-		state_step_ppu_many(state, 4 + taken);                                           \
+		state_step_ppu_many(state, 4 + page_crossed);                                    \
 	}
 
 #define ABSOLUTE_Y_RMW(fn)                                                                       \
