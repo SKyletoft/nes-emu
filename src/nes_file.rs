@@ -332,7 +332,15 @@ impl Mapper {
 				chr_rom,
 			} => match adr {
 				0x0000..=0x1FFF => Some(()),
-				0x3F00..=0x3FFF => {
+				0x3F00..=0x3FFF if adr % 4 == 0 => {
+					let col: NesColour = val.try_into().expect("Writing invalid colour to palette");
+					let adr = adr as usize % 0x20;
+					for pal in ppu.palettes.iter_mut() {
+						pal[0] = col;
+					}
+					Some(())
+				}
+				0x3F00..=0x3FFF if adr % 4 != 0 => {
 					let col: NesColour = val.try_into().expect("Writing invalid colour to palette");
 					let adr = adr as usize % 0x20;
 					ppu.palettes[(adr / 4) % 8][adr % 4] = col;
