@@ -84,6 +84,43 @@ pub fn sdl_thread(texture_ptr: Arc<Mutex<Box<Bitmap>>>) -> Result<(), String> {
 		canvas.set_draw_color(sdl2::pixels::Color::BLACK);
 		canvas.clear();
 		canvas.copy(&texture, None, Some(dst))?;
+
+		let (win_w, win_h) = canvas.window().size();
+
+		let left_width = dst.x();
+		for i in 0..left_width {
+			let t = i as f32 / left_width as f32;
+			let val = (64.0 * (1.0 - t)) as u8; // fade to black
+			canvas.set_draw_color(sdl2::pixels::Color::RGB(val, val, val));
+			canvas.fill_rect(Rect::new(i, 0, 1, win_h))?;
+		}
+
+		let right_width = win_w as i32 - (dst.x() + dst.width() as i32);
+		for i in 0..right_width {
+			let t = i as f32 / right_width as f32;
+			let val = (64.0 * t) as u8; // fade to grey
+			let x = dst.x() + dst.width() as i32 + i;
+			canvas.set_draw_color(sdl2::pixels::Color::RGB(val, val, val));
+			canvas.fill_rect(Rect::new(x, 0, 1, win_h))?;
+		}
+
+		let top_height = dst.y();
+		for j in 0..top_height {
+			let t = j as f32 / top_height as f32;
+			let val = (64.0 * (1.0 - t)) as u8;
+			canvas.set_draw_color(sdl2::pixels::Color::RGB(val, val, val));
+			canvas.fill_rect(Rect::new(0, j, win_w, 1))?;
+		}
+
+		let bottom_height = win_h as i32 - (dst.y() + dst.height() as i32);
+		for j in 0..bottom_height {
+			let t = j as f32 / bottom_height as f32;
+			let val = (64.0 * t) as u8;
+			let y = dst.y() + dst.height() as i32 + j;
+			canvas.set_draw_color(sdl2::pixels::Color::RGB(val, val, val));
+			canvas.fill_rect(Rect::new(0, y, win_w, 1))?;
+		}
+
 		canvas.present();
 	}
 
