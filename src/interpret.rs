@@ -347,14 +347,6 @@ impl State {
 		self.ppu.cycles += 1;
 
 		if (0..240).contains(&self.ppu.scanline) && (0..255).contains(&self.ppu.dot) {
-			let mut sprites: [Sprite; 64] = self.ppu.oam;
-
-			// Stable sort: Primarily by x, then by prio, lastly by index.
-			sprites.sort_by(|l, r| {
-				l.x.cmp(&r.x)
-					.then(l.attr.priority().cmp(&r.attr.priority()))
-			});
-
 			let sprite_0_hit = {
 				let sprite_0 = &self.ppu.oam[0];
 				self.ppu.mask.show_spr()
@@ -366,12 +358,13 @@ impl State {
 				.status
 				.set_sprite_0_hit(self.ppu.status.sprite_0_hit() | sprite_0_hit);
 
-			let colour = sprites
+			let colour = self
+				.ppu
+				.sprite_cache
 				.iter()
-				.filter(|sprite| self.ppu.sprite_is_visible_y(sprite))
-				.take(8)
+				.filter_map(|&s| s)
 				.find(|sprite| self.ppu.sprite_is_visible_x(sprite))
-				.and_then(|s| self.sprite_get_colour(s))
+				.and_then(|s| self.sprite_get_colour(&s))
 				.unwrap_or_else(|| self.background_get_colour());
 			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour.into();
 		}
@@ -389,6 +382,28 @@ impl State {
 			&& (self.ppu.mask.show_bg() || self.ppu.mask.show_spr())
 		{
 			self.ppu.dot = 340;
+		}
+
+		if self.ppu.dot == 0 {
+			let mut sprites: [Sprite; 64] = self.ppu.oam;
+
+			// Stable sort: Primarily by x, then by prio, lastly by index.
+			sprites.sort_by(|l, r| {
+				l.x.cmp(&r.x)
+					.then(l.attr.priority().cmp(&r.attr.priority()))
+			});
+
+			let mut sprite_cache = [None; _];
+			for (cache, sprite) in sprite_cache.iter_mut().zip(
+				sprites
+					.iter()
+					.filter(|sprite| self.ppu.sprite_is_visible_y(sprite))
+					.take(8),
+			) {
+				*cache = Some(*sprite);
+			}
+
+			self.ppu.sprite_cache = sprite_cache;
 		}
 
 		if self.ppu.scanline == 241 && self.ppu.dot == 6 {
