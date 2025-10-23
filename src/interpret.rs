@@ -432,8 +432,8 @@ impl State {
 		let x = (self.ppu.dot + self.ppu.scroll.x as i16) % 512;
 		let y = (self.ppu.scanline + self.ppu.scroll.y as i16) % 480;
 
-		let pixel_x = sprite.x as i16 - self.ppu.dot;
-		let pixel_y = sprite.y as i16 - self.ppu.scanline;
+		let pixel_x = self.ppu.dot - sprite.x as i16;
+		let pixel_y = self.ppu.scanline - sprite.y as i16;
 
 		assert!((0..8).contains(&pixel_x), "{pixel_x}");
 		assert!((0..8).contains(&pixel_y), "{pixel_y}");
@@ -444,9 +444,9 @@ impl State {
 			7 - pixel_x
 		};
 		let pixel_y = if sprite.attr.flip_v() {
-			pixel_y
-		} else {
 			7 - pixel_y
+		} else {
+			pixel_y
 		};
 
 		assert!((0..8).contains(&pixel_x), "{pixel_x}");
