@@ -33,8 +33,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "ADC ${:02X} = ${:02X}", adr, mem)
 		}
 		Inst::AdcZeroPageX(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "ADC ${:02X},X = ${:02X}", adr, mem)
+			let res = state.cpu.x.wrapping_add(adr);
+			let mem = state.mem_pure(res as u16);
+			write!(f, "ADC ${adr:02X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::AhxAbsoluteY(adr) => {
 			let mem = state.mem_pure(adr.into());
