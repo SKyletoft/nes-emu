@@ -19,9 +19,12 @@
 					pkg-config
 
 					llvmPackages_21.clang-tools
+					valgrind
 
 					fceux # For comparison
 					mesen
+
+					kdePackages.kcachegrind
 				];
 				buildInputs = with pkgs; [
 					clang
