@@ -71,6 +71,12 @@ impl Ppu {
 	pub fn raw_palettes(&self) -> &[u8; 64] {
 		unsafe { std::mem::transmute::<&[Palette; 8], &[u8; 64]>(&self.palettes) }
 	}
+
+	pub fn actual_pos(&self) -> (i16, i16) {
+		let x = (self.dot + self.scroll.x as i16 + self.ctrl.x_offset()) % 512;
+		let y = (self.scanline + self.scroll.y as i16 + self.ctrl.y_offset()) % 480;
+		(x, y)
+	}
 }
 
 pub type Vram = [u8; 2048];

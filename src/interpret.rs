@@ -435,8 +435,7 @@ impl State {
 			return None;
 		}
 
-		let x = (self.ppu.dot + self.ppu.scroll.x as i16) % 512;
-		let y = (self.ppu.scanline + self.ppu.scroll.y as i16) % 480;
+		let (x, y) = self.ppu.actual_pos();
 
 		let pixel_x = self.ppu.dot - sprite.x as i16;
 		let pixel_y = self.ppu.scanline - sprite.y as i16 - 1;
@@ -519,8 +518,7 @@ impl State {
 			return None;
 		}
 
-		let x = (self.ppu.dot + self.ppu.scroll.x as i16 + self.ppu.ctrl.x_offset()) % 512;
-		let y = (self.ppu.scanline + self.ppu.scroll.y as i16 + self.ppu.ctrl.y_offset()) % 480;
+		let (x, y) = self.ppu.actual_pos();
 		let nametable_adr = match (x, y) {
 			(0..256, 0..240) => 0x2000,
 			(256..512, 0..240) => 0x2400,
