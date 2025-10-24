@@ -444,9 +444,9 @@ impl State {
 		assert!((0..8).contains(&pixel_y), "{pixel_y}");
 
 		let pixel_x = if sprite.attr.flip_h() {
-			pixel_x
-		} else {
 			7 - pixel_x
+		} else {
+			pixel_x
 		};
 		let pixel_y = if sprite.attr.flip_v() {
 			7 - pixel_y
@@ -457,23 +457,22 @@ impl State {
 		assert!((0..8).contains(&pixel_x), "{pixel_x}");
 		assert!((0..8).contains(&pixel_y), "{pixel_y}");
 
-		let (plane0, plane1) = self.read_pattern_table(
+		let palette_index = self.read_pattern_table(
+			pixel_x as _,
 			pixel_y as _,
 			sprite.tile,
 			self.ppu.ctrl.sprite_pattern_table(),
 		);
 
-		// Combine bits to get 0-3 palette index
-		let bit = pixel_x;
-		let palette_index = ((plane1 >> bit) & 1) << 1 | ((plane0 >> bit) & 1);
-
 		if palette_index == 0 {
 			return None;
 		}
+
 		assert!((0..4).contains(&sprite.attr.palette()));
 		assert!((0..4).contains(&palette_index));
 		let col_idx = sprite.attr.palette() as u16 * 4 + palette_index as u16;
 		assert!((0..16).contains(&col_idx));
+
 		let raw_col = self
 			.rom
 			.get_ppu(0x3F10 + col_idx, &self.ppu)
@@ -482,7 +481,7 @@ impl State {
 		Some(col)
 	}
 
-	pub fn read_pattern_table(&self, fine_y: u8, tile_id: u8, half: bool) -> (u8, u8) {
+	pub fn read_pattern_table(&self, fine_x: u8, fine_y: u8, tile_id: u8, half: bool) -> u8 {
 		let plane0 = self
 			.rom
 			.get_ppu(
@@ -510,7 +509,8 @@ impl State {
 			)
 			.expect("Pattern table read failed");
 
-		(plane0, plane1)
+		let bit = 7 - fine_x;
+		((plane1 >> bit) & 1) << 1 | ((plane0 >> bit) & 1)
 	}
 
 	pub fn background_get_colour(&self) -> Option<NesColour> {
@@ -541,36 +541,30 @@ impl State {
 			.get_ppu(nametable_adr + tile_idx, &self.ppu)
 			.expect("Nametable read failed");
 
-		let (plane0, plane1) = self.read_pattern_table(
+		let tile_palette_index = self.read_pattern_table(
+			pixel_x as _,
 			pixel_y as _,
 			tile_id,
 			self.ppu.ctrl.background_pattern_table(),
 		);
 
-		// Combine bits to get 0-3 palette index
-		let bit = 7 - pixel_x;
-		let tile_palette_index = ((plane1 >> bit) & 1) << 1 | ((plane0 >> bit) & 1);
+		if tile_palette_index == 0 {
+			return None;
+		}
 
-		// Fetch attribute byte
 		let attribute_table_base = nametable_adr + 0x3C0;
 		let attribute_addr = attribute_table_base + (tile_y / 4) * 8 + tile_x / 4;
 		let attribute_byte = self
 			.rom
 			.get_ppu(attribute_addr, &self.ppu)
 			.expect("Attribute table read failed");
-
-		// Select correct quadrant (2 bits)
 		let shift = ((tile_y % 4) / 2) * 4 + ((tile_x % 4) / 2) * 2;
 		let attribute_bits = (attribute_byte >> shift) & 0b11;
 
-		// Combine tile bits with attribute to get final 0-15 palette index
-		let col_idx = ((attribute_bits << 2) | tile_palette_index) as u16;
-
-		if tile_palette_index == 0 {
-			return None;
-		}
-		assert!((0..4).contains(&tile_palette_index));
 		assert!((0..4).contains(&attribute_bits));
+		assert!((0..4).contains(&tile_palette_index));
+		let col_idx = attribute_bits as u16 * 4 + tile_palette_index as u16;
+		assert!((0..16).contains(&col_idx));
 
 		let col = self.ppu.palettes[attribute_bits as usize][tile_palette_index as usize];
 		Some(col)
