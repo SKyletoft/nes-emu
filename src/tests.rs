@@ -985,7 +985,8 @@ macro_rules! make_log_test {
 						|| (ours.contains("STA $2007 = ") && line.contains("STA $2007 = "))
 						|| (ours.contains("LDA $4016") && line.contains("LDA $4016"))
 						|| (ours.contains("LDA $4017") && line.contains("LDA $4017")),
-					"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n       {}\n{}",
+					"Mismatch at\n{}:{i}:\n ours: {ours}\n ref : {line}\n       {}\n{}",
+					$log,
 					ours.chars()
 						.zip(line.chars())
 						.map(|(l, r)| if l == r { ' ' } else { '^' })
