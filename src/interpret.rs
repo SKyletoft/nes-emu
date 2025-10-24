@@ -437,7 +437,7 @@ impl State {
 		let x = (self.ppu.dot + self.ppu.scroll.x as i16) % 512;
 		let y = (self.ppu.scanline + self.ppu.scroll.y as i16) % 480;
 
-		let pixel_x = self.ppu.dot - sprite.x as i16 - 1;
+		let pixel_x = self.ppu.dot - sprite.x as i16;
 		let pixel_y = self.ppu.scanline - sprite.y as i16 - 1;
 
 		assert!((0..8).contains(&pixel_x), "{pixel_x}");

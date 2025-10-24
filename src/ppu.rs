@@ -57,7 +57,7 @@ impl Default for Ppu {
 
 impl Ppu {
 	pub fn sprite_is_visible_x(&self, sprite: &Sprite) -> bool {
-		(sprite.x as i16) < self.dot && self.dot <= sprite.x as i16 + self.sprite_width()
+		(sprite.x as i16) <= self.dot && self.dot < sprite.x as i16 + self.sprite_width()
 	}
 
 	pub fn sprite_is_visible_y(&self, sprite: &Sprite) -> bool {
