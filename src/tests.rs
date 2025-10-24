@@ -314,8 +314,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "INC ${:02X} = ${:02X}", adr, mem)
 		}
 		Inst::IncZeroPageX(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "INC ${:02X},X = ${:02X}", adr, mem)
+			let res = state.cpu.x.wrapping_add(adr);
+			let mem = state.mem_pure(res as u16);
+			write!(f, "INC ${adr:02X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::Inx => write!(f, "INX"),
 		Inst::Iny => write!(f, "INY"),
@@ -465,8 +466,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "LDY ${:02X} = ${:02X}", adr, mem)
 		}
 		Inst::LdyZeroPageX(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "LDY ${:02X},X = ${:02X}", adr, mem)
+			let res = state.cpu.x.wrapping_add(adr);
+			let mem = state.mem_pure(res as u16);
+			write!(f, "LDY ${adr:02X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::LsrAccumulator => write!(f, "LSR A"),
 		Inst::LsrAbsolute(adr) => {
@@ -900,8 +902,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "STY ${:02X} = ${:02X}", adr, mem)
 		}
 		Inst::StyZeroPageX(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "STY ${:02X},X = ${:02X}", adr, mem)
+			let res = state.cpu.x.wrapping_add(adr);
+			let mem = state.mem_pure(res as u16);
+			write!(f, "STY ${adr:02X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::TASAbsoluteY(unaligned_u16) => {
 			let adr = unaligned_u16;
