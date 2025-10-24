@@ -425,6 +425,7 @@ impl State {
 			let mut texture = self.output_texture.lock().unwrap();
 			std::mem::swap(&mut self.current_texture, &mut texture);
 
+			#[cfg(not(test))]
 			std::thread::sleep(std::time::Duration::from_millis(16));
 		}
 	}
