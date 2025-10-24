@@ -921,7 +921,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 	}
 }
 
-fn mesen_log(state: &State) -> String {
+fn mesen_log(state: &State, out: &mut String) {
 	let cpu::Cpu { a, x, y, s, p, pc } = state.cpu;
 	let stack_depth = (0xFF - s) as usize / 2;
 	let inst = {
@@ -943,9 +943,10 @@ fn mesen_log(state: &State) -> String {
 	let frame = state.ppu.frame;
 	let cycle = state.cycles;
 
-	format!(
+	write!(
+		out,
 		"{pc:4X}  {inst:<32} A:{a:02X} X:{x:02X} Y:{y:02X} S:{s:02X} P:{n}{v}--{d}{i}{z}{c} V:{scanline:<3} H:{dot:<3} Fr:{frame} Cycle:{cycle}",
-	)
+	).unwrap();
 }
 
 macro_rules! make_log_test {
@@ -962,13 +963,16 @@ macro_rules! make_log_test {
 			let mut state = State::new(game, drawing::new_bitmap());
 			let file = File::open($log).unwrap();
 			let reader = BufReader::new(file);
+			let mut ours = String::new();
 
 			for (i, line) in reader.lines().enumerate() {
 				let i = i + 1;
 				let line = line.unwrap();
 				let _ = state.next_inst();
-				let ours = mesen_log(&state);
-				let debug_state = state.display();
+
+				ours.clear();
+				mesen_log(&state, &mut ours);
+
 				// Mesen's disassembly disagrees with its debugger when reading the APU status register
 				assert!(
 					ours == line
@@ -978,13 +982,14 @@ macro_rules! make_log_test {
 						|| (ours.contains("STA $2007 = ") && line.contains("STA $2007 = "))
 						|| (ours.contains("LDA $4016") && line.contains("LDA $4016"))
 						|| (ours.contains("LDA $4017") && line.contains("LDA $4017")),
-					"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n       {}\n{debug_state}",
+					"Mismatch at line {i}\n ours: {ours}\n ref : {line}\n       {}\n{}",
 					ours.chars()
 						.zip(line.chars())
 						.map(|(l, r)| if l == r { ' ' } else { '^' })
 						.chain(std::iter::repeat('^'))
 						.take(ours.len().max(line.len()))
-						.collect::<String>()
+						.collect::<String>(),
+					state.display(),
 				);
 				if state.cycles == 116745 {
 					assert_eq!(state.mem_pure(0x01FF), 0x80, "\n{}", state.display());
