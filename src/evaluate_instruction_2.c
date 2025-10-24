@@ -102,7 +102,7 @@ INDIRECT_Y(eor);
 
 void inc_impl(State *state, uint8_t *val) {
 	(*val)++;
-	state->cpu.p.Z = 0 == val;
+	state->cpu.p.Z = 0 == *val;
 	state->cpu.p.N = (*val & 0x80) >> 7;
 }
 
