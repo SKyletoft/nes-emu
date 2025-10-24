@@ -4,3 +4,5 @@ non-free/
 .aider*
 **.o
 Makefile
+
+reference-logs/SMB1-Mesen-long.log

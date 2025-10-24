@@ -1008,3 +1008,9 @@ make_log_test!(
 	"non-free/SMB1.nes",
 	"reference-logs/SMB1-Mesen.txt"
 );
+
+make_log_test!(
+	mesen_log_2,
+	"non-free/SMB1.nes",
+	"reference-logs/SMB1-Mesen-long.log"
+);
