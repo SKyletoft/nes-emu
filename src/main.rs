@@ -39,8 +39,8 @@ fn main() {
 	let shared_texture = drawing::new_bitmap();
 
 	let texture_ptr = shared_texture.clone();
-	let _emulation = std::thread::spawn(|| emulation_loop(texture_ptr));
+	let emulation = std::thread::spawn(|| emulation_loop(texture_ptr));
 	drawing::sdl_thread(shared_texture).unwrap();
 
-	_emulation.join().unwrap();
+	emulation.join().unwrap();
 }
