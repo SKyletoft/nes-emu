@@ -624,6 +624,7 @@ impl State {
 		let cache = self.ppu.data_cache;
 		let ppu_adr = self.ppu.adr;
 		let ppu_cycles = self.ppu.cycles;
+		let Scroll { x: scroll_x, y: scroll_y } = self.ppu.scroll;
 
 		writeln!(&mut out, "┌─CPU───────────────────────────┐").unwrap();
 		writeln!(
@@ -659,10 +660,10 @@ impl State {
 		.unwrap();
 		writeln!(
 			&mut out,
-			"│ cache:{cache:02X} adr:{ppu_adr:04X}             │",
+			"│ cache:{cache:02X} adr:{ppu_adr:04X}       x:{scroll_x:03} │",
 		)
 		.unwrap();
-		writeln!(&mut out, "│ Cycles: {ppu_cycles:<10}            │").unwrap();
+		writeln!(&mut out, "│ Cycles: {ppu_cycles:<10}      y:{scroll_y:03} │").unwrap();
 		writeln!(&mut out, "└───────────────────────────────┘").unwrap();
 		writeln!(&mut out, "Next: {inst:X?}").unwrap();
 		writeln!(&mut out).unwrap();
