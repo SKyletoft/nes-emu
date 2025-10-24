@@ -267,8 +267,9 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "DEC ${:02X} = ${:02X}", adr, mem)
 		}
 		Inst::DecZeroPageX(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "DEC ${:02X},X = ${:02X}", adr, mem)
+			let res = state.cpu.x.wrapping_add(adr);
+			let mem = state.mem_pure(res as u16);
+			write!(f, "DEC ${adr:02X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::Dex => write!(f, "DEX"),
 		Inst::Dey => write!(f, "DEY"),
@@ -581,14 +582,16 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "ORA ${:04X} = ${:02X}", adr, mem)
 		}
 		Inst::OraAbsoluteX(unaligned_u16) => {
-			let adr = unaligned_u16;
-			let mem = state.mem_pure(adr.into());
-			write!(f, "ORA ${:04X},X = ${:02X}", adr, mem)
+			let adr = unaligned_u16.as_u16();
+			let res = adr.wrapping_add(state.cpu.x as u16);
+			let mem = state.mem_pure(res);
+			write!(f, "ORA ${adr:04X},X [${res:04X}] = ${mem:02X}")
 		}
 		Inst::OraAbsoluteY(unaligned_u16) => {
-			let adr = unaligned_u16;
-			let mem = state.mem_pure(adr.into());
-			write!(f, "ORA ${:04X},Y = ${:02X}", adr, mem)
+			let adr = unaligned_u16.as_u16();
+			let res = adr.wrapping_add(state.cpu.y as u16);
+			let mem = state.mem_pure(res);
+			write!(f, "ORA ${adr:04X},Y [${res:04X}] = ${mem:02X}")
 		}
 		Inst::OraImmediate(val) => write!(f, "ORA #${:02X}", val),
 		Inst::OraIndirectX(adr) => {
