@@ -681,6 +681,6 @@ struct PatternAddress {
 	tile_idx: u8,
 	#[bits(1)]
 	half: bool,
-	#[bits(3, default = 0)]
+	#[bits(3, default = 0u8)]
 	__unused: u8,
 }
