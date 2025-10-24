@@ -105,10 +105,10 @@ void state_step_ppu_many(State *state, uint32_t times);
 
 #define ZERO_PAGE_X_RMW(fn)                                                                      \
 	void fn##_zero_page_x(State *state, uint8_t offset) {                                    \
-		uint8_t val =                                                                    \
-		    state_get_mem(state, ((uint16_t) state->cpu.x + (uint16_t) offset) & 0xFF);  \
+		uint16_t actual_adr = ((uint16_t) state->cpu.x + (uint16_t) offset) & 0xFF;      \
+		uint8_t val         = state_get_mem(state, actual_adr);                          \
 		fn##_impl(state, &val);                                                          \
-		state_set_mem(state, (uint16_t) offset, val);                                    \
+		state_set_mem(state, actual_adr, val);                                           \
 		state->cpu.pc += 2;                                                              \
 		state_step_ppu_many(state, 6);                                                   \
 	}
@@ -151,9 +151,10 @@ void state_step_ppu_many(State *state, uint32_t times);
 
 #define ABSOLUTE_X_RMW(fn)                                                                       \
 	void fn##_absolute_x(State *state, uint16_t adr) {                                       \
-		uint8_t val = state_get_mem(state, (uint16_t) state->cpu.x + adr);               \
+		uint16_t actual_adr = state->cpu.x + adr;                                        \
+		uint8_t val         = state_get_mem(state, actual_adr);                          \
 		fn##_impl(state, &val);                                                          \
-		state_set_mem(state, (uint16_t) state->cpu.x + adr, val);                        \
+		state_set_mem(state, actual_adr, val);                                           \
 		state->cpu.pc += 3;                                                              \
 		state_step_ppu_many(state, 7);                                                   \
 	}
@@ -170,9 +171,10 @@ void state_step_ppu_many(State *state, uint32_t times);
 
 #define ABSOLUTE_Y_RMW(fn)                                                                       \
 	void fn##_absolute_y(State *state, uint16_t adr) {                                       \
-		uint8_t val = state_get_mem(state, (uint16_t) state->cpu.y + adr);               \
+		uint16_t actual_adr = state->cpu.y + adr;                                        \
+		uint8_t val         = state_get_mem(state, actual_adr);                          \
 		fn##_impl(state, &val);                                                          \
-		state_set_mem(state, (uint16_t) state->cpu.y + adr, val);                        \
+		state_set_mem(state, actual_adr, val);                                           \
 		state->cpu.pc += 3;                                                              \
 		state_step_ppu_many(state, 7);                                                   \
 	}
