@@ -1,4 +1,7 @@
-#[derive(Copy, Clone, PartialEq, Default)]
+use bitfields::bitfield;
+
+#[bitfield(u8)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct ControllerState {
 	a: bool,
 	b: bool,
@@ -42,14 +45,14 @@ impl Controller {
 
 	pub fn read_pure(&self) -> u8 {
 		(match self.latch_state {
-			LatchState::A => self.controller_state.a,
-			LatchState::B => self.controller_state.b,
-			LatchState::Select => self.controller_state.select,
-			LatchState::Start => self.controller_state.start,
-			LatchState::Up => self.controller_state.up,
-			LatchState::Down => self.controller_state.down,
-			LatchState::Left => self.controller_state.left,
-			LatchState::Right => self.controller_state.right,
+			LatchState::A => self.controller_state.a(),
+			LatchState::B => self.controller_state.b(),
+			LatchState::Select => self.controller_state.select(),
+			LatchState::Start => self.controller_state.start(),
+			LatchState::Up => self.controller_state.up(),
+			LatchState::Down => self.controller_state.down(),
+			LatchState::Left => self.controller_state.left(),
+			LatchState::Right => self.controller_state.right(),
 			LatchState::One => true,
 		}) as u8
 	}
