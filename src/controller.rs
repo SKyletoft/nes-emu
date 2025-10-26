@@ -36,6 +36,10 @@ pub struct Controller {
 }
 
 impl Controller {
+	pub fn state_mut(&mut self) -> &mut u8 {
+		unsafe { std::mem::transmute::<&mut ControllerState, &mut u8>(&mut self.controller_state) }
+	}
+
 	pub fn write(&mut self, val: u8) {
 		self.strobe = val == 1;
 		if self.strobe {

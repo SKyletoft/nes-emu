@@ -1,7 +1,14 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{
+	Arc, Mutex,
+	atomic::{AtomicU8, Ordering},
+};
 
 use bytemuck::{Pod, Zeroable};
-use sdl2::{event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect};
+use sdl2::{
+	controller::{Button, GameController}, event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect,
+};
+
+use crate::controller::ControllerState;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Default, Pod, Zeroable)]
@@ -30,9 +37,13 @@ pub fn new_bitmap() -> Arc<Mutex<Box<Bitmap>>> {
 	Arc::new(Mutex::new(Box::new(empty_bitmap())))
 }
 
-pub fn sdl_thread(texture_ptr: Arc<Mutex<Box<Bitmap>>>) -> Result<(), String> {
+pub fn sdl_thread(
+	texture_ptr: Arc<Mutex<Box<Bitmap>>>,
+	shared_controller_state: &AtomicU8,
+) -> Result<(), String> {
 	let sdl_context = sdl2::init()?;
 	let video_subsystem = sdl_context.video()?;
+	let controller_subsystem = sdl_context.game_controller()?;
 
 	let window = video_subsystem
 		.window("Pixel Test", 800, 600)
@@ -54,6 +65,15 @@ pub fn sdl_thread(texture_ptr: Arc<Mutex<Box<Bitmap>>>) -> Result<(), String> {
 
 	let mut event_pump = sdl_context.event_pump()?;
 
+	let _controller = (0..controller_subsystem.num_joysticks()?).find_map(|i| {
+		if controller_subsystem.is_game_controller(i) {
+			controller_subsystem.open(i).ok()
+		} else {
+			None
+		}
+	});
+	let mut controller_state = ControllerState::new();
+
 	'running: loop {
 		for event in event_pump.poll_iter() {
 			match event {
@@ -62,9 +82,167 @@ pub fn sdl_thread(texture_ptr: Arc<Mutex<Box<Bitmap>>>) -> Result<(), String> {
 					keycode: Some(Keycode::Escape | Keycode::Q),
 					..
 				} => break 'running,
+				Event::KeyDown {
+					keycode: Some(Keycode::Left),
+					..
+				}
+				| Event::ControllerButtonDown {
+					button: Button::DPadLeft,
+					..
+				} => {
+					controller_state.set_left(true);
+				}
+				Event::KeyUp {
+					keycode: Some(Keycode::Left),
+					..
+				}
+				| Event::ControllerButtonUp {
+					button: Button::DPadLeft,
+					..
+				} => {
+					controller_state.set_left(false);
+				}
+				Event::KeyDown {
+					keycode: Some(Keycode::Right),
+					..
+				}
+				| Event::ControllerButtonDown {
+					button: Button::DPadRight,
+					..
+				} => {
+					controller_state.set_right(true);
+				}
+				Event::KeyUp {
+					keycode: Some(Keycode::Right),
+					..
+				}
+				| Event::ControllerButtonUp {
+					button: Button::DPadRight,
+					..
+				} => {
+					controller_state.set_right(false);
+				}
+				Event::KeyDown {
+					keycode: Some(Keycode::Up),
+					..
+				}
+				| Event::ControllerButtonDown {
+					button: Button::DPadUp,
+					..
+				} => {
+					controller_state.set_up(true);
+				}
+				Event::KeyUp {
+					keycode: Some(Keycode::Up),
+					..
+				}
+				| Event::ControllerButtonUp {
+					button: Button::DPadUp,
+					..
+				} => {
+					controller_state.set_up(false);
+				}
+				Event::KeyDown {
+					keycode: Some(Keycode::Down),
+					..
+				}
+				| Event::ControllerButtonDown {
+					button: Button::DPadDown,
+					..
+				} => {
+					controller_state.set_down(true);
+				}
+				Event::KeyUp {
+					keycode: Some(Keycode::Down),
+					..
+				}
+				| Event::ControllerButtonUp {
+					button: Button::DPadDown,
+					..
+				} => {
+					controller_state.set_down(false);
+				}
+				Event::KeyDown {
+					keycode: Some(Keycode::Z),
+					..
+				}
+				| Event::ControllerButtonDown {
+					button: Button::A, ..
+				} => {
+					controller_state.set_a(true);
+				}
+				Event::KeyUp {
+					keycode: Some(Keycode::Z),
+					..
+				}
+				| Event::ControllerButtonUp {
+					button: Button::A, ..
+				} => {
+					controller_state.set_a(false);
+				}
+				Event::KeyDown {
+					keycode: Some(Keycode::X),
+					..
+				}
+				| Event::ControllerButtonDown {
+					button: Button::B, ..
+				} => {
+					controller_state.set_b(true);
+				}
+				Event::KeyUp {
+					keycode: Some(Keycode::X),
+					..
+				}
+				| Event::ControllerButtonUp {
+					button: Button::B, ..
+				} => {
+					controller_state.set_b(false);
+				}
+				Event::KeyDown {
+					keycode: Some(Keycode::Return),
+					..
+				}
+				| Event::ControllerButtonDown {
+					button: Button::Start,
+					..
+				} => {
+					controller_state.set_start(true);
+				}
+				Event::KeyUp {
+					keycode: Some(Keycode::Return),
+					..
+				}
+				| Event::ControllerButtonUp {
+					button: Button::Start,
+					..
+				} => {
+					controller_state.set_start(false);
+				}
+				Event::KeyDown {
+					keycode: Some(Keycode::RShift),
+					..
+				}
+				| Event::ControllerButtonDown {
+					button: Button::Back,
+					..
+				} => {
+					controller_state.set_select(true);
+				}
+				Event::KeyUp {
+					keycode: Some(Keycode::RShift),
+					..
+				}
+				| Event::ControllerButtonUp {
+					button: Button::Back,
+					..
+				} => {
+					controller_state.set_select(false);
+				}
 				_ => {}
 			}
 		}
+
+		shared_controller_state.store(controller_state.into_bits(), Ordering::SeqCst);
 
 		let (win_w, win_h) = canvas.window().size();
 		let size = win_w.min(win_h);
