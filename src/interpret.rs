@@ -360,14 +360,23 @@ impl State {
 				.status
 				.set_sprite_0_hit(self.ppu.status.sprite_0_hit() | sprite_0_hit);
 
-			let colour = self
+			let visible_sprites_iter = self
 				.ppu
 				.sprite_cache
 				.iter()
 				.filter_map(|&s| s)
-				.find(|sprite| self.ppu.sprite_is_visible_x(sprite))
-				.and_then(|s| self.sprite_get_colour(&s))
-				.or_else(|| self.background_get_colour())
+				.filter(|sprite| self.ppu.sprite_is_visible_x(sprite));
+			let colour = visible_sprites_iter
+				.clone()
+				.filter(|s| !s.attr.priority())
+				.filter_map(|s| self.sprite_get_colour(&s))
+				.chain(self.background_get_colour())
+				.chain(
+					visible_sprites_iter
+						.filter(|s| s.attr.priority())
+						.filter_map(|s| self.sprite_get_colour(&s)),
+				)
+				.next()
 				.unwrap_or(self.ppu.palettes[0][0]);
 			self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour.into();
 		}
