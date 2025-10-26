@@ -136,7 +136,7 @@ impl State {
 		];
 		let res: Inst = code.into();
 		// To set the open bus
-		let _ = self.mem(self.cpu.pc - 1 + res.len() as u16);
+		let _ = self.mem(self.cpu.pc.wrapping_sub(1).wrapping_add(res.len() as u16));
 		res
 	}
 
