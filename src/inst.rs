@@ -829,7 +829,7 @@ impl Inst {
 			// Inst::Ahx(Ahx::AbsoluteY(a)) => ahx_absolute_y(cpu, *a),
 			// Inst::Ahx(Ahx::IndirectY(x)) => ahx_indirect_y(cpu, *x),
 			// Inst::NOPU(..) => {}
-			_ => todo!("No support for unofficial instructions yet"),
+			_ => todo!("No support for unofficial instructions yet ({self:?})"),
 		}
 	}
 }
