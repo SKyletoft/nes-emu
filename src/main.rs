@@ -27,7 +27,7 @@ fn emulation_loop(
 ) {
 	let path = std::env::args()
 		.nth(1)
-		.unwrap_or_else(|| "../non-free/SMB1.nes".into());
+		.unwrap_or_else(|| concat!(env!("CARGO_MANIFEST_DIR"), "/non-free/SMB1.nes").into());
 	dbg!(&path);
 	let buffer = std::fs::read(path).unwrap();
 	let game = Mapper::parse_ines(buffer).unwrap();
