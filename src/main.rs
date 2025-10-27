@@ -13,14 +13,18 @@ mod tests;
 
 use std::sync::{
 	Arc, Mutex,
-	atomic::{AtomicU8, Ordering},
+	atomic::{AtomicBool, AtomicU8, Ordering},
 };
 
 use drawing::Bitmap;
 use interpret::State;
 use nes_file::Mapper;
 
-fn emulation_loop(shared_texture: Arc<Mutex<Box<Bitmap>>>, controller_state: &AtomicU8) {
+fn emulation_loop(
+	shared_texture: Arc<Mutex<Box<Bitmap>>>,
+	controller_state: &AtomicU8,
+	kill: &AtomicBool,
+) {
 	let path = std::env::args()
 		.nth(1)
 		.unwrap_or_else(|| "../non-free/SMB1.nes".into());
@@ -30,7 +34,7 @@ fn emulation_loop(shared_texture: Arc<Mutex<Box<Bitmap>>>, controller_state: &At
 	let mut system_state = State::new(game, shared_texture);
 
 	// let mut buf = String::new();
-	loop {
+	while kill.load(Ordering::Relaxed) {
 		*system_state.controller1.state_mut() = controller_state.load(Ordering::SeqCst);
 		system_state.next();
 		// print!("{}", system_state.display());
@@ -42,10 +46,12 @@ fn emulation_loop(shared_texture: Arc<Mutex<Box<Bitmap>>>, controller_state: &At
 fn main() {
 	let shared_texture = drawing::new_bitmap();
 	let controller_state = AtomicU8::new(0);
+	let kill_predicate = AtomicBool::new(true);
 
 	let texture_ptr = shared_texture.clone();
 	std::thread::scope(|s| {
-		s.spawn(|| emulation_loop(texture_ptr, &controller_state));
+		s.spawn(|| emulation_loop(texture_ptr, &controller_state, &kill_predicate));
 		drawing::sdl_thread(shared_texture, &controller_state).unwrap();
+		kill_predicate.store(false, Ordering::SeqCst);
 	});
 }
