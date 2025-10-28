@@ -7,7 +7,6 @@ mod inst;
 mod interpret;
 mod nes_file;
 mod ppu;
-mod u15;
 
 #[cfg(test)]
 mod tests;
