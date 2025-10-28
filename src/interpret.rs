@@ -319,7 +319,7 @@ impl State {
 	}
 
 	pub fn set_vblank(&mut self) {
-		if self.ppu.ctrl.nmi_enable() {
+		if self.ppu.ctrl().nmi_enable() {
 			let hi = self.mem(0xFFFB);
 			let lo = self.mem(0xFFFA);
 			self.set_mem(0x0100 + self.cpu.s as u16, (self.cpu.pc >> 8) as u8);
@@ -470,7 +470,7 @@ impl State {
 			pixel_x as _,
 			pixel_y as _,
 			sprite.tile,
-			self.ppu.ctrl.sprite_pattern_table(),
+			self.ppu.ctrl().sprite_pattern_table(),
 		);
 
 		if palette_index == 0 {
@@ -553,7 +553,7 @@ impl State {
 			pixel_x as _,
 			pixel_y as _,
 			tile_id,
-			self.ppu.ctrl.background_pattern_table(),
+			self.ppu.ctrl().background_pattern_table(),
 		);
 
 		if tile_palette_index == 0 {
@@ -598,8 +598,8 @@ impl State {
 
 		let inst = self.next_inst_pure();
 
-		let crate::ppu::Ppu {
-			ctrl,
+		let ctrl = self.ppu.ctrl();
+		let crate::ppu::Ppu2 {
 			mask,
 			status,
 			scanline,
@@ -624,12 +624,12 @@ impl State {
 		let cycles = self.cycles;
 
 		let cache = self.ppu.data_cache;
-		let ppu_adr = self.ppu.adr;
+		let ppu_adr = self.ppu.adr();
 		let ppu_cycles = self.ppu.cycles;
 		let Scroll {
 			x: scroll_x,
 			y: scroll_y,
-		} = self.ppu.scroll;
+		} = self.ppu.scroll();
 
 		writeln!(&mut out, "┌─CPU───────────────────────────┐").unwrap();
 		writeln!(
