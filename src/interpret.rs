@@ -9,7 +9,7 @@ use crate::{
 	drawing::{self, Bitmap},
 	inst::Inst,
 	nes_file::Mapper,
-	ppu::{DoubleWriter, NesColour, Ppu, Scroll, Sprite},
+	ppu::{DoubleWriter, NesColour, Ppu2, Scroll, Sprite, W},
 };
 
 use bitfields::bitfield;
@@ -26,7 +26,7 @@ pub enum InterruptTiming {
 #[repr(C)]
 pub struct State {
 	pub cpu: Cpu,
-	pub ppu: Ppu,
+	pub ppu: Ppu2,
 	pub apu: Apu,
 	pub controller1: Controller,
 	pub controller2: Controller,
@@ -102,7 +102,7 @@ impl State {
 
 		let ram = [0; 2048];
 		let apu = Apu::default();
-		let ppu = Ppu::default();
+		let ppu = Ppu2::default();
 		let controller1 = Controller::default();
 		let controller2 = Controller::default();
 		let cpu_bus = 0;
@@ -171,7 +171,7 @@ impl State {
 				(status & 0b1110_0000) | (bus & 0b0001_1111)
 			}
 			3 => self.ppu_bus,
-			4 => self.ppu.oam_data,
+			4 => 0,
 			5 => self.ppu_bus,
 			6 => self.ppu_bus,
 			7 => self.ppu.data_cache,
@@ -185,14 +185,14 @@ impl State {
 		match adr % 8 {
 			2 => {
 				self.ppu.status.set_vblank(false);
-				self.ppu.double_writer = DoubleWriter::default();
+				self.ppu.w = W::First;
 			}
 			7 => {
 				self.ppu.data_cache = self
 					.rom
-					.get_ppu(self.ppu.adr, &self.ppu)
+					.get_ppu(self.ppu.adr(), &self.ppu)
 					.expect("Ppu data adr should always be inbounds");
-				self.ppu.adr = (self.ppu.adr + self.ppu.ctrl.vram_increment_value()) & PPUADDR_MASK;
+				self.ppu.set_adr(self.ppu.adr() + self.ppu.ctrl().vram_increment_value());
 			}
 			_ => unreachable!(),
 		}
@@ -202,26 +202,18 @@ impl State {
 	fn write_ppu(&mut self, adr: u16, val: u8) {
 		self.ppu_bus = val;
 		match adr % 8 {
-			0 => self.ppu.ctrl.set_bits(val),
+			0 => self.ppu.set_ctrl(val),
 			1 => self.ppu.mask.set_bits(val),
 			2 => {}
-			3 => self.ppu.oam_adr = val,
-			4 => self.ppu.oam_data = val,
-			5 => {
-				if let Some((x, y)) = self.ppu.double_writer.write(val) {
-					self.ppu.scroll = Scroll { x, y };
-				}
-			}
-			6 => {
-				if let Some((hi, lo)) = self.ppu.double_writer.write(val) {
-					self.ppu.adr = u16::from_be_bytes([hi, lo]) & PPUADDR_MASK;
-				}
-			}
+			3 => todo!(),
+			4 => todo!(),
+			5 => self.ppu.write_scroll(val),
+			6 => self.ppu.write_adr(val),
 			7 => {
 				self.rom
-					.set_ppu(self.ppu.adr, &mut self.ppu, val)
+					.set_ppu(self.ppu.adr(), &mut self.ppu, val)
 					.expect("All PPU writes should be inbounds");
-				self.ppu.adr = (self.ppu.adr + self.ppu.ctrl.vram_increment_value()) & PPUADDR_MASK;
+				self.ppu.set_adr(self.ppu.adr() + self.ppu.ctrl().vram_increment_value());
 			}
 			_ => unreachable!(),
 		}

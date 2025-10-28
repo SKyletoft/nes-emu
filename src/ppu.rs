@@ -1,6 +1,7 @@
 #![allow(dead_code, unused)]
 
 use anyhow::bail;
+use arbitrary_int::{traits::Integer, u3, u15};
 use bitfields::bitfield;
 use bytemuck::{Pod, Zeroable};
 use derive_more::derive::Into;
@@ -55,7 +56,128 @@ impl Default for Ppu {
 	}
 }
 
-impl Ppu {
+impl Ppu {}
+
+#[derive(Copy, Clone, PartialEq, Eq, Default, Debug)]
+pub enum W {
+	#[default]
+	First,
+	Second,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct Ppu2 {
+	pub v: u15,
+	pub t: u15,
+	pub x: u3,
+	pub w: W,
+
+	pub vram_increment: bool,
+	pub sprite_pattern_table: bool,
+	pub background_pattern_table: bool,
+	pub sprite_size: bool,
+	pub master_slave: bool,
+	pub nmi_enable: bool,
+
+	pub mask: Mask,
+	pub status: Status,
+
+	pub scanline: i16,
+	pub dot: i16,
+	pub frame: u64,
+	pub cycles: u64,
+	pub vram: Vram,
+	pub oam: Oam,
+	pub data_cache: u8,
+
+	pub palettes: Palettes,
+	pub sprite_cache: [Option<Sprite>; 8],
+}
+
+impl Default for Ppu2 {
+	fn default() -> Self {
+		Self {
+			mask: Default::default(),
+			status: Default::default(),
+			scanline: 0,
+			dot: 27, // I dunno, ask the Mesen devs why.
+			frame: 1,
+			cycles: 0,
+			vram: [0; _],
+			oam: Oam::zeroed(),
+			data_cache: Default::default(),
+			palettes: [[NesColour::DarkGrey; 4]; 8],
+			sprite_cache: Default::default(),
+			v: Default::default(),
+			t: Default::default(),
+			x: Default::default(),
+			w: Default::default(),
+			vram_increment: Default::default(),
+			sprite_pattern_table: Default::default(),
+			background_pattern_table: Default::default(),
+			sprite_size: Default::default(),
+			master_slave: Default::default(),
+			nmi_enable: Default::default(),
+		}
+	}
+}
+
+impl Ppu2 {
+	pub fn adr(&self) -> u16 {
+		todo!()
+	}
+
+	pub fn scroll(&self) -> Scroll {
+		let x = ((self.v.as_u16() & 0b11111) << 3) as u8 | self.x.as_u8();
+		let y = (((self.v.as_u16() & 0b1111100000) >> 2) | self.v.as_u16() >> 12) as u8;
+		Scroll { x, y }
+	}
+
+	pub fn ctrl(&self) -> Ctrl {
+		let x = ((self.v.as_u16() >> 4) & 1) as u8;
+		let y = ((self.v.as_u16() >> 9) & 1) as u8;
+		CtrlBuilder::new()
+			.with_nametable((y << 1) | x)
+			.with_vram_increment(self.vram_increment)
+			.with_sprite_pattern_table(self.sprite_pattern_table)
+			.with_background_pattern_table(self.background_pattern_table)
+			.with_sprite_size(self.sprite_size)
+			.with_master_slave(self.master_slave)
+			.with_nmi_enable(self.nmi_enable)
+			.build()
+	}
+
+	pub fn set_ctrl(&mut self, val: u8) {
+		let ctrl = Ctrl::from_bits(val);
+
+		self.v &= (!0b111_1101_1110_1111u16).into();
+		self.v |= ((ctrl.nametable() as u16 & 0b01) << 4).into();
+		self.v |= ((ctrl.nametable() as u16 & 0b10) << 8).into();
+
+		self.vram_increment = ctrl.vram_increment();
+		self.sprite_pattern_table = ctrl.sprite_pattern_table();
+		self.background_pattern_table = ctrl.background_pattern_table();
+		self.sprite_size = ctrl.sprite_size();
+		self.master_slave = ctrl.master_slave();
+		self.nmi_enable = ctrl.nmi_enable();
+	}
+
+	pub fn write_scroll(&mut self, val: u8) {
+		match self.w {
+			W::First => {
+				todo!();
+				self.w = W::Second
+			}
+			W::Second => {
+				todo!();
+				self.w = W::Second
+			}
+		}
+	}
+
+	pub fn write_adr(&mut self, val: u8) {}
+
 	pub fn sprite_is_visible_x(&self, sprite: &Sprite) -> bool {
 		(sprite.x as i16) <= self.dot && self.dot < sprite.x as i16 + self.sprite_width()
 	}
@@ -65,7 +187,7 @@ impl Ppu {
 	}
 
 	fn sprite_width(&self) -> i16 {
-		if self.ctrl.sprite_size() { 16 } else { 8 }
+		if self.ctrl().sprite_size() { 16 } else { 8 }
 	}
 
 	pub fn raw_palettes(&self) -> &[u8; 64] {
@@ -73,11 +195,15 @@ impl Ppu {
 	}
 
 	pub fn actual_pos(&self) -> (i16, i16) {
-		let x = self.dot + self.scroll.x as i16 + self.ctrl.x_offset();
-		let y = self.scanline + self.scroll.y as i16 + self.ctrl.y_offset();
+		let x = self.dot + self.scroll().x as i16 + self.ctrl().x_offset();
+		let y = self.scanline + self.scroll().y as i16 + self.ctrl().y_offset();
 		assert!((0..512).contains(&x));
 		assert!((0..480).contains(&y));
 		(x, y)
+	}
+
+	pub fn set_adr(&self, val: u16) {
+		todo!()
 	}
 }
 

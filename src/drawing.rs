@@ -5,7 +5,7 @@ use std::sync::{
 
 use bytemuck::{Pod, Zeroable};
 use sdl2::{
-	controller::{Button, GameController}, event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect,
+	controller::Button, event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect,
 };
 
 use crate::controller::ControllerState;

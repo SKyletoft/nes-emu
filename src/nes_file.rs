@@ -2,7 +2,7 @@
 
 use anyhow::{Result, bail};
 
-use crate::ppu::{NesColour, Ppu};
+use crate::ppu::{NesColour, Ppu, Ppu2};
 
 // Yeah, yeah, it's huge, but this entire thing is expected to be boxed, so it's fine.
 // #[allow(clippy::large_enum_variant)]
@@ -291,7 +291,7 @@ impl Mapper {
 		}
 	}
 
-	pub fn get_ppu(&self, adr: u16, ppu: &Ppu) -> Option<u8> {
+	pub fn get_ppu(&self, adr: u16, ppu: &Ppu2) -> Option<u8> {
 		match self {
 			// Mapper::MMC3 {
 			//	chr_2k_banks,
@@ -324,7 +324,7 @@ impl Mapper {
 		}
 	}
 
-	pub fn set_ppu(&mut self, adr: u16, ppu: &mut Ppu, val: u8) -> Option<()> {
+	pub fn set_ppu(&mut self, adr: u16, ppu: &mut Ppu2, val: u8) -> Option<()> {
 		match self {
 			Mapper::NROM256 {
 				prg_ram,
