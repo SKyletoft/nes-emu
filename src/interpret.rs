@@ -1,5 +1,3 @@
-#![allow(unused, dead_code)]
-
 use std::sync::{Arc, Mutex};
 
 use crate::{
@@ -9,16 +7,13 @@ use crate::{
 	drawing::{self, Bitmap},
 	inst::Inst,
 	nes_file::Mapper,
-	ppu::{DoubleWriter, NesColour, Ppu2, Scroll, Sprite, W},
+	ppu::{NesColour, Ppu2, Sprite, W},
 };
 
 use bitfields::bitfield;
 
-pub const PPU_STARTUP_TIME: u64 = 2500;
-const PPUADDR_MASK: u16 = (1 << 14) - 1;
 pub enum InterruptTiming {
 	Clear,
-	Waiting,
 	Ready,
 }
 
@@ -129,12 +124,7 @@ impl State {
 	}
 
 	pub fn next_inst(&mut self) -> Inst {
-		let code = [
-			self.mem_pure(self.cpu.pc),
-			self.mem_pure(self.cpu.pc + 1),
-			self.mem_pure(self.cpu.pc + 2),
-		];
-		let res: Inst = code.into();
+		let res: Inst = self.next_inst_pure();
 		// To set the open bus
 		let _ = self.mem(self.cpu.pc.wrapping_sub(1).wrapping_add(res.len() as u16));
 		res
@@ -147,13 +137,6 @@ impl State {
 			self.mem_pure(self.cpu.pc + 2),
 		];
 		code.into()
-	}
-
-	pub fn next_step(mut self) -> Self {
-		let inst = self.next_inst();
-		inst.evaluate(&mut self);
-
-		self
 	}
 
 	pub fn next(&mut self) {
@@ -332,7 +315,6 @@ impl State {
 	pub fn check_interrupt(&mut self) {
 		match self.interrupt_requested {
 			InterruptTiming::Clear => {}
-			InterruptTiming::Waiting => self.interrupt_requested = InterruptTiming::Ready,
 			InterruptTiming::Ready => self.set_vblank(),
 		}
 	}
@@ -437,8 +419,6 @@ impl State {
 		if !self.ppu.mask.show_spr() {
 			return None;
 		}
-
-		let (x, y) = self.ppu.actual_pos();
 
 		let pixel_x = self.ppu.dot - sprite.x as i16;
 		let pixel_y = self.ppu.scanline - sprite.y as i16 - 1;
@@ -571,7 +551,10 @@ impl State {
 		let col = self.ppu.palettes[attribute_bits as usize][tile_palette_index as usize];
 		Some(col)
 	}
+}
 
+#[cfg(test)]
+impl State {
 	pub fn display(&self) -> String {
 		use std::fmt::Write;
 
@@ -620,7 +603,8 @@ impl State {
 		let cache = self.ppu.data_cache;
 		let ppu_adr = self.ppu.adr();
 		let ppu_cycles = self.ppu.cycles;
-		let (scroll_x, scroll_y) = self.ppu.scroll();
+		let scroll_x = self.ppu.x();
+		let scroll_y = self.ppu.y();
 
 		writeln!(&mut out, "┌─CPU───────────────────────────┐").unwrap();
 		writeln!(

@@ -2,7 +2,7 @@
 
 use anyhow::{Result, bail};
 
-use crate::ppu::{NesColour, Ppu, Ppu2};
+use crate::ppu::{NesColour, Ppu2};
 
 // Yeah, yeah, it's huge, but this entire thing is expected to be boxed, so it's fine.
 // #[allow(clippy::large_enum_variant)]

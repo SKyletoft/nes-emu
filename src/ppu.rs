@@ -1,62 +1,8 @@
-#![allow(dead_code, unused)]
-
-use anyhow::bail;
-use arbitrary_int::{traits::Integer, u3, u9, u15};
+use arbitrary_int::{traits::Integer, u3, u9};
 use bitfields::bitfield;
 use bytemuck::{Pod, Zeroable};
-use derive_more::derive::Into;
 
 use crate::drawing::Colour;
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct Ppu {
-	pub ctrl: Ctrl,
-	pub mask: Mask,
-	pub status: Status,
-	pub oam_adr: u8,
-	pub oam_data: u8,
-	pub scroll: Scroll,
-	pub adr: u16,
-	pub double_writer: DoubleWriter,
-
-	pub scanline: i16,
-	pub dot: i16,
-	pub frame: u64,
-	pub cycles: u64,
-	pub vram: Vram,
-	pub oam: Oam,
-	pub data_cache: u8,
-
-	pub palettes: Palettes,
-	pub sprite_cache: [Option<Sprite>; 8],
-}
-
-impl Default for Ppu {
-	fn default() -> Self {
-		Self {
-			ctrl: Default::default(),
-			mask: Default::default(),
-			status: Default::default(),
-			oam_adr: Default::default(),
-			oam_data: Default::default(),
-			scroll: Default::default(),
-			adr: Default::default(),
-			double_writer: Default::default(),
-			scanline: 0,
-			dot: 27, // I dunno, ask the Mesen devs why.
-			frame: 1,
-			cycles: 0,
-			vram: [0; _],
-			oam: Oam::zeroed(),
-			data_cache: Default::default(),
-			palettes: [[NesColour::DarkGrey; 4]; 8],
-			sprite_cache: Default::default(),
-		}
-	}
-}
-
-impl Ppu {}
 
 #[derive(Copy, Clone, PartialEq, Eq, Default, Debug)]
 pub enum W {
@@ -158,10 +104,6 @@ impl Ppu2 {
 
 	pub fn y(&self) -> u9 {
 		u9::new((self.v.coarse_y() as u16) << 3 | (self.v.fine_y() as u16))
-	}
-
-	pub fn scroll(&self) -> (u9, u9) {
-		(self.x(), self.y())
 	}
 
 	pub fn ctrl(&self) -> Ctrl {
@@ -309,31 +251,6 @@ pub struct Status {
 	sprite_0_hit: bool,
 	#[bits(1)]
 	vblank: bool,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
-pub struct Scroll {
-	pub x: u8,
-	pub y: u8,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
-pub struct DoubleWriter(Option<u8>);
-
-impl DoubleWriter {
-	pub fn write(&mut self, x: u8) -> Option<(u8, u8)> {
-		match self.0 {
-			Some(y) => {
-				self.0 = None;
-				Some((y, x))
-			}
-			None => {
-				self.0 = Some(x);
-				None
-			}
-		}
-	}
 }
 
 #[repr(C)]
