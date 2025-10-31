@@ -65,6 +65,15 @@ pub enum W {
 	Second,
 }
 
+impl W {
+	fn tick(&mut self) {
+		*self = match self {
+			W::First => W::Second,
+			W::Second => W::First,
+		};
+	}
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 pub struct Ppu2 {
