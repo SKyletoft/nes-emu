@@ -7,9 +7,10 @@ use crate::{
 	drawing::{self, Bitmap},
 	inst::Inst,
 	nes_file::Mapper,
-	ppu::{NesColour, Ppu, Sprite, W},
+	ppu::{Ctrl, NesColour, Ppu, Sprite, V, W},
 };
 
+use arbitrary_int::u3;
 use bitfields::bitfield;
 
 pub enum InterruptTiming {
@@ -176,7 +177,7 @@ impl State {
 					.get_ppu(self.ppu.adr(), &self.ppu)
 					.expect("Ppu data adr should always be inbounds");
 				let new_adr = self.ppu.adr() + self.ppu.ctrl().vram_increment_value();
-				self.ppu.set_adr(new_adr);
+				self.ppu.v = V::from_bits(new_adr & ((1 << 15) - 1));
 			}
 			_ => unreachable!(),
 		}
@@ -186,19 +187,53 @@ impl State {
 	fn write_ppu(&mut self, adr: u16, val: u8) {
 		self.ppu_bus = val;
 		match adr % 8 {
-			0 => self.ppu.set_ctrl(val),
+			0 => {
+				let ctrl = Ctrl::from_bits(val);
+				self.ppu.v.set_nametable(ctrl.nametable());
+				self.ppu.vram_increment = ctrl.vram_increment();
+				self.ppu.sprite_pattern_table = ctrl.sprite_pattern_table();
+				self.ppu.background_pattern_table = ctrl.background_pattern_table();
+				self.ppu.sprite_size = ctrl.sprite_size();
+				self.ppu.master_slave = ctrl.master_slave();
+				self.ppu.nmi_enable = ctrl.nmi_enable();
+			}
 			1 => self.ppu.mask.set_bits(val),
 			2 => {}
 			3 => {}
 			4 => todo!(),
-			5 => self.ppu.write_scroll(val),
-			6 => self.ppu.write_adr(val),
+			5 => {
+				let this = &mut self.ppu;
+				match this.w {
+					W::First => {
+						this.v.set_coarse_x(val >> 3);
+						this.x = u3::new(val & 0b111);
+						this.w = W::Second;
+					}
+					W::Second => {
+						this.v.set_coarse_y(val >> 3);
+						this.v.set_fine_y(val & 0b111);
+						this.w = W::First;
+					}
+				}
+			}
+			6 => {
+				let mut raw = self.ppu.v.into_bits().to_le_bytes();
+				match self.ppu.w {
+					W::First => raw[0] = val,
+					W::Second => raw[1] = val,
+				}
+				self.ppu.v = V::from_bits(u16::from_le_bytes(raw));
+				self.ppu.w = match &mut self.ppu.w {
+					W::First => W::Second,
+					W::Second => W::First,
+				};
+			}
 			7 => {
 				self.rom
 					.set_ppu(self.ppu.adr(), &mut self.ppu, val)
 					.expect("All PPU writes should be inbounds");
 				let new_adr = self.ppu.adr() + self.ppu.ctrl().vram_increment_value();
-				self.ppu.set_adr(new_adr);
+				self.ppu.v = V::from_bits(new_adr & ((1 << 15) - 1));
 			}
 			_ => unreachable!(),
 		}

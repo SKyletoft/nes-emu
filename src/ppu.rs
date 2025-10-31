@@ -13,15 +13,6 @@ pub enum W {
 	Second,
 }
 
-impl W {
-	fn tick(&mut self) {
-		*self = match self {
-			W::First => W::Second,
-			W::Second => W::First,
-		};
-	}
-}
-
 #[bitfield(u16)]
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct V {
@@ -121,42 +112,6 @@ impl Ppu {
 			.build()
 	}
 
-	pub fn set_ctrl(&mut self, val: u8) {
-		let ctrl = Ctrl::from_bits(val);
-		self.v.set_nametable(ctrl.nametable());
-		self.vram_increment = ctrl.vram_increment();
-		self.sprite_pattern_table = ctrl.sprite_pattern_table();
-		self.background_pattern_table = ctrl.background_pattern_table();
-		self.sprite_size = ctrl.sprite_size();
-		self.master_slave = ctrl.master_slave();
-		self.nmi_enable = ctrl.nmi_enable();
-	}
-
-	pub fn write_scroll(&mut self, val: u8) {
-		match self.w {
-			W::First => {
-				self.v.set_coarse_x(val >> 3);
-				self.x = u3::new(val & 0b111);
-				self.w = W::Second;
-			}
-			W::Second => {
-				self.v.set_coarse_y(val >> 3);
-				self.v.set_fine_y(val & 0b111);
-				self.w = W::First;
-			}
-		}
-	}
-
-	pub fn write_adr(&mut self, val: u8) {
-		let mut raw = self.v.into_bits().to_le_bytes();
-		match self.w {
-			W::First => raw[0] = val,
-			W::Second => raw[1] = val,
-		}
-		self.v = V::from_bits(u16::from_le_bytes(raw));
-		self.w.tick();
-	}
-
 	pub fn sprite_is_visible_x(&self, sprite: &Sprite) -> bool {
 		(sprite.x as i16) <= self.dot && self.dot < sprite.x as i16 + self.sprite_width()
 	}
@@ -179,10 +134,6 @@ impl Ppu {
 		assert!((0..512).contains(&x));
 		assert!((0..480).contains(&y));
 		(x, y)
-	}
-
-	pub fn set_adr(&mut self, val: u16) {
-		self.v = V::from_bits(val & ((1 << 15) - 1));
 	}
 }
 
