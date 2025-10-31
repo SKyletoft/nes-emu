@@ -7,6 +7,8 @@ use derive_more::derive::Into;
 
 use crate::drawing::Colour;
 
+pub const VRAM_MASK: u16 = (1 << 14) - 1;
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 pub struct Ppu {
