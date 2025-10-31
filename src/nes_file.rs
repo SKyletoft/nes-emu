@@ -2,7 +2,7 @@
 
 use anyhow::{Result, bail};
 
-use crate::ppu::{NesColour, Ppu};
+use crate::ppu::{NesColour, Ppu, VRAM_MASK};
 
 // Yeah, yeah, it's huge, but this entire thing is expected to be boxed, so it's fine.
 // #[allow(clippy::large_enum_variant)]
@@ -292,9 +292,7 @@ impl Mapper {
 	}
 
 	pub fn get_ppu(&self, adr: u16, ppu: &Ppu) -> Option<u8> {
-		if adr & 0b1100_0000_0000_0000 != 0 {
-			panic!("Address overflow actually happens! (this is ok, I just need to mask out the top bits)");
-		}
+		let adr = adr & VRAM_MASK;
 		match self {
 			// Mapper::MMC3 {
 			//	chr_2k_banks,
@@ -328,6 +326,7 @@ impl Mapper {
 	}
 
 	pub fn set_ppu(&mut self, adr: u16, ppu: &mut Ppu, val: u8) -> Option<()> {
+		let adr = adr & VRAM_MASK;
 		match self {
 			Mapper::NROM256 {
 				prg_ram,

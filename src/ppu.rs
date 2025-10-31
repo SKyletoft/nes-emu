@@ -4,6 +4,8 @@ use bytemuck::{Pod, Zeroable};
 
 use crate::drawing::Colour;
 
+pub const VRAM_MASK: u16 = (1 << 14) - 1;
+
 #[derive(Copy, Clone, PartialEq, Eq, Default, Debug)]
 pub enum W {
 	#[default]
