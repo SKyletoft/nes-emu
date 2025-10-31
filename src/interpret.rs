@@ -206,7 +206,7 @@ impl State {
 			0 => self.ppu.set_ctrl(val),
 			1 => self.ppu.mask.set_bits(val),
 			2 => {}
-			3 => todo!(),
+			3 => {}
 			4 => todo!(),
 			5 => self.ppu.write_scroll(val),
 			6 => self.ppu.write_adr(val),
