@@ -1,7 +1,7 @@
 #![allow(dead_code, unused)]
 
 use anyhow::bail;
-use arbitrary_int::{traits::Integer, u3, u15};
+use arbitrary_int::{traits::Integer, u3, u9, u15};
 use bitfields::bitfield;
 use bytemuck::{Pod, Zeroable};
 use derive_more::derive::Into;
@@ -126,12 +126,17 @@ impl Default for Ppu2 {
 impl Ppu2 {
 	pub fn adr(&self) -> u16 {
 		todo!()
+
+	pub fn x(&self) -> u9 {
+		u9::new((self.v.coarse_x() as u16) << 3 | self.x.as_u16())
 	}
 
-	pub fn scroll(&self) -> Scroll {
-		let x = ((self.v.as_u16() & 0b11111) << 3) as u8 | self.x.as_u8();
-		let y = (((self.v.as_u16() & 0b1111100000) >> 2) | self.v.as_u16() >> 12) as u8;
-		Scroll { x, y }
+	pub fn y(&self) -> u9 {
+		u9::new((self.v.coarse_y() as u16) << 3 | (self.v.fine_y() as u16))
+	}
+
+	pub fn scroll(&self) -> (u9, u9) {
+		(self.x(), self.y())
 	}
 
 	pub fn ctrl(&self) -> Ctrl {
@@ -194,9 +199,9 @@ impl Ppu2 {
 		unsafe { std::mem::transmute::<&[Palette; 8], &[u8; 64]>(&self.palettes) }
 	}
 
-	pub fn actual_pos(&self) -> (i16, i16) {
-		let x = self.dot + self.scroll().x as i16 + self.ctrl().x_offset();
-		let y = self.scanline + self.scroll().y as i16 + self.ctrl().y_offset();
+	pub fn actual_pos(&self) -> (u16, u16) {
+		let x = self.x().as_u16();
+		let y = self.y().as_u16();
 		assert!((0..512).contains(&x));
 		assert!((0..480).contains(&y));
 		(x, y)

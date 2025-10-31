@@ -620,10 +620,7 @@ impl State {
 		let cache = self.ppu.data_cache;
 		let ppu_adr = self.ppu.adr();
 		let ppu_cycles = self.ppu.cycles;
-		let Scroll {
-			x: scroll_x,
-			y: scroll_y,
-		} = self.ppu.scroll();
+		let (scroll_x, scroll_y) = self.ppu.scroll();
 
 		writeln!(&mut out, "┌─CPU───────────────────────────┐").unwrap();
 		writeln!(
