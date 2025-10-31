@@ -175,12 +175,14 @@ impl Ppu2 {
 	pub fn write_scroll(&mut self, val: u8) {
 		match self.w {
 			W::First => {
-				todo!();
-				self.w = W::Second
+				self.v.set_coarse_x(val >> 3);
+				self.x = u3::new(val & 0b111);
+				self.w = W::Second;
 			}
 			W::Second => {
-				todo!();
-				self.w = W::Second
+				self.v.set_coarse_y(val >> 3);
+				self.v.set_fine_y(val & 0b111);
+				self.w = W::First;
 			}
 		}
 	}
