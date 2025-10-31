@@ -292,6 +292,9 @@ impl Mapper {
 	}
 
 	pub fn get_ppu(&self, adr: u16, ppu: &Ppu2) -> Option<u8> {
+		if adr & 0b1100_0000_0000_0000 != 0 {
+			panic!("Address overflow actually happens! (this is ok, I just need to mask out the top bits)");
+		}
 		match self {
 			// Mapper::MMC3 {
 			//	chr_2k_banks,
