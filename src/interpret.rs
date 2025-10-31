@@ -313,7 +313,7 @@ impl State {
 	}
 
 	pub fn set_vblank(&mut self) {
-		if self.ppu.ctrl().nmi_enable() {
+		if self.cpu.p.i() && self.ppu.ctrl().nmi_enable() {
 			let hi = self.mem(0xFFFB);
 			let lo = self.mem(0xFFFA);
 			self.set_mem(0x0100 + self.cpu.s as u16, (self.cpu.pc >> 8) as u8);
