@@ -205,7 +205,7 @@ impl State {
 			0 => self.ppu.ctrl.set_bits(val),
 			1 => self.ppu.mask.set_bits(val),
 			2 => {}
-			3 => self.ppu.oam_adr = val,
+			3 => {}
 			4 => self.ppu.oam_data = val,
 			5 => {
 				if let Some((x, y)) = self.ppu.double_writer.write(val) {
