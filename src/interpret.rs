@@ -192,7 +192,8 @@ impl State {
 					.rom
 					.get_ppu(self.ppu.adr(), &self.ppu)
 					.expect("Ppu data adr should always be inbounds");
-				self.ppu.set_adr(self.ppu.adr() + self.ppu.ctrl().vram_increment_value());
+				let new_adr = self.ppu.adr() + self.ppu.ctrl().vram_increment_value();
+				self.ppu.set_adr(new_adr);
 			}
 			_ => unreachable!(),
 		}
@@ -213,7 +214,8 @@ impl State {
 				self.rom
 					.set_ppu(self.ppu.adr(), &mut self.ppu, val)
 					.expect("All PPU writes should be inbounds");
-				self.ppu.set_adr(self.ppu.adr() + self.ppu.ctrl().vram_increment_value());
+				let new_adr = self.ppu.adr() + self.ppu.ctrl().vram_increment_value();
+				self.ppu.set_adr(new_adr);
 			}
 			_ => unreachable!(),
 		}
