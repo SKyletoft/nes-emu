@@ -140,10 +140,9 @@ impl Ppu2 {
 	}
 
 	pub fn ctrl(&self) -> Ctrl {
-		let x = ((self.v.as_u16() >> 4) & 1) as u8;
-		let y = ((self.v.as_u16() >> 9) & 1) as u8;
+		let nametable = ((self.v.into_bits() >> 10) & 0b11) as u8;
 		CtrlBuilder::new()
-			.with_nametable((y << 1) | x)
+			.with_nametable(nametable)
 			.with_vram_increment(self.vram_increment)
 			.with_sprite_pattern_table(self.sprite_pattern_table)
 			.with_background_pattern_table(self.background_pattern_table)
@@ -155,11 +154,7 @@ impl Ppu2 {
 
 	pub fn set_ctrl(&mut self, val: u8) {
 		let ctrl = Ctrl::from_bits(val);
-
-		self.v &= (!0b111_1101_1110_1111u16).into();
-		self.v |= ((ctrl.nametable() as u16 & 0b01) << 4).into();
-		self.v |= ((ctrl.nametable() as u16 & 0b10) << 8).into();
-
+		self.v.set_nametable(ctrl.nametable());
 		self.vram_increment = ctrl.vram_increment();
 		self.sprite_pattern_table = ctrl.sprite_pattern_table();
 		self.background_pattern_table = ctrl.background_pattern_table();
