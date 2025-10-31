@@ -530,10 +530,10 @@ impl State {
 			(..0, _) | (_, ..0) | (512.., _) | (_, 480..) => panic!("Out of bounds tile access!"),
 		};
 
-		let tile_x = (x % 256 / 8) as u16;
-		let tile_y = (y % 240 / 8) as u16;
-		let pixel_x = (x % 8) as u16;
-		let pixel_y = (y % 8) as u16;
+		let tile_x = x % 256 / 8;
+		let tile_y = y % 240 / 8;
+		let pixel_x = x % 8;
+		let pixel_y = y % 8;
 
 		let tile_idx = (tile_y << 5) + tile_x;
 
