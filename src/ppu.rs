@@ -74,11 +74,26 @@ impl W {
 	}
 }
 
+#[bitfield(u16)]
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub struct V {
+	#[bits(5)]
+	coarse_x: u8,
+	#[bits(5)]
+	coarse_y: u8,
+	#[bits(2)]
+	nametable: u8,
+	#[bits(3)]
+	fine_y: u8,
+	#[bits(1)]
+	_unused: u8,
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 pub struct Ppu2 {
-	pub v: u15,
-	pub t: u15,
+	pub v: V,
+	pub t: V,
 	pub x: u3,
 	pub w: W,
 
@@ -134,7 +149,8 @@ impl Default for Ppu2 {
 
 impl Ppu2 {
 	pub fn adr(&self) -> u16 {
-		todo!()
+		self.v.into_bits()
+	}
 
 	pub fn x(&self) -> u9 {
 		u9::new((self.v.coarse_x() as u16) << 3 | self.x.as_u16())
@@ -187,7 +203,15 @@ impl Ppu2 {
 		}
 	}
 
-	pub fn write_adr(&mut self, val: u8) {}
+	pub fn write_adr(&mut self, val: u8) {
+		let mut raw = self.v.into_bits().to_le_bytes();
+		match self.w {
+			W::First => raw[0] = val,
+			W::Second => raw[1] = val,
+		}
+		self.v = V::from_bits(u16::from_le_bytes(raw));
+		self.w.tick();
+	}
 
 	pub fn sprite_is_visible_x(&self, sprite: &Sprite) -> bool {
 		(sprite.x as i16) <= self.dot && self.dot < sprite.x as i16 + self.sprite_width()
@@ -213,8 +237,8 @@ impl Ppu2 {
 		(x, y)
 	}
 
-	pub fn set_adr(&self, val: u16) {
-		todo!()
+	pub fn set_adr(&mut self, val: u16) {
+		self.v = V::from_bits(val & ((1 << 15) - 1));
 	}
 }
 
