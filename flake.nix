@@ -8,7 +8,7 @@
 		flake-utils.lib.eachDefaultSystem(system:
 			let
 				pkgs = nixpkgs.legacyPackages.${system};
-				nativeBuildInputs = with pkgs; [
+				shellInputs = with pkgs; [
 					rustc
 					cargo
 					clippy
@@ -16,7 +16,6 @@
 					rust-analyzer
 
 					python3
-					pkg-config
 
 					llvmPackages_21.clang-tools
 					valgrind
@@ -26,13 +25,17 @@
 
 					kdePackages.kcachegrind
 				];
+				nativeBuildInputs = with pkgs; [
+					clang
+					pkg-config
+				];
 				buildInputs = with pkgs; [
 					clang
 					SDL2
 				];
 			in {
 				devShells.default = pkgs.mkShell {
-					inherit nativeBuildInputs buildInputs;
+					packages = buildInputs ++ nativeBuildInputs ++ shellInputs;
 					LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
 				};
 				packages.default = pkgs.rustPlatform.buildRustPackage {
@@ -40,8 +43,9 @@
 					version = "0.0.1";
 					src = ./.;
 					cargoLock.lockFile = ./Cargo.lock;
+					doCheck = false; # All tests rely on non-free ROMs
 
-					inherit buildInputs;
+					inherit nativeBuildInputs buildInputs;
 				};
 			}
 		);
