@@ -5,7 +5,7 @@ use anyhow::{Result, bail};
 use crate::ppu::{NesColour, Ppu, VRAM_MASK};
 
 // Yeah, yeah, it's huge, but this entire thing is expected to be boxed, so it's fine.
-// #[allow(clippy::large_enum_variant)]
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone)]
 pub enum Mapper {
 	MMC3 {
@@ -273,9 +273,7 @@ impl Mapper {
 				Some(())
 			}
 			Mapper::MMC4 => todo!(),
-			Mapper::NROM128 { .. } => match adr {
-				_ => todo!(),
-			},
+			Mapper::NROM128 { .. } => todo!(),
 			Mapper::NROM256 {
 				prg_ram: ram,
 				prg_rom: rom,
