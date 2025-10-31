@@ -7,7 +7,7 @@ use crate::{
 	drawing::{self, Bitmap},
 	inst::Inst,
 	nes_file::Mapper,
-	ppu::{NesColour, Ppu2, Sprite, W},
+	ppu::{NesColour, Ppu, Sprite, W},
 };
 
 use bitfields::bitfield;
@@ -21,7 +21,7 @@ pub enum InterruptTiming {
 #[repr(C)]
 pub struct State {
 	pub cpu: Cpu,
-	pub ppu: Ppu2,
+	pub ppu: Ppu,
 	pub apu: Apu,
 	pub controller1: Controller,
 	pub controller2: Controller,
@@ -97,7 +97,7 @@ impl State {
 
 		let ram = [0; 2048];
 		let apu = Apu::default();
-		let ppu = Ppu2::default();
+		let ppu = Ppu::default();
 		let controller1 = Controller::default();
 		let controller2 = Controller::default();
 		let cpu_bus = 0;
@@ -576,7 +576,7 @@ impl State {
 		let inst = self.next_inst_pure();
 
 		let ctrl = self.ppu.ctrl();
-		let crate::ppu::Ppu2 {
+		let crate::ppu::Ppu {
 			mask,
 			status,
 			scanline,

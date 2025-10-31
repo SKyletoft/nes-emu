@@ -37,7 +37,7 @@ pub struct V {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-pub struct Ppu2 {
+pub struct Ppu {
 	pub v: V,
 	pub t: V,
 	pub x: u3,
@@ -65,7 +65,7 @@ pub struct Ppu2 {
 	pub sprite_cache: [Option<Sprite>; 8],
 }
 
-impl Default for Ppu2 {
+impl Default for Ppu {
 	fn default() -> Self {
 		Self {
 			mask: Default::default(),
@@ -93,7 +93,7 @@ impl Default for Ppu2 {
 	}
 }
 
-impl Ppu2 {
+impl Ppu {
 	pub fn adr(&self) -> u16 {
 		self.v.into_bits()
 	}
