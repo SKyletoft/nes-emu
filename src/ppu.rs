@@ -6,6 +6,26 @@ use crate::drawing::Colour;
 
 pub const VRAM_MASK: u16 = (1 << 14) - 1;
 
+#[bitfield(u16)]
+struct U9VTransform {
+	#[bits(3)]
+	fine: u8,
+	#[bits(5)]
+	coarse: u8,
+	#[bits(1)]
+	nametable: u8,
+	#[bits(7)]
+	__unused: u8,
+}
+
+impl From<U9VTransform> for u9 {
+	fn from(value: U9VTransform) -> Self {
+		let val =
+			value.fine() as u16 | (value.coarse() as u16) << 3 | (value.nametable() as u16) << 8;
+		u9::new(val)
+	}
+}
+
 #[derive(Copy, Clone, PartialEq, Eq, Default, Debug)]
 pub enum W {
 	#[default]
@@ -92,11 +112,35 @@ impl Ppu {
 	}
 
 	pub fn x(&self) -> u9 {
-		u9::new((self.v.coarse_x() as u16) << 3 | self.x.as_u16())
+		U9VTransformBuilder::new()
+			.with_coarse(self.v.coarse_x())
+			.with_fine(self.x.into())
+			.with_nametable(self.v.nametable() >> 1)
+			.build()
+			.into()
 	}
 
 	pub fn y(&self) -> u9 {
-		u9::new((self.v.coarse_y() as u16) << 3 | (self.v.fine_y() as u16))
+		U9VTransformBuilder::new()
+			.with_coarse(self.v.coarse_y())
+			.with_fine(self.v.fine_y())
+			.with_nametable(self.v.nametable() & 1)
+			.build()
+			.into()
+	}
+
+	pub fn set_x(&mut self, val: u9) {
+		self.x = u3::new(val.as_u8() & 0b111);
+		self.v.set_coarse_x((val.as_u16() >> 3) as u8);
+		self.v
+			.set_nametable(self.v.nametable() & 0b01 | (val.as_u16() >> 7) as u8);
+	}
+
+	pub fn set_y(&mut self, val: u9) {
+		self.v.set_fine_y(val.as_u8() & 0b111);
+		self.v.set_coarse_y((val.as_u16() >> 3) as u8);
+		self.v
+			.set_nametable(self.v.nametable() & 0b10 | (val.as_u16() >> 8) as u8);
 	}
 
 	pub fn ctrl(&self) -> Ctrl {

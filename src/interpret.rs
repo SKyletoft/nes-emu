@@ -10,7 +10,7 @@ use crate::{
 	ppu::{Ctrl, NesColour, Ppu, Sprite, V, W},
 };
 
-use arbitrary_int::u3;
+use arbitrary_int::{u3, u9};
 use bitfields::bitfield;
 
 pub enum InterruptTiming {
@@ -189,7 +189,7 @@ impl State {
 		match adr % 8 {
 			0 => {
 				let ctrl = Ctrl::from_bits(val);
-				self.ppu.v.set_nametable(ctrl.nametable());
+				self.ppu.t.set_nametable(ctrl.nametable());
 				self.ppu.vram_increment = ctrl.vram_increment();
 				self.ppu.sprite_pattern_table = ctrl.sprite_pattern_table();
 				self.ppu.background_pattern_table = ctrl.background_pattern_table();
@@ -201,29 +201,26 @@ impl State {
 			2 => {}
 			3 => {}
 			4 => todo!(),
-			5 => {
-				let this = &mut self.ppu;
-				match this.w {
-					W::First => {
-						this.v.set_coarse_x(val >> 3);
-						this.x = u3::new(val & 0b111);
-						this.w = W::Second;
-					}
-					W::Second => {
-						this.v.set_coarse_y(val >> 3);
-						this.v.set_fine_y(val & 0b111);
-						this.w = W::First;
-					}
+			5 => match self.ppu.w {
+				W::First => {
+					self.ppu.t.set_coarse_x(val >> 3);
+					self.ppu.x = u3::new(val & 0b111);
+					self.ppu.w = W::Second;
 				}
-			}
+				W::Second => {
+					self.ppu.v.set_coarse_y(val >> 3);
+					self.ppu.v.set_fine_y(val & 0b111);
+					self.ppu.w = W::First;
+				}
+			},
 			6 => {
-				let mut raw = self.ppu.v.into_bits().to_le_bytes();
+				let mut raw = self.ppu.t.into_bits().to_be_bytes();
 				match self.ppu.w {
-					W::First => raw[0] = val,
+					W::First => raw[0] = val & 0b0011_1111,
 					W::Second => raw[1] = val,
 				}
-				self.ppu.v = V::from_bits(u16::from_le_bytes(raw));
-				self.ppu.w = match &mut self.ppu.w {
+				self.ppu.t = V::from_bits(u16::from_be_bytes(raw));
+				self.ppu.w = match self.ppu.w {
 					W::First => W::Second,
 					W::Second => W::First,
 				};
@@ -399,6 +396,34 @@ impl State {
 			self.ppu.status.set_sprite_0_hit(false);
 		}
 
+		if self.ppu.dot == 256 {
+			let old = self.ppu.y();
+			let new = old + u9::new(1);
+			self.ppu.set_y(self.ppu.y() + u9::new(1));
+			let after = self.ppu.y();
+			println!("{old} -> {new} -> {after}");
+		}
+		if self.ppu.dot == 257 {
+			self.ppu.v.set_coarse_x(self.ppu.t.coarse_x());
+			self.ppu
+				.v
+				.set_nametable((self.ppu.v.nametable() & 0b01) | (self.ppu.t.nametable() & 0b10));
+		}
+
+		if self.ppu.scanline == -1 && (280..304).contains(&self.ppu.dot) {
+			self.ppu.v.set_coarse_y(self.ppu.t.coarse_y());
+			self.ppu.v.set_fine_y(self.ppu.t.fine_y());
+			self.ppu
+				.v
+				.set_nametable((self.ppu.v.nametable() & 0b10) | (self.ppu.t.nametable() & 0b01));
+		}
+
+		if (self.ppu.mask.show_bg() || self.ppu.mask.show_spr())
+			&& !(257..=328).contains(&self.ppu.dot)
+		{
+			self.ppu.set_x(self.ppu.x().wrapping_add(u9::new(1)));
+		}
+
 		// Dot crawl
 		if self.ppu.scanline == -1
 			&& self.ppu.dot == 339
@@ -544,6 +569,10 @@ impl State {
 			(256..512, 240..480) => 0x2C00,
 			(512.., _) | (_, 480..) => panic!("Out of bounds tile access!"),
 		};
+
+		if self.ppu.frame > 50 {
+			// println!("{x} {y}");
+		}
 
 		let tile_x = x % 256 / 8;
 		let tile_y = y % 240 / 8;
