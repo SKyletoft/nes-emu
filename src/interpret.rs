@@ -10,7 +10,7 @@ use crate::{
 	ppu::{Ctrl, NesColour, Ppu, Sprite, V, W},
 };
 
-use arbitrary_int::{u3, u9};
+use arbitrary_int::{traits::Integer, u3, u9};
 use bitfields::bitfield;
 
 pub enum InterruptTiming {
@@ -398,9 +398,10 @@ impl State {
 
 		if self.ppu.dot == 256 {
 			let old = self.ppu.y();
-			let new = old + u9::new(1);
-			self.ppu.set_y(self.ppu.y() + u9::new(1));
+			let new = old.wrapping_add(u9::new(1));
+			self.ppu.set_y(self.ppu.y().wrapping_add(u9::new(1)));
 			let after = self.ppu.y();
+			assert!((0..480).contains(&self.ppu.y().as_u16()));
 			println!("{old} -> {new} -> {after}");
 		}
 		if self.ppu.dot == 257 {
