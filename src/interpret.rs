@@ -210,11 +210,21 @@ impl State {
 			5 => {
 				if let Some((x, y)) = self.ppu.double_writer.write(val) {
 					self.ppu.scroll = Scroll { x, y };
+					if (0..240).contains(&self.ppu.scanline) {
+						println!("Writing to scroll during render?");
+					}
 				}
 			}
 			6 => {
 				if let Some((hi, lo)) = self.ppu.double_writer.write(val) {
-					self.ppu.adr = u16::from_be_bytes([hi, lo]) & PPUADDR_MASK;
+					let adr = u16::from_be_bytes([hi, lo]) & PPUADDR_MASK;
+					self.ppu.adr = adr;
+					if (0..240).contains(&self.ppu.scanline) {
+						println!("Writing data to scroll!");
+						let x = (lo & 0b11111) << 3;
+						let y = ((adr & 0b11111_00000) >> 2 | (adr >> 12)) as u8;
+						self.ppu.scroll = Scroll { x, y };
+					}
 				}
 			}
 			7 => {
