@@ -65,13 +65,13 @@ pub fn sdl_thread(
 
 	let mut event_pump = sdl_context.event_pump()?;
 
-	let _controller = (0..controller_subsystem.num_joysticks()?).find_map(|i| {
+	let _controller = (0..controller_subsystem.num_joysticks()?).filter_map(|i| {
 		if controller_subsystem.is_game_controller(i) {
 			controller_subsystem.open(i).ok()
 		} else {
 			None
 		}
-	});
+	}).collect::<Vec<_>>();
 	let mut controller_state = ControllerState::new();
 
 	'running: loop {
