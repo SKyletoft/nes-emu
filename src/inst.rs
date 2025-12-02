@@ -213,8 +213,8 @@ pub enum Inst {
 	NOPAbsoluteX4(UnalignedU16) = 0x7C,
 	NOPAbsoluteX5(UnalignedU16) = 0xDC,
 	NOPAbsoluteX6(UnalignedU16) = 0xFC,
-	NOPImmediate(u8) = 0x80,
-	NOPImmediate2(u8) = 0x89,
+	NopImmediate(u8) = 0x80,
+	NopImmediate2(u8) = 0x89,
 	NopImmediate3(u8) = 0xEA,
 	NOPZeroPage(u8) = 0x04,
 	NOPZeroPage3(u8) = 0x44,
@@ -513,8 +513,8 @@ impl Inst {
 			| Inst::SreIndirectX(..)
 			| Inst::SreIndirectY(..)
 			| Inst::AhxIndirectY(..)
-			| Inst::NOPImmediate(..)
-			| Inst::NOPImmediate2(..)
+			| Inst::NopImmediate(..)
+			| Inst::NopImmediate2(..)
 			| Inst::NopImmediate3(..) => 2,
 			Inst::OraAbsolute(..)
 			| Inst::OraAbsoluteX(..)
@@ -732,6 +732,8 @@ impl Inst {
 			Inst::LsrZeroPage(x) => lsr_zero_page(state, *x),
 			Inst::LsrZeroPageX(x) => lsr_zero_page_x(state, *x),
 			Inst::Nop2 => nop(state),
+			Inst::NopImmediate(_) => nop(state),
+			Inst::NopImmediate2(_) => nop(state),
 			Inst::NopImmediate3(_) => nop(state),
 			Inst::OraAbsolute(a) => ora_absolute(state, a.into()),
 			Inst::OraAbsoluteX(a) => ora_absolute_x(state, a.into()),

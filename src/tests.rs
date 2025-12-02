@@ -537,8 +537,8 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "NOP ${:04X},X = ${:02X}", adr, mem)
 		}
-		Inst::NOPImmediate(val) => write!(f, "NOP ${:02X}", val),
-		Inst::NOPImmediate2(val) => write!(f, "NOP ${:02X}", val),
+		Inst::NopImmediate(val) => write!(f, "NOP ${:02X}", val),
+		Inst::NopImmediate2(val) => write!(f, "NOP ${:02X}", val),
 		Inst::NopImmediate3(_val) => write!(f, "NOP"),
 		Inst::NOPZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
