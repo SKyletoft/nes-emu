@@ -766,6 +766,8 @@ impl Inst {
 			Inst::Txa => txa(state),
 			Inst::Txs => txs(state),
 			Inst::Tya => tya(state),
+
+			Inst::NOPImmediate3(_) => nop(state),
 			// Inst::LAX(LAX::ZeroPage(x)) => lax_zero_page(cpu, *x),
 			// Inst::LAX(LAX::ZeroPageY(x)) => lax_zero_page_y(cpu, *x),
 			// Inst::LAX(LAX::Absolute(a)) => lax_absolute(cpu, *a),
