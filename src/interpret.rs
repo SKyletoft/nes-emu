@@ -131,8 +131,8 @@ impl State {
 	pub fn next_inst(&mut self) -> Inst {
 		let code = [
 			self.mem_pure(self.cpu.pc),
-			self.mem_pure(self.cpu.pc + 1),
-			self.mem_pure(self.cpu.pc + 2),
+			self.mem_pure(self.cpu.pc.wrapping_add(1)),
+			self.mem_pure(self.cpu.pc.wrapping_add(2)),
 		];
 		let res: Inst = code.into();
 		// To set the open bus
@@ -143,8 +143,8 @@ impl State {
 	pub fn next_inst_pure(&self) -> Inst {
 		let code = [
 			self.mem_pure(self.cpu.pc),
-			self.mem_pure(self.cpu.pc + 1),
-			self.mem_pure(self.cpu.pc + 2),
+			self.mem_pure(self.cpu.pc.wrapping_add(1)),
+			self.mem_pure(self.cpu.pc.wrapping_add(2)),
 		];
 		code.into()
 	}
