@@ -185,7 +185,7 @@ pub fn sdl_thread(
 					..
 				}
 				| Event::ControllerButtonDown {
-					button: Button::B, ..
+					button: Button::B | Button::X, ..
 				} => {
 					controller_state.set_b(true);
 				}
@@ -194,7 +194,7 @@ pub fn sdl_thread(
 					..
 				}
 				| Event::ControllerButtonUp {
-					button: Button::B, ..
+					button: Button::B | Button::X, ..
 				} => {
 					controller_state.set_b(false);
 				}
