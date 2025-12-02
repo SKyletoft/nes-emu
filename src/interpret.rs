@@ -210,21 +210,17 @@ impl State {
 			5 => {
 				if let Some((x, y)) = self.ppu.double_writer.write(val) {
 					self.ppu.scroll = Scroll { x, y };
-					if (0..240).contains(&self.ppu.scanline) {
-						println!("Writing to scroll during render?");
-					}
 				}
 			}
 			6 => {
 				if let Some((hi, lo)) = self.ppu.double_writer.write(val) {
 					let adr = u16::from_be_bytes([hi, lo]) & PPUADDR_MASK;
 					self.ppu.adr = adr;
-					if (0..240).contains(&self.ppu.scanline) {
-						println!("Writing data to scroll!");
-						let x = (lo & 0b11111) << 3;
-						let y = ((adr & 0b11111_00000) >> 2 | (adr >> 12)) as u8;
-						self.ppu.scroll = Scroll { x, y };
-					}
+					let x = ((lo & 0b11111) << 3) | (self.ppu.scroll.x & 0b111);
+					let y = ((adr & 0b11111_00000) >> 2 | ((adr >> 12) & 0b111)) as u8;
+					let nn = (adr >> 10) & 0b11;
+					self.ppu.ctrl.set_nametable(nn as _);
+					self.ppu.scroll = Scroll { x, y };
 				}
 			}
 			7 => {
@@ -543,7 +539,7 @@ impl State {
 			(256..512, 0..240) => 0x2400,
 			(0..256, 240..480) => 0x2800,
 			(256..512, 240..480) => 0x2C00,
-			(..0, _) | (_, ..0) | (512.., _) | (_, 480..) => panic!("Out of bounds tile access!"),
+			(..0, _) | (_, ..0) | (512.., _) | (_, 480..) => return None,
 		};
 
 		let tile_x = (x % 256 / 8) as u16;

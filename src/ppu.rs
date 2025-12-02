@@ -77,9 +77,7 @@ impl Ppu {
 	pub fn actual_pos(&self) -> (i16, i16) {
 		let x = self.dot + self.scroll.x as i16 + self.ctrl.x_offset();
 		let y = self.scanline + self.scroll.y as i16 + self.ctrl.y_offset();
-		assert!((0..512).contains(&x));
-		assert!((0..480).contains(&y));
-		(x, y)
+		(x % 512, y % 480)
 	}
 }
 
