@@ -744,6 +744,24 @@ void nop(State *state) {
 	state_step_ppu_many(state, 2);
 }
 
+void skb(State *state) {
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 2);
+}
+
+void ign(State *state) {
+	state->cpu.pc += 3;
+	state_step_ppu_many(state, 4);
+}
+
+void ign_absolute_x(State *state, uint16_t adr) {
+	uint16_t actual_adr = (uint16_t) state->cpu.x + adr;
+	bool page_crossed   = state->cpu.x + (adr & 0xFF) > 0xFF;
+	(void)state_get_mem(state, actual_adr);
+	state->cpu.pc += 3;
+	state_step_ppu_many(state, 4 + page_crossed);
+}
+
 void lax_zero_page(State *state, uint8_t val) {
 	state->cpu.a = val;
 	state->cpu.x = val;

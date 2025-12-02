@@ -79,6 +79,8 @@ unsafe extern "C" {
 	pub safe fn eor_indirect_y(state: &mut State, val: u8);
 	pub safe fn eor_zero_page(state: &mut State, val: u8);
 	pub safe fn eor_zero_page_x(state: &mut State, val: u8);
+	pub safe fn ign(state: &mut State);
+	pub safe fn ign_absolute_x(state: &mut State, val: u16);
 	pub safe fn inc_absolute(state: &mut State, val: u16);
 	pub safe fn inc_absolute_x(state: &mut State, val: u16);
 	pub safe fn inc_zero_page(state: &mut State, val: u8);
@@ -181,6 +183,7 @@ unsafe extern "C" {
 	pub safe fn sei(state: &mut State);
 	pub safe fn shx(state: &mut State, val: u8);
 	pub safe fn shy(state: &mut State, val: u8);
+	pub safe fn skb(state: &mut State);
 	pub safe fn slo_absolute(state: &mut State, val: u16);
 	pub safe fn slo_absolute_x(state: &mut State, val: u16);
 	pub safe fn slo_absolute_y(state: &mut State, val: u16);
