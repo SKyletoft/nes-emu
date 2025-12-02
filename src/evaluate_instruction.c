@@ -739,7 +739,7 @@ void rts(State *state) {
 	state_step_ppu_many(state, 6);
 }
 
-void nop([[maybe_unused]] State *state) {
+void nop(State *state) {
 	state->cpu.pc += 1;
 	state_step_ppu_many(state, 2);
 }
