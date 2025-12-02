@@ -831,7 +831,13 @@ impl Inst {
 			// Inst::Ahx(Ahx::AbsoluteY(a)) => ahx_absolute_y(cpu, *a),
 			// Inst::Ahx(Ahx::IndirectY(x)) => ahx_indirect_y(cpu, *x),
 			// Inst::NOPU(..) => {}
-			_ => todo!("No support for unofficial instructions yet ({self:?})"),
+
+			_ => {
+				todo!(
+					"No support for unofficial instructions yet ({self:?}, {:02X?})",
+					unsafe { std::mem::transmute::<Inst, [u8; 3]>(*self) }
+				)
+			}
 		}
 	}
 }
