@@ -225,31 +225,31 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "CPY ${:02X} = ${:02X}", adr, mem)
 		}
-		Inst::DCPAbsolute(adr) => {
+		Inst::DcpAbsolute(adr) => {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "DCP ${:04X} = ${:02X}", adr, mem)
 		}
-		Inst::DCPAbsoluteX(adr) => {
+		Inst::DcpAbsoluteX(adr) => {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "DCP ${:04X},X = ${:02X}", adr, mem)
 		}
-		Inst::DCPAbsoluteY(adr) => {
+		Inst::DcpAbsoluteY(adr) => {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "DCP ${:04X},Y = ${:02X}", adr, mem)
 		}
-		Inst::DCPIndirectX(adr) => {
+		Inst::DcpIndirectX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "DCP (${:02X}),X = ${:02X}", adr, mem)
 		}
-		Inst::DCPIndirectY(adr) => {
+		Inst::DcpIndirectY(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "DCP (${:02X}),Y = ${:02X}", adr, mem)
 		}
-		Inst::DCPZeroPage(adr) => {
+		Inst::DcpZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "DCP ${:02X} = ${:02X}", adr, mem)
 		}
-		Inst::DCPZeroPageX(adr) => {
+		Inst::DcpZeroPageX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "DCP ${:02X},X = ${:02X}", adr, mem)
 		}
@@ -321,31 +321,31 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		}
 		Inst::Inx => write!(f, "INX"),
 		Inst::Iny => write!(f, "INY"),
-		Inst::ISCAbsolute(adr) => {
+		Inst::IscAbsolute(adr) => {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "ISC ${:04X} = ${:02X}", adr, mem)
 		}
-		Inst::ISCAbsoluteX(adr) => {
+		Inst::IscAbsoluteX(adr) => {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "ISC ${:04X},X = ${:02X}", adr, mem)
 		}
-		Inst::ISCAbsoluteY(adr) => {
+		Inst::IscAbsoluteY(adr) => {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "ISC ${:04X},Y = ${:02X}", adr, mem)
 		}
-		Inst::ISCIndirectX(adr) => {
+		Inst::IscIndirectX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "ISC (${:02X}),X = ${:02X}", adr, mem)
 		}
-		Inst::ISCIndirectY(adr) => {
+		Inst::IscIndirectY(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "ISC (${:02X}),Y = ${:02X}", adr, mem)
 		}
-		Inst::ISCZeroPage(adr) => {
+		Inst::IscZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "ISC ${:02X} = ${:02X}", adr, mem)
 		}
-		Inst::ISCZeroPageX(adr) => {
+		Inst::IscZeroPageX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "ISC ${:02X},X = ${:02X}", adr, mem)
 		}
@@ -367,28 +367,28 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "LAS ${:04X},Y = ${:02X}", adr, mem)
 		}
-		Inst::LAXAbsolute(adr) => {
+		Inst::LaxAbsolute(adr) => {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "LAX ${:04X} = ${:02X}", adr, mem)
 		}
-		Inst::LAXAbsoluteY(adr) => {
+		Inst::LaxAbsoluteY(adr) => {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "LAX ${:04X},Y = ${:02X}", adr, mem)
 		}
 		Inst::LAXImmediate(val) => write!(f, "LAX ${:02X}", val),
-		Inst::LAXIndirectX(adr) => {
+		Inst::LaxIndirectX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "LAX (${:02X},X) = ${:02X}", adr, mem)
 		}
-		Inst::LAXIndirectY(adr) => {
+		Inst::LaxIndirectY(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "LAX (${:02X}),Y = ${:02X}", adr, mem)
 		}
-		Inst::LAXZeroPage(adr) => {
+		Inst::LaxZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "LAX ${:02X} = ${:02X}", adr, mem)
 		}
-		Inst::LAXZeroPageY(adr) => {
+		Inst::LaxZeroPageY(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "LAX ${:02X},Y = ${:02X}", adr, mem)
 		}
@@ -539,7 +539,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		}
 		Inst::NOPImmediate(val) => write!(f, "NOP ${:02X}", val),
 		Inst::NOPImmediate2(val) => write!(f, "NOP ${:02X}", val),
-		Inst::NOPImmediate3(_val) => write!(f, "NOP"),
+		Inst::NopImmediate3(_val) => write!(f, "NOP"),
 		Inst::NOPZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "NOP ${:02X} = ${:02X}", adr, mem)
@@ -614,34 +614,34 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		Inst::Php => write!(f, "PHP"),
 		Inst::Pla => write!(f, "PLA"),
 		Inst::Plp => write!(f, "PLP"),
-		Inst::RLAAbsolute(unaligned_u16) => {
+		Inst::RlaAbsolute(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "RLA ${:04X} = ${:02X}", adr, mem)
 		}
-		Inst::RLAAbsoluteX(unaligned_u16) => {
+		Inst::RlaAbsoluteX(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "RLA ${:04X},X = ${:02X}", adr, mem)
 		}
-		Inst::RLAAbsoluteY(unaligned_u16) => {
+		Inst::RlaAbsoluteY(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "RLA ${:04X},Y = ${:02X}", adr, mem)
 		}
-		Inst::RLAIndirectX(adr) => {
+		Inst::RlaIndirectX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "RLA (${:02X}),X = ${:02X}", adr, mem)
 		}
-		Inst::RLAIndirectY(adr) => {
+		Inst::RlaIndirectY(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "RLA (${:02X}),Y = ${:02X}", adr, mem)
 		}
-		Inst::RLAZeroPage(adr) => {
+		Inst::RlaZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "RLA ${:02X} = ${:02X}", adr, mem)
 		}
-		Inst::RLAZeroPageX(adr) => {
+		Inst::RlaZeroPageX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "RLA ${:02X},X = ${:02X}", adr, mem)
 		}
@@ -683,53 +683,53 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "ROR ${:02X},X = ${:02X}", adr, mem)
 		}
-		Inst::RRAAbsolute(unaligned_u16) => {
+		Inst::RraAbsolute(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "RRA ${:04X} = ${:02X}", adr, mem)
 		}
-		Inst::RRAAbsoluteX(unaligned_u16) => {
+		Inst::RraAbsoluteX(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "RRA ${:04X},X = ${:02X}", adr, mem)
 		}
-		Inst::RRAAbsoluteY(unaligned_u16) => {
+		Inst::RraAbsoluteY(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "RRA ${:04X},Y = ${:02X}", adr, mem)
 		}
-		Inst::RRAIndirectX(adr) => {
+		Inst::RraIndirectX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "RRA (${:02X}),X = ${:02X}", adr, mem)
 		}
-		Inst::RRAIndirectY(adr) => {
+		Inst::RraIndirectY(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "RRA (${:02X}),Y = ${:02X}", adr, mem)
 		}
-		Inst::RRAZeroPage(adr) => {
+		Inst::RraZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "RRA ${:02X} = ${:02X}", adr, mem)
 		}
-		Inst::RRAZeroPageX(adr) => {
+		Inst::RraZeroPageX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "RRA ${:02X},X = ${:02X}", adr, mem)
 		}
 		Inst::Rti => write!(f, "RTI"),
 		Inst::Rts => write!(f, "RTS"),
-		Inst::SAXAbsolute(unaligned_u16) => {
+		Inst::SaxAbsolute(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "SAX ${:04X} = ${:02X}", adr, mem)
 		}
-		Inst::SAXIndirectX(adr) => {
+		Inst::SaxIndirectX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "SAX (${:02X}),X = ${:02X}", adr, mem)
 		}
-		Inst::SAXZeroPage(adr) => {
+		Inst::SaxZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "SAX ${:02X} = ${:02X}", adr, mem)
 		}
-		Inst::SAXZeroPageY(adr) => {
+		Inst::SaxZeroPageY(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "SAX ${:02X},Y = ${:02X}", adr, mem)
 		}
@@ -781,65 +781,65 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "SHY ${:04X},X = ${:02X}", adr, mem)
 		}
-		Inst::SLOAbsolute(unaligned_u16) => {
+		Inst::SloAbsolute(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "SLO ${:04X} = ${:02X}", adr, mem)
 		}
-		Inst::SLOAbsoluteX(unaligned_u16) => {
+		Inst::SloAbsoluteX(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "SLO ${:04X},X = ${:02X}", adr, mem)
 		}
-		Inst::SLOAbsoluteY(unaligned_u16) => {
+		Inst::SloAbsoluteY(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "SLO ${:04X},Y = ${:02X}", adr, mem)
 		}
-		Inst::SLOIndirectX(adr) => {
+		Inst::SloIndirectX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "SLO (${:02X}),X = ${:02X}", adr, mem)
 		}
-		Inst::SLOIndirectY(adr) => {
+		Inst::SloIndirectY(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "SLO (${:02X}),Y = ${:02X}", adr, mem)
 		}
-		Inst::SLOZeroPage(adr) => {
+		Inst::SloZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "SLO ${:02X} = ${:02X}", adr, mem)
 		}
-		Inst::SLOZeroPageX(adr) => {
+		Inst::SloZeroPageX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "SLO ${:02X},X = ${:02X}", adr, mem)
 		}
-		Inst::SREAbsolute(unaligned_u16) => {
+		Inst::SreAbsolute(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "SRE ${:04X} = ${:02X}", adr, mem)
 		}
-		Inst::SREAbsoluteX(unaligned_u16) => {
+		Inst::SreAbsoluteX(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "SRE ${:04X},X = ${:02X}", adr, mem)
 		}
-		Inst::SREAbsoluteY(unaligned_u16) => {
+		Inst::SreAbsoluteY(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "SRE ${:04X},Y = ${:02X}", adr, mem)
 		}
-		Inst::SREIndirectX(adr) => {
+		Inst::SreIndirectX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "SRE (${:02X}),X = ${:02X}", adr, mem)
 		}
-		Inst::SREIndirectY(adr) => {
+		Inst::SreIndirectY(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "SRE (${:02X}),Y = ${:02X}", adr, mem)
 		}
-		Inst::SREZeroPage(adr) => {
+		Inst::SreZeroPage(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "SRE ${:02X} = ${:02X}", adr, mem)
 		}
-		Inst::SREZeroPageX(adr) => {
+		Inst::SreZeroPageX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "SRE ${:02X},X = ${:02X}", adr, mem)
 		}
