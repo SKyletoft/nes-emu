@@ -194,6 +194,7 @@ impl State {
 					.expect("Ppu data adr should always be inbounds");
 				self.ppu.adr = (self.ppu.adr + self.ppu.ctrl.vram_increment_value()) & PPUADDR_MASK;
 			}
+			0 | 1 | 3 | 4 | 5 | 6 => {}
 			_ => unreachable!(),
 		}
 		res
