@@ -1,6 +1,9 @@
 #![allow(unused, dead_code)]
 
-use std::sync::{Arc, Mutex};
+use std::{
+	sync::{Arc, Mutex},
+	time::{Duration, Instant},
+};
 
 use crate::{
 	apu::Apu,
@@ -441,8 +444,17 @@ impl State {
 			let mut texture = self.output_texture.lock().unwrap();
 			std::mem::swap(&mut self.current_texture, &mut texture);
 
-			#[cfg(not(test))]
-			std::thread::sleep(std::time::Duration::from_millis(16));
+			static LAST_TIME: Mutex<Option<Instant>> = Mutex::new(None);
+			let mut last_time = LAST_TIME.lock().unwrap();
+			let to_sleep = match &mut *last_time {
+				None => Duration::from_millis(16),
+				Some(last_time) => {
+					let now = Instant::now();
+					(Duration::from_millis(1000) / 60).saturating_sub(now - *last_time)
+				}
+			};
+			std::thread::sleep(to_sleep);
+			*last_time = Some(Instant::now());
 		}
 	}
 
