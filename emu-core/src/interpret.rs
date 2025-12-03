@@ -9,7 +9,7 @@ use crate::{
 	apu::Apu,
 	controller::Controller,
 	cpu::{Cpu, P},
-	drawing::{self, Bitmap},
+	graphics::{self, Bitmap},
 	inst::Inst,
 	nes_file::Mapper,
 	ppu::{DoubleWriter, NesColour, Ppu, Scroll, Sprite},
@@ -110,7 +110,7 @@ impl State {
 		let controller2 = Controller::default();
 		let cpu_bus = 0;
 		let ppu_bus = 0;
-		let current_texture = Box::new(drawing::empty_bitmap());
+		let current_texture = Box::new(graphics::empty_bitmap());
 		let cycles = 8;
 		let interrupt_requested = InterruptTiming::Clear;
 

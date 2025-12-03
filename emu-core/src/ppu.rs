@@ -5,7 +5,7 @@ use bitfields::bitfield;
 use bytemuck::{Pod, Zeroable};
 use derive_more::derive::Into;
 
-use crate::drawing::Colour;
+use crate::graphics::Colour;
 
 pub const VRAM_MASK: u16 = (1 << 14) - 1;
 

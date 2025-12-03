@@ -3,39 +3,14 @@ use std::sync::{
 	atomic::{AtomicU8, Ordering},
 };
 
-use bytemuck::{Pod, Zeroable};
 use sdl2::{
-	controller::{Button, GameController}, event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect,
+	controller::Button, event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect,
 };
 
-use crate::controller::ControllerState;
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Default, Pod, Zeroable)]
-pub struct Colour {
-	pub blue: u8,
-	pub green: u8,
-	pub red: u8,
-	pub alpha: u8,
-}
-
-pub const WIDTH: usize = 256;
-pub const HEIGHT: usize = 240;
-
-pub type Bitmap = [[Colour; WIDTH]; HEIGHT];
-
-pub const fn empty_bitmap() -> Bitmap {
-	[[Colour {
-		blue: 0,
-		green: 0,
-		red: 0,
-		alpha: 0,
-	}; _]; _]
-}
-
-pub fn new_bitmap() -> Arc<Mutex<Box<Bitmap>>> {
-	Arc::new(Mutex::new(Box::new(empty_bitmap())))
-}
+use emu_core::{
+	controller::ControllerState,
+	graphics::{Bitmap, HEIGHT, WIDTH},
+};
 
 pub fn sdl_thread(
 	texture_ptr: Arc<Mutex<Box<Bitmap>>>,
@@ -65,13 +40,15 @@ pub fn sdl_thread(
 
 	let mut event_pump = sdl_context.event_pump()?;
 
-	let _controller = (0..controller_subsystem.num_joysticks()?).filter_map(|i| {
-		if controller_subsystem.is_game_controller(i) {
-			controller_subsystem.open(i).ok()
-		} else {
-			None
-		}
-	}).collect::<Vec<_>>();
+	let _controller = (0..controller_subsystem.num_joysticks()?)
+		.filter_map(|i| {
+			if controller_subsystem.is_game_controller(i) {
+				controller_subsystem.open(i).ok()
+			} else {
+				None
+			}
+		})
+		.collect::<Vec<_>>();
 	let mut controller_state = ControllerState::new();
 
 	'running: loop {
@@ -185,7 +162,8 @@ pub fn sdl_thread(
 					..
 				}
 				| Event::ControllerButtonDown {
-					button: Button::B | Button::X, ..
+					button: Button::B | Button::X,
+					..
 				} => {
 					controller_state.set_b(true);
 				}
@@ -194,7 +172,8 @@ pub fn sdl_thread(
 					..
 				}
 				| Event::ControllerButtonUp {
-					button: Button::B | Button::X, ..
+					button: Button::B | Button::X,
+					..
 				} => {
 					controller_state.set_b(false);
 				}

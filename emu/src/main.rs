@@ -1,37 +1,24 @@
-mod apu;
-mod controller;
-mod cpu;
 mod drawing;
-mod evaluate_instruction;
-mod inst;
-mod interpret;
-mod nes_file;
-mod ppu;
-
-#[cfg(test)]
-mod tests;
 
 use std::sync::{
 	Arc, Mutex,
 	atomic::{AtomicBool, AtomicU8, Ordering},
 };
 
-use drawing::Bitmap;
-use interpret::State;
-use nes_file::Mapper;
+use emu_core::{graphics::Bitmap, interpret::State, nes_file::Mapper};
 
 fn emulation_loop(
 	shared_texture: Arc<Mutex<Box<Bitmap>>>,
 	controller_state: &AtomicU8,
 	kill: &AtomicBool,
 ) {
-	let path = std::env::args()
-		.nth(1)
-		.unwrap_or_else(|| concat!(
+	let path = std::env::args().nth(1).unwrap_or_else(|| {
+		concat!(
 			env!("CARGO_MANIFEST_DIR"),
-			// "/non-free/SMB1.nes"
-			"/non-free/AccuracyCoin.nes"
-		).into());
+			"/../non-free/SMB1.nes" // "/../non-free/AccuracyCoin.nes"
+		)
+		.into()
+	});
 	dbg!(&path);
 	let buffer = std::fs::read(path).unwrap();
 	let game = Mapper::parse_ines(buffer).unwrap();
@@ -48,7 +35,7 @@ fn emulation_loop(
 }
 
 fn main() {
-	let shared_texture = drawing::new_bitmap();
+	let shared_texture = emu_core::graphics::new_bitmap();
 	let controller_state = AtomicU8::new(0);
 	let kill_predicate = AtomicBool::new(true);
 
