@@ -7,6 +7,3 @@ edition = "2024"
 emu-core = { path = "../emu-core" }
 sdl2 = { version = "0.38", features = [ "use-pkgconfig" ] }
 bytemuck = { version = "1.23", features = [ "derive" ] }
-
-[profile.dev]
-opt-level = 1
