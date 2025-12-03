@@ -71,8 +71,8 @@ pub enum Inst {
 	AhxAbsoluteY(UnalignedU16) = 0x9F,
 	AhxIndirectY(u8) = 0x93,
 	AlrImmediate(u8) = 0x4B,
-	AncImmediate2(u8) = 0x2B,
 	AncImmediate(u8) = 0x0B,
+	AncImmediate2(u8) = 0x2B,
 	AndAbsolute(UnalignedU16) = 0x2D,
 	AndAbsoluteX(UnalignedU16) = 0x3D,
 	AndAbsoluteY(UnalignedU16) = 0x39,
@@ -138,6 +138,22 @@ pub enum Inst {
 	EorIndirectY(u8) = 0x51,
 	EorZeroPage(u8) = 0x45,
 	EorZeroPageX(u8) = 0x55,
+	Ign(UnalignedU16) = 0x0C,
+	IgnAbsoluteX(UnalignedU16) = 0x1C,
+	IgnAbsoluteX2(UnalignedU16) = 0x3C,
+	IgnAbsoluteX3(UnalignedU16) = 0x5C,
+	IgnAbsoluteX4(UnalignedU16) = 0x7C,
+	IgnAbsoluteX5(UnalignedU16) = 0xDC,
+	IgnAbsoluteX6(UnalignedU16) = 0xFC,
+	IgnDirect(u8) = 0x04,
+	IgnDirect2(u8) = 0x44,
+	IgnDirect3(u8) = 0x64,
+	IgnDirectX(u8) = 0x14,
+	IgnDirectX2(u8) = 0x34,
+	IgnDirectX3(u8) = 0x54,
+	IgnDirectX4(u8) = 0x74,
+	IgnDirectX5(u8) = 0xD4,
+	IgnDirectX6(u8) = 0xF4,
 	IncAbsolute(UnalignedU16) = 0xEE,
 	IncAbsoluteX(UnalignedU16) = 0xFE,
 	IncZeroPage(u8) = 0xE6,
@@ -155,9 +171,9 @@ pub enum Inst {
 	JmpIndirect(UnalignedU16) = 0x6C,
 	Jsr(UnalignedU16) = 0x20,
 	LASAbsoluteY(UnalignedU16) = 0xBB,
+	LAXImmediate(u8) = 0xAB,
 	LaxAbsolute(UnalignedU16) = 0xAF,
 	LaxAbsoluteY(UnalignedU16) = 0xBF,
-	LAXImmediate(u8) = 0xAB,
 	LaxIndirectX(u8) = 0xA3,
 	LaxIndirectY(u8) = 0xB3,
 	LaxZeroPage(u8) = 0xA7,
@@ -185,46 +201,13 @@ pub enum Inst {
 	LsrAccumulator = 0x4A,
 	LsrZeroPage(u8) = 0x46,
 	LsrZeroPageX(u8) = 0x56,
-	NOP10 = 0x5A,
-	NOP11 = 0x62,
-	NOP12 = 0x72,
-	NOP13 = 0x7A,
-	NOP14 = 0x82,
-	NOP15 = 0x92,
-	NOP16 = 0xB2,
-	NOP17 = 0xC2,
-	NOP18 = 0xD2,
-	NOP19 = 0xDA,
-	Nop2 = 0x02,
-	NOP20 = 0xE2,
-	NOP21 = 0xF2,
-	NOP22 = 0xFA,
-	NOP3 = 0x12,
-	NOP4 = 0x1A,
-	NOP5 = 0x22,
-	NOP6 = 0x32,
-	NOP7 = 0x3A,
-	NOP8 = 0x42,
-	NOP9 = 0x52,
-	NOPAbsolute(UnalignedU16) = 0x0C,
-	NOPAbsoluteX(UnalignedU16) = 0x1C,
-	NOPAbsoluteX2(UnalignedU16) = 0x3C,
-	NOPAbsoluteX3(UnalignedU16) = 0x5C,
-	NOPAbsoluteX4(UnalignedU16) = 0x7C,
-	NOPAbsoluteX5(UnalignedU16) = 0xDC,
-	NOPAbsoluteX6(UnalignedU16) = 0xFC,
-	NopImmediate(u8) = 0x80,
-	NopImmediate2(u8) = 0x89,
-	NopImmediate3(u8) = 0xEA,
-	NOPZeroPage(u8) = 0x04,
-	NOPZeroPage3(u8) = 0x44,
-	NOPZeroPage4(u8) = 0x64,
-	NOPZeroPageX(u8) = 0x14,
-	NOPZeroPageX2(u8) = 0x34,
-	NOPZeroPageX3(u8) = 0x54,
-	NOPZeroPageX4(u8) = 0x74,
-	NOPZeroPageX5(u8) = 0xD4,
-	NOPZeroPageX6(u8) = 0xF4,
+	Nop = 0x1A,
+	Nop2 = 0x3A,
+	Nop3 = 0x5A,
+	Nop4 = 0x7A,
+	Nop5 = 0xDA,
+	Nop6 = 0xEA,
+	Nop7 = 0xFA,
 	OraAbsolute(UnalignedU16) = 0x0D,
 	OraAbsoluteX(UnalignedU16) = 0x1D,
 	OraAbsoluteY(UnalignedU16) = 0x19,
@@ -263,6 +246,8 @@ pub enum Inst {
 	RraZeroPageX(u8) = 0x77,
 	Rti = 0x40,
 	Rts = 0x60,
+	ShxAbsoluteY(UnalignedU16) = 0x9E,
+	ShyAbsoluteX(UnalignedU16) = 0x9C,
 	SaxAbsolute(UnalignedU16) = 0x8F,
 	SaxIndirectX(u8) = 0x83,
 	SaxZeroPage(u8) = 0x87,
@@ -279,8 +264,11 @@ pub enum Inst {
 	Sec = 0x38,
 	Sed = 0xF8,
 	Sei = 0x78,
-	SHXAbsoluteY(UnalignedU16) = 0x9E,
-	SHYAbsoluteX(UnalignedU16) = 0x9C,
+	Skb(u8) = 0x80,
+	Skb2(u8) = 0x82,
+	Skb3(u8) = 0x89,
+	Skb4(u8) = 0xC2,
+	Skb5(u8) = 0xE2,
 	SloAbsolute(UnalignedU16) = 0x0F,
 	SloAbsoluteX(UnalignedU16) = 0x1F,
 	SloAbsoluteY(UnalignedU16) = 0x1B,
@@ -302,20 +290,32 @@ pub enum Inst {
 	StaIndirectY(u8) = 0x91,
 	StaZeroPage(u8) = 0x85,
 	StaZeroPageX(u8) = 0x95,
+	Stp = 0x02,
+	Stp10 = 0xB2,
+	Stp11 = 0xD2,
+	Stp12 = 0xF2,
+	Stp2 = 0x12,
+	Stp3 = 0x22,
+	Stp4 = 0x32,
+	Stp5 = 0x42,
+	Stp6 = 0x52,
+	Stp7 = 0x62,
+	Stp8 = 0x72,
+	Stp9 = 0x92,
 	StxAbsolute(UnalignedU16) = 0x8E,
 	StxZeroPage(u8) = 0x86,
 	StxZeroPageY(u8) = 0x96,
 	StyAbsolute(UnalignedU16) = 0x8C,
 	StyZeroPage(u8) = 0x84,
 	StyZeroPageX(u8) = 0x94,
-	TASAbsoluteY(UnalignedU16) = 0x9B,
+	TasAbsoluteY(UnalignedU16) = 0x9B,
 	Tax = 0xAA,
 	Tay = 0xA8,
 	Tsx = 0xBA,
 	Txa = 0x8A,
 	Txs = 0x9A,
 	Tya = 0x98,
-	XAAImmediate(u8) = 0x8B,
+	XaaImmediate(u8) = 0x8B,
 }
 
 const _: () = {
@@ -353,7 +353,8 @@ impl Inst {
 
 	pub fn len(&self) -> u8 {
 		match self {
-			Inst::Brk
+			Inst::AslAccumulator
+			| Inst::Brk
 			| Inst::Clc
 			| Inst::Cld
 			| Inst::Cli
@@ -362,172 +363,214 @@ impl Inst {
 			| Inst::Dey
 			| Inst::Inx
 			| Inst::Iny
+			| Inst::LsrAccumulator
+			| Inst::Nop
 			| Inst::Nop2
-			| Inst::NOP3
-			| Inst::NOP4
-			| Inst::NOP5
-			| Inst::NOP6
-			| Inst::NOP7
-			| Inst::NOP8
-			| Inst::NOP9
-			| Inst::NOP10
-			| Inst::NOP11
-			| Inst::NOP12
-			| Inst::NOP13
-			| Inst::NOP14
-			| Inst::NOP15
-			| Inst::NOP16
-			| Inst::NOP17
-			| Inst::NOP18
-			| Inst::NOP19
-			| Inst::NOP20
-			| Inst::NOP21
-			| Inst::NOP22
+			| Inst::Nop3
+			| Inst::Nop4
+			| Inst::Nop5
+			| Inst::Nop6
+			| Inst::Nop7
 			| Inst::Pha
 			| Inst::Php
 			| Inst::Pla
 			| Inst::Plp
+			| Inst::RolAccumulator
+			| Inst::RorAccumulator
 			| Inst::Rti
 			| Inst::Rts
 			| Inst::Sec
 			| Inst::Sed
 			| Inst::Sei
+			| Inst::Stp
+			| Inst::Stp10
+			| Inst::Stp11
+			| Inst::Stp12
+			| Inst::Stp2
+			| Inst::Stp3
+			| Inst::Stp4
+			| Inst::Stp5
+			| Inst::Stp6
+			| Inst::Stp7
+			| Inst::Stp8
+			| Inst::Stp9
 			| Inst::Tax
 			| Inst::Tay
 			| Inst::Tsx
 			| Inst::Txa
 			| Inst::Txs
-			| Inst::Tya
-			| Inst::AslAccumulator
-			| Inst::LsrAccumulator
-			| Inst::RolAccumulator
-			| Inst::RorAccumulator => 1,
-			Inst::OraImmediate(..)
-			| Inst::OraZeroPage(..)
-			| Inst::OraZeroPageX(..)
-			| Inst::OraIndirectX(..)
-			| Inst::OraIndirectY(..)
-			| Inst::AndImmediate(..)
-			| Inst::AndZeroPage(..)
-			| Inst::AndZeroPageX(..)
-			| Inst::AndIndirectX(..)
-			| Inst::AndIndirectY(..)
-			| Inst::EorImmediate(..)
-			| Inst::EorZeroPage(..)
-			| Inst::EorZeroPageX(..)
-			| Inst::EorIndirectX(..)
-			| Inst::EorIndirectY(..)
-			| Inst::AdcImmediate(..)
-			| Inst::AdcZeroPage(..)
-			| Inst::AdcZeroPageX(..)
+			| Inst::Tya => 1,
+
+			Inst::AdcImmediate(..)
 			| Inst::AdcIndirectX(..)
 			| Inst::AdcIndirectY(..)
+			| Inst::AdcZeroPage(..)
+			| Inst::AdcZeroPageX(..)
+			| Inst::AhxIndirectY(..)
+			| Inst::AlrImmediate(..)
+			| Inst::AncImmediate(..)
+			| Inst::AncImmediate2(..)
+			| Inst::AndImmediate(..)
+			| Inst::AndIndirectX(..)
+			| Inst::AndIndirectY(..)
+			| Inst::AndZeroPage(..)
+			| Inst::AndZeroPageX(..)
+			| Inst::ArrImmediate(..)
+			| Inst::AslZeroPage(..)
+			| Inst::AslZeroPageX(..)
+			| Inst::AxsImmediate(..)
+			| Inst::Bcc(..)
+			| Inst::Bcs(..)
+			| Inst::Beq(..)
+			| Inst::BitZeroPage(..)
+			| Inst::Bmi(..)
+			| Inst::Bne(..)
+			| Inst::Bpl(..)
+			| Inst::Bvc(..)
+			| Inst::Bvs(..)
+			| Inst::CmpImmediate(..)
+			| Inst::CmpIndirectX(..)
+			| Inst::CmpIndirectY(..)
+			| Inst::CmpZeroPage(..)
+			| Inst::CmpZeroPageX(..)
+			| Inst::CpxImmediate(..)
+			| Inst::CpxZeroPage(..)
+			| Inst::CpyImmediate(..)
+			| Inst::CpyZeroPage(..)
+			| Inst::DcpIndirectX(..)
+			| Inst::DcpIndirectY(..)
+			| Inst::DcpZeroPage(..)
+			| Inst::DcpZeroPageX(..)
+			| Inst::DecZeroPage(..)
+			| Inst::DecZeroPageX(..)
+			| Inst::EorImmediate(..)
+			| Inst::EorIndirectX(..)
+			| Inst::EorIndirectY(..)
+			| Inst::EorZeroPage(..)
+			| Inst::EorZeroPageX(..)
+			| Inst::IgnDirect(..)
+			| Inst::IgnDirect2(..)
+			| Inst::IgnDirect3(..)
+			| Inst::IgnDirectX(..)
+			| Inst::IgnDirectX2(..)
+			| Inst::IgnDirectX3(..)
+			| Inst::IgnDirectX4(..)
+			| Inst::IgnDirectX5(..)
+			| Inst::IgnDirectX6(..)
+			| Inst::IncZeroPage(..)
+			| Inst::IncZeroPageX(..)
+			| Inst::IscIndirectX(..)
+			| Inst::IscIndirectY(..)
+			| Inst::IscZeroPage(..)
+			| Inst::IscZeroPageX(..)
+			| Inst::LAXImmediate(..)
+			| Inst::LaxIndirectX(..)
+			| Inst::LaxIndirectY(..)
+			| Inst::LaxZeroPage(..)
+			| Inst::LaxZeroPageY(..)
 			| Inst::LdaImmediate(..)
-			| Inst::LdaZeroPage(..)
-			| Inst::LdaZeroPageX(..)
 			| Inst::LdaIndirectX(..)
 			| Inst::LdaIndirectY(..)
+			| Inst::LdaZeroPage(..)
+			| Inst::LdaZeroPageX(..)
 			| Inst::LdxImmediate(..)
 			| Inst::LdxZeroPage(..)
 			| Inst::LdxZeroPageY(..)
 			| Inst::LdyImmediate(..)
 			| Inst::LdyZeroPage(..)
 			| Inst::LdyZeroPageX(..)
-			| Inst::StaZeroPage(..)
-			| Inst::StaZeroPageX(..)
-			| Inst::StaIndirectX(..)
-			| Inst::StaIndirectY(..)
-			| Inst::StxZeroPage(..)
-			| Inst::StxZeroPageY(..)
-			| Inst::StyZeroPage(..)
-			| Inst::StyZeroPageX(..)
-			| Inst::CmpImmediate(..)
-			| Inst::CmpZeroPage(..)
-			| Inst::CmpZeroPageX(..)
-			| Inst::CmpIndirectX(..)
-			| Inst::CmpIndirectY(..)
-			| Inst::CpxImmediate(..)
-			| Inst::CpxZeroPage(..)
-			| Inst::CpyImmediate(..)
-			| Inst::CpyZeroPage(..)
-			| Inst::SbcImmediate(..)
-			| Inst::SbcZeroPage(..)
-			| Inst::SbcZeroPageX(..)
-			| Inst::SbcIndirectX(..)
-			| Inst::SbcIndirectY(..)
-			| Inst::BitZeroPage(..)
-			| Inst::AslZeroPage(..)
-			| Inst::AslZeroPageX(..)
 			| Inst::LsrZeroPage(..)
 			| Inst::LsrZeroPageX(..)
+			| Inst::OraImmediate(..)
+			| Inst::OraIndirectX(..)
+			| Inst::OraIndirectY(..)
+			| Inst::OraZeroPage(..)
+			| Inst::OraZeroPageX(..)
+			| Inst::RlaIndirectX(..)
+			| Inst::RlaIndirectY(..)
+			| Inst::RlaZeroPage(..)
+			| Inst::RlaZeroPageX(..)
 			| Inst::RolZeroPage(..)
 			| Inst::RolZeroPageX(..)
 			| Inst::RorZeroPage(..)
 			| Inst::RorZeroPageX(..)
-			| Inst::DecZeroPage(..)
-			| Inst::DecZeroPageX(..)
-			| Inst::IncZeroPage(..)
-			| Inst::IncZeroPageX(..)
-			| Inst::Bpl(..)
-			| Inst::Bmi(..)
-			| Inst::Bvc(..)
-			| Inst::Bvs(..)
-			| Inst::Bcc(..)
-			| Inst::Bcs(..)
-			| Inst::Bne(..)
-			| Inst::Beq(..)
-			| Inst::AncImmediate(..)
-			| Inst::AncImmediate2(..)
-			| Inst::AlrImmediate(..)
-			| Inst::ArrImmediate(..)
-			| Inst::AxsImmediate(..)
-			| Inst::LaxZeroPage(..)
-			| Inst::LaxZeroPageY(..)
-			| Inst::LaxIndirectX(..)
-			| Inst::LaxIndirectY(..)
-			| Inst::SaxZeroPage(..)
-			| Inst::SaxZeroPageY(..)
-			| Inst::SaxIndirectX(..)
-			| Inst::DcpZeroPage(..)
-			| Inst::DcpZeroPageX(..)
-			| Inst::DcpIndirectX(..)
-			| Inst::DcpIndirectY(..)
-			| Inst::IscZeroPage(..)
-			| Inst::IscZeroPageX(..)
-			| Inst::IscIndirectX(..)
-			| Inst::IscIndirectY(..)
-			| Inst::RlaZeroPage(..)
-			| Inst::RlaZeroPageX(..)
-			| Inst::RlaIndirectX(..)
-			| Inst::RlaIndirectY(..)
-			| Inst::RraZeroPage(..)
-			| Inst::RraZeroPageX(..)
 			| Inst::RraIndirectX(..)
 			| Inst::RraIndirectY(..)
-			| Inst::SloZeroPage(..)
-			| Inst::SloZeroPageX(..)
+			| Inst::RraZeroPage(..)
+			| Inst::RraZeroPageX(..)
+			| Inst::SaxIndirectX(..)
+			| Inst::SaxZeroPage(..)
+			| Inst::SaxZeroPageY(..)
+			| Inst::SbcImmediate(..)
+			| Inst::SbcImmediate2(..)
+			| Inst::SbcIndirectX(..)
+			| Inst::SbcIndirectY(..)
+			| Inst::SbcZeroPage(..)
+			| Inst::SbcZeroPageX(..)
+			| Inst::Skb(..)
+			| Inst::Skb2(..)
+			| Inst::Skb3(..)
+			| Inst::Skb4(..)
+			| Inst::Skb5(..)
 			| Inst::SloIndirectX(..)
 			| Inst::SloIndirectY(..)
-			| Inst::SreZeroPage(..)
-			| Inst::SreZeroPageX(..)
+			| Inst::SloZeroPage(..)
+			| Inst::SloZeroPageX(..)
 			| Inst::SreIndirectX(..)
 			| Inst::SreIndirectY(..)
-			| Inst::AhxIndirectY(..)
-			| Inst::NopImmediate(..)
-			| Inst::NopImmediate2(..)
-			| Inst::NopImmediate3(..) => 2,
-			Inst::OraAbsolute(..)
-			| Inst::OraAbsoluteX(..)
-			| Inst::OraAbsoluteY(..)
+			| Inst::SreZeroPage(..)
+			| Inst::SreZeroPageX(..)
+			| Inst::StaIndirectX(..)
+			| Inst::StaIndirectY(..)
+			| Inst::StaZeroPage(..)
+			| Inst::StaZeroPageX(..)
+			| Inst::StxZeroPage(..)
+			| Inst::StxZeroPageY(..)
+			| Inst::StyZeroPage(..)
+			| Inst::StyZeroPageX(..)
+			| Inst::XaaImmediate(..) => 2,
+
+			Inst::AdcAbsolute(..)
+			| Inst::AdcAbsoluteX(..)
+			| Inst::AdcAbsoluteY(..)
+			| Inst::AhxAbsoluteY(..)
 			| Inst::AndAbsolute(..)
 			| Inst::AndAbsoluteX(..)
 			| Inst::AndAbsoluteY(..)
+			| Inst::AslAbsolute(..)
+			| Inst::AslAbsoluteX(..)
+			| Inst::BitAbsolute(..)
+			| Inst::CmpAbsolute(..)
+			| Inst::CmpAbsoluteX(..)
+			| Inst::CmpAbsoluteY(..)
+			| Inst::CpxAbsolute(..)
+			| Inst::CpyAbsolute(..)
+			| Inst::DcpAbsolute(..)
+			| Inst::DcpAbsoluteX(..)
+			| Inst::DcpAbsoluteY(..)
+			| Inst::DecAbsolute(..)
+			| Inst::DecAbsoluteX(..)
 			| Inst::EorAbsolute(..)
 			| Inst::EorAbsoluteX(..)
 			| Inst::EorAbsoluteY(..)
-			| Inst::AdcAbsolute(..)
-			| Inst::AdcAbsoluteX(..)
-			| Inst::AdcAbsoluteY(..)
+			| Inst::Ign(..)
+			| Inst::IgnAbsoluteX(..)
+			| Inst::IgnAbsoluteX2(..)
+			| Inst::IgnAbsoluteX3(..)
+			| Inst::IgnAbsoluteX4(..)
+			| Inst::IgnAbsoluteX5(..)
+			| Inst::IgnAbsoluteX6(..)
+			| Inst::IncAbsolute(..)
+			| Inst::IncAbsoluteX(..)
+			| Inst::IscAbsolute(..)
+			| Inst::IscAbsoluteX(..)
+			| Inst::IscAbsoluteY(..)
+			| Inst::JmpAbsolute(..)
+			| Inst::JmpIndirect(..)
+			| Inst::Jsr(..)
+			| Inst::LASAbsoluteY(..)
+			| Inst::LaxAbsolute(..)
+			| Inst::LaxAbsoluteY(..)
 			| Inst::LdaAbsolute(..)
 			| Inst::LdaAbsoluteX(..)
 			| Inst::LdaAbsoluteY(..)
@@ -535,81 +578,39 @@ impl Inst {
 			| Inst::LdxAbsoluteY(..)
 			| Inst::LdyAbsolute(..)
 			| Inst::LdyAbsoluteX(..)
-			| Inst::StaAbsolute(..)
-			| Inst::StaAbsoluteX(..)
-			| Inst::StaAbsoluteY(..)
-			| Inst::StxAbsolute(..)
-			| Inst::StyAbsolute(..)
-			| Inst::CmpAbsolute(..)
-			| Inst::CmpAbsoluteX(..)
-			| Inst::CmpAbsoluteY(..)
-			| Inst::CpxAbsolute(..)
-			| Inst::CpyAbsolute(..)
-			| Inst::SbcAbsolute(..)
-			| Inst::SbcAbsoluteX(..)
-			| Inst::SbcAbsoluteY(..)
-			| Inst::BitAbsolute(..)
-			| Inst::AslAbsolute(..)
-			| Inst::AslAbsoluteX(..)
 			| Inst::LsrAbsolute(..)
 			| Inst::LsrAbsoluteX(..)
+			| Inst::OraAbsolute(..)
+			| Inst::OraAbsoluteX(..)
+			| Inst::OraAbsoluteY(..)
+			| Inst::RlaAbsolute(..)
+			| Inst::RlaAbsoluteX(..)
+			| Inst::RlaAbsoluteY(..)
 			| Inst::RolAbsolute(..)
 			| Inst::RolAbsoluteX(..)
 			| Inst::RorAbsolute(..)
 			| Inst::RorAbsoluteX(..)
-			| Inst::DecAbsolute(..)
-			| Inst::DecAbsoluteX(..)
-			| Inst::IncAbsolute(..)
-			| Inst::IncAbsoluteX(..)
-			| Inst::JmpAbsolute(..)
-			| Inst::JmpIndirect(..)
-			| Inst::Jsr(..)
-			| Inst::LaxAbsolute(..)
-			| Inst::LaxAbsoluteY(..)
-			| Inst::SaxAbsolute(..)
-			| Inst::DcpAbsolute(..)
-			| Inst::DcpAbsoluteX(..)
-			| Inst::DcpAbsoluteY(..)
-			| Inst::IscAbsolute(..)
-			| Inst::IscAbsoluteX(..)
-			| Inst::IscAbsoluteY(..)
-			| Inst::RlaAbsolute(..)
-			| Inst::RlaAbsoluteX(..)
-			| Inst::RlaAbsoluteY(..)
 			| Inst::RraAbsolute(..)
 			| Inst::RraAbsoluteX(..)
 			| Inst::RraAbsoluteY(..)
+			| Inst::SaxAbsolute(..)
+			| Inst::SbcAbsolute(..)
+			| Inst::SbcAbsoluteX(..)
+			| Inst::SbcAbsoluteY(..)
+			| Inst::ShxAbsoluteY(..)
+			| Inst::ShyAbsoluteX(..)
 			| Inst::SloAbsolute(..)
 			| Inst::SloAbsoluteX(..)
 			| Inst::SloAbsoluteY(..)
 			| Inst::SreAbsolute(..)
 			| Inst::SreAbsoluteX(..)
 			| Inst::SreAbsoluteY(..)
-			| Inst::LASAbsoluteY(..)
-			| Inst::TASAbsoluteY(..)
-			| Inst::SHYAbsoluteX(..)
-			| Inst::SHXAbsoluteY(..)
-			| Inst::AhxAbsoluteY(..)
-			| Inst::NOPAbsolute(..)
-			| Inst::NOPAbsoluteX(..)
-			| Inst::NOPAbsoluteX2(..)
-			| Inst::NOPAbsoluteX3(..)
-			| Inst::NOPAbsoluteX4(..)
-			| Inst::NOPAbsoluteX5(..)
-			| Inst::NOPAbsoluteX6(..) => 3,
-
-			Inst::LAXImmediate(_) => todo!(),
-			Inst::NOPZeroPage(_) => todo!(),
-			Inst::NOPZeroPage3(_) => todo!(),
-			Inst::NOPZeroPage4(_) => todo!(),
-			Inst::NOPZeroPageX(_) => todo!(),
-			Inst::NOPZeroPageX2(_) => todo!(),
-			Inst::NOPZeroPageX3(_) => todo!(),
-			Inst::NOPZeroPageX4(_) => todo!(),
-			Inst::NOPZeroPageX5(_) => todo!(),
-			Inst::NOPZeroPageX6(_) => todo!(),
-			Inst::SbcImmediate2(_) => todo!(),
-			Inst::XAAImmediate(_) => todo!(),
+			| Inst::StaAbsolute(..)
+			| Inst::StaAbsoluteX(..)
+			| Inst::StaAbsoluteY(..)
+			| Inst::StxAbsolute(..)
+			| Inst::StyAbsolute(..)
+			| Inst::TasAbsoluteY(..) => 3,
 		}
 	}
 
@@ -731,10 +732,14 @@ impl Inst {
 			Inst::LsrAccumulator => lsr_accumulator(state),
 			Inst::LsrZeroPage(x) => lsr_zero_page(state, *x),
 			Inst::LsrZeroPageX(x) => lsr_zero_page_x(state, *x),
+			Inst::Nop => nop(state),
 			Inst::Nop2 => nop(state),
-			Inst::NopImmediate(_) => nop(state),
-			Inst::NopImmediate2(_) => nop(state),
-			Inst::NopImmediate3(_) => nop(state),
+			Inst::Nop3 => nop(state),
+			Inst::Nop4 => nop(state),
+			Inst::Nop5 => nop(state),
+			Inst::Nop6 => nop(state),
+			Inst::Nop7 => nop(state),
+			Inst::Ign(_) => ign(state),
 			Inst::OraAbsolute(a) => ora_absolute(state, a.into()),
 			Inst::OraAbsoluteX(a) => ora_absolute_x(state, a.into()),
 			Inst::OraAbsoluteY(a) => ora_absolute_y(state, a.into()),

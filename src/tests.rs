@@ -509,7 +509,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		Inst::NOP20 => write!(f, "NOP"),
 		Inst::NOP21 => write!(f, "NOP"),
 		Inst::NOP22 => write!(f, "NOP"),
-		Inst::NOPAbsolute(adr) => {
+		Inst::Ign(adr) => {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "NOP ${:04X} = ${:02X}", adr, mem)
 		}
@@ -771,12 +771,12 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		Inst::Sec => write!(f, "SEC"),
 		Inst::Sed => write!(f, "SED"),
 		Inst::Sei => write!(f, "SEI"),
-		Inst::SHXAbsoluteY(unaligned_u16) => {
+		Inst::ShxAbsoluteY(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "SHX ${:04X},Y = ${:02X}", adr, mem)
 		}
-		Inst::SHYAbsoluteX(unaligned_u16) => {
+		Inst::ShyAbsoluteX(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "SHY ${:04X},X = ${:02X}", adr, mem)
@@ -909,7 +909,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			let mem = state.mem_pure(res as u16);
 			write!(f, "STY ${adr:02X},X [${res:04X}] = ${mem:02X}")
 		}
-		Inst::TASAbsoluteY(unaligned_u16) => {
+		Inst::TasAbsoluteY(unaligned_u16) => {
 			let adr = unaligned_u16;
 			let mem = state.mem_pure(adr.into());
 			write!(f, "TAS ${:04X},Y = ${:02X}", adr, mem)
@@ -920,7 +920,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		Inst::Txa => write!(f, "TXA"),
 		Inst::Txs => write!(f, "TXS"),
 		Inst::Tya => write!(f, "TYA"),
-		Inst::XAAImmediate(val) => write!(f, "XAA ${:02X}", val),
+		Inst::XaaImmediate(val) => write!(f, "XAA ${:02X}", val),
 	}
 }
 
