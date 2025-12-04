@@ -4,13 +4,67 @@ use std::sync::{
 };
 
 use sdl2::{
-	controller::Button, event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect,
+	controller::Button,
+	event::Event,
+	keyboard::Keycode,
+	pixels::{Color, PixelFormatEnum},
+	rect::Rect,
+	render::Canvas,
+	video::Window,
 };
 
 use emu_core::{
 	controller::ControllerState,
 	graphics::{Bitmap, HEIGHT, WIDTH},
 };
+
+fn draw_horizontal_gradient(
+	canvas: &mut Canvas<Window>,
+	x_start: i32,
+	width: i32,
+	win_h: u32,
+	start_val: f32,
+	end_val: f32,
+) -> Result<(), String> {
+	let steps = 64;
+	for i in 0..steps {
+		let t0 = i as f32 / steps as f32;
+		let t1 = (i + 1) as f32 / steps as f32;
+		let val0 = start_val + (end_val - start_val) * t0;
+		let val1 = start_val + (end_val - start_val) * t1;
+		let rect_width = ((val1 - val0).abs().max(1.0) * width as f32
+			/ (end_val - start_val).abs().max(1.0))
+		.round() as u32;
+		let x = x_start + (width as f32 * t0).round() as i32;
+		canvas.set_draw_color(Color::RGB(val0 as u8, val0 as u8, val0 as u8));
+		canvas.fill_rect(Rect::new(x, 0, rect_width, win_h))?;
+	}
+	Ok(())
+}
+
+fn draw_vertical_gradient(
+	canvas: &mut Canvas<Window>,
+	y_start: i32,
+	height: i32,
+	win_w: u32,
+	start_val: f32,
+	end_val: f32,
+) -> Result<(), String> {
+	let steps = 64;
+	for i in 0..steps {
+		let t0 = i as f32 / steps as f32;
+		let t1 = (i + 1) as f32 / steps as f32;
+		let val0 = start_val + (end_val - start_val) * t0;
+		let val1 = start_val + (end_val - start_val) * t1;
+		let rect_height = ((val1 - val0).abs().max(1.0) * height as f32
+			/ (end_val - start_val).abs().max(1.0))
+		.round() as u32;
+		let y = y_start + (height as f32 * t0).round() as i32;
+		canvas.set_draw_color(Color::RGB(val0 as u8, val0 as u8, val0 as u8));
+		canvas.fill_rect(Rect::new(0, y, win_w, rect_height))?;
+	}
+	Ok(())
+}
 
 pub fn sdl_thread(
 	texture_ptr: Arc<Mutex<Box<Bitmap>>>,
@@ -245,44 +299,34 @@ pub fn sdl_thread(
 
 		canvas.set_draw_color(sdl2::pixels::Color::BLACK);
 		canvas.clear();
-		canvas.copy(&texture, None, Some(dst))?;
 
 		let (win_w, win_h) = canvas.window().size();
 
 		let left_width = dst.x();
-		for i in 0..left_width {
-			let t = i as f32 / left_width as f32;
-			let val = (64.0 * (1.0 - t)) as u8; // fade to black
-			canvas.set_draw_color(sdl2::pixels::Color::RGB(val, val, val));
-			canvas.fill_rect(Rect::new(i, 0, 1, win_h))?;
-		}
-
 		let right_width = win_w as i32 - (dst.x() + dst.width() as i32);
-		for i in 0..right_width {
-			let t = i as f32 / right_width as f32;
-			let val = (64.0 * t) as u8; // fade to grey
-			let x = dst.x() + dst.width() as i32 + i;
-			canvas.set_draw_color(sdl2::pixels::Color::RGB(val, val, val));
-			canvas.fill_rect(Rect::new(x, 0, 1, win_h))?;
-		}
-
 		let top_height = dst.y();
-		for j in 0..top_height {
-			let t = j as f32 / top_height as f32;
-			let val = (64.0 * (1.0 - t)) as u8;
-			canvas.set_draw_color(sdl2::pixels::Color::RGB(val, val, val));
-			canvas.fill_rect(Rect::new(0, j, win_w, 1))?;
-		}
-
 		let bottom_height = win_h as i32 - (dst.y() + dst.height() as i32);
-		for j in 0..bottom_height {
-			let t = j as f32 / bottom_height as f32;
-			let val = (64.0 * t) as u8;
-			let y = dst.y() + dst.height() as i32 + j;
-			canvas.set_draw_color(sdl2::pixels::Color::RGB(val, val, val));
-			canvas.fill_rect(Rect::new(0, y, win_w, 1))?;
-		}
 
+		draw_horizontal_gradient(&mut canvas, 0, left_width, win_h, 64., 0.)?;
+		draw_horizontal_gradient(
+			&mut canvas,
+			dst.x() + dst.width() as i32,
+			right_width,
+			win_h,
+			0.,
+			64.,
+		)?;
+		draw_vertical_gradient(&mut canvas, 0, top_height, win_w, 64., 0.)?;
+		draw_vertical_gradient(
+			&mut canvas,
+			dst.y() + dst.height() as i32,
+			bottom_height,
+			win_w,
+			0.,
+			64.,
+		)?;
+
+		canvas.copy(&texture, None, Some(dst))?;
 		canvas.present();
 	}
 
