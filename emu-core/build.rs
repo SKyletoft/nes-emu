@@ -4,7 +4,7 @@ fn main() {
 	println!("cargo:rerun-if-changed=src/evaluate_instruction.c");
 
 	let mut build = cc::Build::new();
-	build .file("src/evaluate_instruction.c");
+	build.file("src/evaluate_instruction.c");
 
 	build.compiler("clang");
 
