@@ -7,4 +7,3 @@ edition = "2024"
 emu-core = { path = "../emu-core" }
 anyhow = "1"
 tempfile = "3"
-cc = "1"
