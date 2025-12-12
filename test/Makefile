@@ -1,8 +1,8 @@
 Main: main.o mario.o ../target/debug/libemu_core.a
-	clang main.o mario.o ../target/debug/libemu_core.a -lpthread -ldl -lm -o Main
+	clang main.o mario.o ../target/debug/libemu_core.a -o Main
 
 main.o: main.c
-	clang -c main.c
+	clang -c main.c -I ../emu-core/inc
 
 mario.o:
 	cd ../nesc; cargo run
