@@ -1,9 +1,9 @@
 use std::{
 	collections::{BTreeSet, VecDeque},
-	fmt::Write,
+	fmt::{self, Write},
 };
 
-use anyhow::{Result, bail};
+use anyhow::{Result, anyhow, bail};
 use emu_core::{graphics, inst::Inst, interpret::State, nes_file::Mapper};
 
 #[derive(Debug)]
@@ -12,6 +12,11 @@ struct Block {
 	insts: Vec<Inst>,
 	then: u16,
 	otherwise: Option<u16>,
+}
+
+fn to_h(Block { starting_at, .. }: &Block, out: &mut String) -> Result<()> {
+	writeln!(out, "void bb_{starting_at:04X}(State *state);")?;
+	Ok(())
 }
 
 fn to_c(
@@ -29,46 +34,62 @@ fn to_c(
 		write!(out, "\t{}", inst.instruction_representation())?;
 	}
 
+	fn branch(out: &mut String, cond: &str, then: u16, other: u16) -> fmt::Result {
+		writeln!(out, "\tif ({cond}) {{")?;
+		writeln!(out, "\t\t[[clang::musttail]] return bb_{then:04X}(state);")?;
+		writeln!(out, "\t}} else {{")?;
+		writeln!(out, "\t\t[[clang::musttail]] return bb_{other:04X}(state);")?;
+		writeln!(out, "\t}}")?;
+		Ok(())
+	}
+
 	match (insts.last().unwrap(), otherwise) {
-		(Inst::Bcc(_), Some(other)) => {
-			writeln!(out, "\tif (state->cpu.p.c == 0) {{")?;
-			writeln!(out, "\t\t[[clang::musttail]] return bb_{then:04X}(state);")?;
-			writeln!(out, "\t}} else {{")?;
-			writeln!(out, "\t\t[[clang::musttail]] return bb_{other:04X}(state);")?;
-			writeln!(out, "\t}}")?;
+		(Inst::Bcc(_), Some(other)) => branch(out, "state->cpu.p.C == 0", *then, *other)?,
+		(Inst::Bcs(_), Some(other)) => branch(out, "state->cpu.p.C != 0", *then, *other)?,
+		(Inst::Bpl(_), Some(other)) => branch(out, "state->cpu.p.N == 0", *then, *other)?,
+		(Inst::Bmi(_), Some(other)) => branch(out, "state->cpu.p.N != 0", *then, *other)?,
+		(Inst::Bne(_), Some(other)) => branch(out, "state->cpu.p.Z == 0", *then, *other)?,
+		(Inst::Beq(_), Some(other)) => branch(out, "state->cpu.p.Z != 0", *then, *other)?,
+		(Inst::Bvc(_), Some(other)) => branch(out, "state->cpu.p.V == 0", *then, *other)?,
+		(Inst::Bvs(_), Some(other)) => branch(out, "state->cpu.p.V != 0", *then, *other)?,
+		(Inst::JmpAbsolute(_), None) => {
+			writeln!(out, "\t[[clang::musttail]] return bb_{then:04X}(state);")?
 		}
-		(Inst::Bcs(_), Some(other)) => {
-			writeln!(out, "\tif (state->cpu.p.c != 0) {{")?;
-			writeln!(out, "\t\t[[clang::musttail]] return bb_{then:04X}(state);")?;
-			writeln!(out, "\t}} else {{")?;
-			writeln!(out, "\t\t[[clang::musttail]] return bb_{other:04X}(state);")?;
-			writeln!(out, "\t}}")?;
+		(Inst::JmpIndirect(to), None) => {
+			writeln!(out, "\t[[clang::musttail]] return return_jmp_indirect(to, state);")?
 		}
-		(Inst::Bmi(_), Some(other)) => {
-			writeln!(out, "\tif (state->cpu.p.n != 0) {{")?;
-			writeln!(out, "\t\t[[clang::musttail]] return bb_{then:04X}(state);")?;
-			writeln!(out, "\t}} else {{")?;
-			writeln!(out, "\t\t[[clang::musttail]] return bb_{other:04X}(state);")?;
-			writeln!(out, "\t}}")?;
+		(Inst::Jsr(_), Some(other)) => {
+			writeln!(out, "\tpush_pc({other});")?;
+			writeln!(out, "\t[[clang::musttail]] return bb_{then:04X}(state);")?;
 		}
-		(Inst::Bpl(_), Some(other)) => {
-			writeln!(out, "\tif (state->cpu.p.n == 0) {{")?;
-			writeln!(out, "\t\t[[clang::musttail]] return bb_{then:04X}(state);")?;
-			writeln!(out, "\t}} else {{")?;
-			writeln!(out, "\t\t[[clang::musttail]] return bb_{other:04X}(state);")?;
-			writeln!(out, "\t}}")?;
-		}
-		(Inst::Bne(_), Some(other)) => {}
-		(Inst::JmpAbsolute(_), None) => {}
-		(Inst::Jsr(_), None) => {}
-		(Inst::Rti, None) => {}
-		(Inst::Rts, None) => {}
-		(Inst::Stp, None) => {}
-		_ => bail!("Invalid bb"),
+		(Inst::Rti, None) => writeln!(out, "\t[[clang::musttail]] return return_rti(state);")?,
+		(Inst::Rts, None) => writeln!(out, "\t[[clang::musttail]] return return_rts(state);")?,
+		(
+			Inst::Stp | Inst::Stp2 | Inst::Stp3 | Inst::Stp4
+			| Inst::Stp5 | Inst::Stp6 | Inst::Stp7 | Inst::Stp8
+			| Inst::Stp9 | Inst::Stp10 | Inst::Stp11 | Inst::Stp12,
+			None,
+		) => writeln!(out, "\t[[clang::musttail]] return return_stp(state);")?,
+		e => bail!("Invalid bb ({e:?})"),
 	}
 
 	write!(out, "}}\n\n")?;
 
+	Ok(())
+}
+
+fn jump_table(blocks: &[Block], out: &mut String) -> Result<()> {
+	writeln!(out, "void jump_table(u16 to, State *state) {{")?;
+	writeln!(out, "\tswitch (to) {{")?;
+	for &Block {starting_at, .. } in blocks.iter() {
+		writeln!(out, "\tcase 0x{starting_at:04X}: [[clang::musttail]] return bb_{starting_at:04X}(state);")?;
+	}
+	writeln!(out, "\tdefault: {{")?;
+	writeln!(out, "\t\tprintf(\"Unknown block %X\\n\", to);")?;
+	writeln!(out, "\t\texit(-1);")?;
+	writeln!(out, "\t}}")?;
+	writeln!(out, "\t}}")?;
+	writeln!(out, "}}")?;
 	Ok(())
 }
 
@@ -86,13 +107,21 @@ fn main() -> Result<()> {
 		matches!(&*rom, Mapper::NROM256 { .. }),
 		"Blocks are currently identified exclusively by address"
 	);
-	let mut system_state = State::new(rom, graphics::new_bitmap());
 
 	let mut blocks = Vec::new();
 	let mut queue = VecDeque::new();
-	queue.push_back(system_state.cpu.pc);
+	queue.push_back(u16::from_le_bytes([
+		rom.get_cpu(0xFFFC).expect("Cannot read reset vector"),
+		rom.get_cpu(0xFFFD).expect("Cannot read reset vector (2)"),
+	]));
+	queue.push_back(u16::from_le_bytes([
+		rom.get_cpu(0xFFFA).expect("Cannot read interrupt vector"),
+		rom.get_cpu(0xFFFB)
+			.expect("Cannot read interrupt vector (2)"),
+	]));
 	let mut visited = BTreeSet::new();
 
+	let mut system_state = State::new(rom, graphics::new_bitmap());
 	while let Some(adr) = queue.pop_front() {
 		if visited.contains(&adr) || adr < 0x4020 {
 			continue;
@@ -121,6 +150,7 @@ fn main() -> Result<()> {
 			| Inst::Bcs(offset)
 			| Inst::Bmi(offset)
 			| Inst::Bne(offset)
+			| Inst::Beq(offset)
 			| Inst::Bpl(offset) => {
 				let then = system_state.cpu.pc.wrapping_add(offset as u16);
 				let otherwise = system_state.cpu.pc.wrapping_add(inst.len() as _);
@@ -134,12 +164,29 @@ fn main() -> Result<()> {
 				block.then = then;
 				queue.push_back(then);
 			}
+			Inst::JmpIndirect(_) => {
+				// let then = u16::from_le_bytes([
+				//	system_state.rom.get_cpu(adr.as_u16()).ok_or(anyhow!(
+				//		"Cannot read indirect jump (is it in RAM? 0x{adr:04X})"
+				//	))?,
+				//	system_state.rom.get_cpu(adr.as_u16() + 1).ok_or(anyhow!(
+				//		"Cannot read indirect jump (2) (is it in RAM? 0x{adr:04X})"
+				//	))?,
+				// ]);
+				// block.then = then;
+				// queue.push_back(then);
+			}
 			Inst::Jsr(fn_adr) => {
-				queue.push_back(fn_adr.as_u16());
+				let then = fn_adr.as_u16();
+				let otherwise = system_state.cpu.pc.wrapping_add(inst.len() as _);
+				block.then = then;
+				block.otherwise = Some(otherwise);
+				queue.push_back(then);
+				queue.push_back(otherwise);
 			}
 			Inst::Rti => {}
 			Inst::Rts => {}
-			Inst::Stp => {}
+			Inst::Stp | Inst::Stp2 => {}
 			e => panic!("Not a valid basic block end: {e:X?}\n{block:#?}"),
 		}
 
@@ -151,9 +198,16 @@ fn main() -> Result<()> {
 	let mut c_code = String::new();
 	writeln!(&mut c_code, "#include \"evaluate_instruction.c\"\n")?;
 
-	for block in blocks.into_iter() {
-		to_c(&block, &mut c_code)?;
+	for block in blocks.iter() {
+		to_h(block, &mut c_code)?;
 	}
+	writeln!(&mut c_code)?;
+
+	for block in blocks.iter() {
+		to_c(block, &mut c_code)?;
+	}
+
+	jump_table(&blocks, &mut c_code)?;
 
 	println!("{c_code}");
 
