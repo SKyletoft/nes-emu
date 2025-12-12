@@ -3,6 +3,8 @@
 non-free/
 .aider*
 **.o
+**.a
 Makefile
+Main
 
 reference-logs/SMB1-Mesen-long.log
