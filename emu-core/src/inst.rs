@@ -1070,6 +1070,18 @@ impl Inst {
 			Inst::StaIndirectY(x) => format!("sta_indirect_y(state, {x});\n"),
 			Inst::StaZeroPage(x) => format!("sta_zero_page(state, {x});\n"),
 			Inst::StaZeroPageX(x) => format!("sta_zero_page_x(state, {x});\n"),
+			Inst::Stp
+			| Inst::Stp2
+			| Inst::Stp3
+			| Inst::Stp4
+			| Inst::Stp5
+			| Inst::Stp6
+			| Inst::Stp7
+			| Inst::Stp8
+			| Inst::Stp9
+			| Inst::Stp10
+			| Inst::Stp11
+			| Inst::Stp12 => format!("stp();\n"),
 			Inst::StxAbsolute(a) => format!("stx_absolute(state, {a});\n"),
 			Inst::StxZeroPage(x) => format!("stx_zero_page(state, {x});\n"),
 			Inst::StxZeroPageY(x) => format!("stx_zero_page_y(state, {x});\n"),
