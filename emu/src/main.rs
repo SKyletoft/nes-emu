@@ -21,7 +21,7 @@ fn emulation_loop(
 	});
 	dbg!(&path);
 	let buffer = std::fs::read(path).unwrap();
-	let game = Mapper::parse_ines(buffer).unwrap();
+	let game = Mapper::parse_ines(&buffer).unwrap();
 	let mut system_state = State::new(game, shared_texture);
 
 	// let mut buf = String::new();

@@ -246,7 +246,7 @@ fn main() -> Result<()> {
 		.into()
 	});
 	let buffer = std::fs::read(path)?;
-	let rom = Mapper::parse_ines(buffer)?;
+	let rom = Mapper::parse_ines(&buffer)?;
 	assert!(
 		matches!(&*rom, Mapper::NROM256 { .. }),
 		"Blocks are currently identified exclusively by address"

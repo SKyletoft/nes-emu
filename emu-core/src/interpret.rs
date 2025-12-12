@@ -1,6 +1,7 @@
 #![allow(unused, dead_code)]
 
 use std::{
+	ffi::{CStr, c_char},
 	sync::{Arc, Mutex},
 	time::{Duration, Instant},
 };
@@ -85,6 +86,17 @@ pub unsafe extern "C" fn state_step_ppu_many(ptr: *mut State, times: u32) {
 pub unsafe extern "C" fn state_check_interrupt(ptr: *mut State) {
 	let state = unsafe { &mut *ptr };
 	state.check_interrupt();
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn new_state_from_file_name(name: *const c_char) -> *mut State {
+	let c_name = unsafe { std::ffi::CStr::from_ptr(name) };
+	let name = c_name.to_str().unwrap();
+	let buffer = std::fs::read(name).unwrap();
+	let game = Mapper::parse_ines(&buffer).unwrap();
+	let shared_texture = graphics::new_bitmap();
+	let system_state = State::new(game, shared_texture);
+	Box::leak(Box::new(system_state))
 }
 
 impl State {

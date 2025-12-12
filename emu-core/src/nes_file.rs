@@ -63,7 +63,7 @@ pub struct Mmc3Registers {
 }
 
 impl Mapper {
-	pub fn parse_ines(buffer: Vec<u8>) -> Result<Box<Self>> {
+	pub fn parse_ines(buffer: &[u8]) -> Result<Box<Self>> {
 		let [
 			b'N',
 			b'E',
