@@ -1,5 +1,9 @@
 #include <stdint.h>
 
+#ifndef STATIC_INLINE
+#define STATIC_INLINE
+#endif
+
 typedef union {
 	struct {
 		uint8_t C       : 1;
@@ -64,21 +68,21 @@ void state_step_ppu(State *state);
 void state_step_ppu_many(State *state, uint32_t times);
 
 #define ACCUMULATOR(fn)                                                                          \
-	void fn##_accumulator(State *state) {                                                    \
+	STATIC_INLINE void fn##_accumulator(State *state) {                                      \
 		fn##_impl(state, &state->cpu.a);                                                 \
 		state->cpu.pc += 1;                                                              \
 		state_step_ppu_many(state, 2);                                                   \
 	}
 
 #define IMMEDIATE(fn)                                                                            \
-	void fn##_immediate(State *state, uint8_t val) {                                         \
+	STATIC_INLINE void fn##_immediate(State *state, uint8_t val) {                           \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 2;                                                              \
 		state_step_ppu_many(state, 2);                                                   \
 	}
 
 #define ZERO_PAGE(fn)                                                                            \
-	void fn##_zero_page(State *state, uint8_t offset) {                                      \
+	STATIC_INLINE void fn##_zero_page(State *state, uint8_t offset) {                        \
 		uint8_t val = state_get_mem(state, (uint16_t) offset);                           \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 2;                                                              \
@@ -86,7 +90,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 	}
 
 #define ZERO_PAGE_RMW(fn)                                                                        \
-	void fn##_zero_page(State *state, uint8_t offset) {                                      \
+	STATIC_INLINE void fn##_zero_page(State *state, uint8_t offset) {                        \
 		uint8_t val = state_get_mem(state, (uint16_t) offset);                           \
 		fn##_impl(state, &val);                                                          \
 		state_set_mem(state, (uint16_t) offset, val);                                    \
@@ -95,7 +99,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 	}
 
 #define ZERO_PAGE_X(fn)                                                                          \
-	void fn##_zero_page_x(State *state, uint8_t offset) {                                    \
+	STATIC_INLINE void fn##_zero_page_x(State *state, uint8_t offset) {                      \
 		uint8_t val =                                                                    \
 		    state_get_mem(state, ((uint16_t) state->cpu.x + (uint16_t) offset) & 0xFF);  \
 		fn##_impl(state, val);                                                           \
@@ -104,7 +108,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 	}
 
 #define ZERO_PAGE_X_RMW(fn)                                                                      \
-	void fn##_zero_page_x(State *state, uint8_t offset) {                                    \
+	STATIC_INLINE void fn##_zero_page_x(State *state, uint8_t offset) {                      \
 		uint16_t actual_adr = ((uint16_t) state->cpu.x + (uint16_t) offset) & 0xFF;      \
 		uint8_t val         = state_get_mem(state, actual_adr);                          \
 		fn##_impl(state, &val);                                                          \
@@ -114,7 +118,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 	}
 
 #define ZERO_PAGE_Y(fn)                                                                          \
-	void fn##_zero_page_y(State *state, uint8_t offset) {                                    \
+	STATIC_INLINE void fn##_zero_page_y(State *state, uint8_t offset) {                      \
 		uint8_t val =                                                                    \
 		    state_get_mem(state, ((uint16_t) state->cpu.y + (uint16_t) offset) & 0xFF);  \
 		fn##_impl(state, val);                                                           \
@@ -123,7 +127,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 	}
 
 #define ABSOLUTE(fn)                                                                             \
-	void fn##_absolute(State *state, uint16_t adr) {                                         \
+	STATIC_INLINE void fn##_absolute(State *state, uint16_t adr) {                           \
 		uint8_t val = state_get_mem(state, adr);                                         \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 3;                                                              \
@@ -131,7 +135,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 	}
 
 #define ABSOLUTE_RMW(fn)                                                                         \
-	void fn##_absolute(State *state, uint16_t adr) {                                         \
+	STATIC_INLINE void fn##_absolute(State *state, uint16_t adr) {                           \
 		uint8_t val = state_get_mem(state, adr);                                         \
 		fn##_impl(state, &val);                                                          \
 		state_set_mem(state, adr, val);                                                  \
@@ -140,7 +144,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 	}
 
 #define ABSOLUTE_X(fn)                                                                           \
-	void fn##_absolute_x(State *state, uint16_t adr) {                                       \
+	STATIC_INLINE void fn##_absolute_x(State *state, uint16_t adr) {                         \
 		uint16_t actual_adr = (uint16_t) state->cpu.x + adr;                             \
 		bool page_crossed   = state->cpu.x + (adr & 0xFF) > 0xFF;                        \
 		uint8_t val         = state_get_mem(state, actual_adr);                          \
@@ -150,7 +154,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 	}
 
 #define ABSOLUTE_X_RMW(fn)                                                                       \
-	void fn##_absolute_x(State *state, uint16_t adr) {                                       \
+	STATIC_INLINE void fn##_absolute_x(State *state, uint16_t adr) {                         \
 		uint16_t actual_adr = state->cpu.x + adr;                                        \
 		uint8_t val         = state_get_mem(state, actual_adr);                          \
 		fn##_impl(state, &val);                                                          \
@@ -160,7 +164,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 	}
 
 #define ABSOLUTE_Y(fn)                                                                           \
-	void fn##_absolute_y(State *state, uint16_t adr) {                                       \
+	STATIC_INLINE void fn##_absolute_y(State *state, uint16_t adr) {                         \
 		uint16_t actual_adr = (uint16_t) state->cpu.y + adr;                             \
 		bool page_crossed   = state->cpu.y + (adr & 0xFF) > 0xFF;                        \
 		uint8_t val         = state_get_mem(state, actual_adr);                          \
@@ -170,7 +174,7 @@ void state_step_ppu_many(State *state, uint32_t times);
 	}
 
 #define ABSOLUTE_Y_RMW(fn)                                                                       \
-	void fn##_absolute_y(State *state, uint16_t adr) {                                       \
+	STATIC_INLINE void fn##_absolute_y(State *state, uint16_t adr) {                         \
 		uint16_t actual_adr = state->cpu.y + adr;                                        \
 		uint8_t val         = state_get_mem(state, actual_adr);                          \
 		fn##_impl(state, &val);                                                          \
@@ -180,11 +184,11 @@ void state_step_ppu_many(State *state, uint32_t times);
 	}
 
 #define INDIRECT_X(fn)                                                                           \
-	void fn##_indirect_x(State *state, uint8_t adr) {                                        \
+	STATIC_INLINE void fn##_indirect_x(State *state, uint8_t adr) {                          \
 		uint8_t tmp = state_get_mem(state, (uint16_t) (state->cpu.x + adr) & 0xFF);      \
 		uint16_t adr2 =                                                                  \
 		    (uint16_t) (state_get_mem(state, (uint16_t) tmp)                             \
-		                | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);       \
+				| state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);       \
 		uint8_t val = state_get_mem(state, adr2);                                        \
 		fn##_impl(state, val);                                                           \
 		state->cpu.pc += 2;                                                              \
@@ -192,11 +196,11 @@ void state_step_ppu_many(State *state, uint32_t times);
 	}
 
 #define INDIRECT_Y(fn)                                                                           \
-	void fn##_indirect_y(State *state, uint8_t adr) {                                        \
+	STATIC_INLINE void fn##_indirect_y(State *state, uint8_t adr) {                          \
 		uint8_t tmp = state_get_mem(state, (uint16_t) (state->cpu.y + adr) & 0xFF);      \
 		uint16_t adr2 =                                                                  \
 		    (uint16_t) (state_get_mem(state, (uint16_t) tmp)                             \
-		                | state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);       \
+				| state_get_mem(state, (uint16_t) (tmp + 1) & 0xFF) << 8);       \
 		bool taken  = (adr2 & 0xFF) == 0;                                                \
 		uint8_t val = state_get_mem(state, adr2);                                        \
 		fn##_impl(state, val);                                                           \
