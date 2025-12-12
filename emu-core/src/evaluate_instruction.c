@@ -1632,3 +1632,8 @@ STATIC_INLINE void ahx_indirect_y(State *state, uint8_t val) {
 	state_set_mem(state, (uint16_t) (adr_low | (adr_high << 8)), state->cpu.a & state->cpu.x);
 	state->cpu.pc += 2;
 }
+
+STATIC_INLINE void stp(State *state) {
+	state->cpu.pc += 1;
+	state_step_ppu_many(state, 1);
+}
