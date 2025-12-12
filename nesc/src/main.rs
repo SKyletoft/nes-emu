@@ -100,7 +100,7 @@ fn c_helpers<T: Write>(blocks: &[Block], out: &mut T) -> Result<()> {
 	writeln!(out, "\t}}")?;
 	writeln!(out, "}}\n")?;
 
-	writeln!(out, "void return_stp(State *state) {{")?;
+	writeln!(out, "void return_stp([[maybe_unused]] State *state) {{")?;
 	writeln!(out, "\t\tprintf(\"Unimplemented\\n\");")?;
 	writeln!(out, "\t\texit(-1);")?;
 	writeln!(out, "}}\n")?;
