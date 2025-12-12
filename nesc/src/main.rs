@@ -253,7 +253,8 @@ fn main() -> Result<()> {
 	);
 
 	let blocks = find_blocks(rom);
-	let c = write_to_c(&blocks)?;
+	let mut c = write_to_c(&blocks)?;
+	c.disable_cleanup(true);
 
 	let cc_output = std::process::Command::new("clang")
 		.args([
