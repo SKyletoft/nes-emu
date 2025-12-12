@@ -235,5 +235,23 @@ fn main() -> Result<()> {
 	let blocks = find_blocks(rom);
 	let c = write_to_c(&blocks)?;
 
+	let out_dir = tempfile::tempdir()?;
+
+	let cc_output = std::process::Command::new("clang")
+		.args([
+			"-x", "c", "-std=c23", "-c", "-Og", "-g3", "-Wall", "-Wextra",
+		])
+		.arg(c.path())
+		.arg("-I")
+		.arg(concat!(env!("CARGO_MANIFEST_DIR"), "/../emu-core/inc"))
+		.arg("-I")
+		.arg(concat!(env!("CARGO_MANIFEST_DIR"), "/../emu-core/src"))
+		.arg("-working-directory")
+		.arg(out_dir.path())
+		.output()?;
+
+	println!("{}", String::from_utf8(cc_output.stdout)?);
+	eprintln!("{}", String::from_utf8(cc_output.stderr)?);
+
 	Ok(())
 }
