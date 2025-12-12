@@ -31,7 +31,7 @@ fn to_c<T: Write>(
 ) -> Result<()> {
 	writeln!(out, "void bb_{starting_at:04X}(State *state) {{")?;
 
-	for inst in insts.iter().take(insts.len().saturating_sub(1)) {
+	for inst in insts.iter() {
 		write!(out, "\t{}", inst.instruction_representation())?;
 	}
 
@@ -53,9 +53,8 @@ fn to_c<T: Write>(
 		(Inst::Beq(_), Some(other)) => branch(out, "state->cpu.p.Z != 0", *then, *other)?,
 		(Inst::Bvc(_), Some(other)) => branch(out, "state->cpu.p.V == 0", *then, *other)?,
 		(Inst::Bvs(_), Some(other)) => branch(out, "state->cpu.p.V != 0", *then, *other)?,
-		(inst @ Inst::Jsr(_), Some(_)) => {
-			writeln!(out, "\t{}", inst.instruction_representation())?;
-			writeln!(out, "\t[[clang::musttail]] return bb_{then:04X}(state);")?;
+		(Inst::Jsr(_), Some(_)) => {
+			writeln!(out, "\t[[clang::musttail]] return bb_{then:04X}(state);")?
 		}
 		(
 			Inst::Stp
@@ -72,8 +71,7 @@ fn to_c<T: Write>(
 			| Inst::Stp12,
 			None,
 		) => writeln!(out, "\t[[clang::musttail]] return return_stp(state);")?,
-		(inst @ (Inst::JmpAbsolute(_) | Inst::JmpIndirect(_) | Inst::Rti | Inst::Rts), None) => {
-			write!(out, "\t{}", inst.instruction_representation())?;
+		(Inst::JmpAbsolute(_) | Inst::JmpIndirect(_) | Inst::Rti | Inst::Rts, None) => {
 			writeln!(out, "\t[[clang::musttail]] return jump_table(state);")?
 		}
 		e => bail!("Invalid bb ({e:?})"),
