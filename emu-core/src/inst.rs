@@ -1087,7 +1087,7 @@ impl Inst {
 			| Inst::Stp9
 			| Inst::Stp10
 			| Inst::Stp11
-			| Inst::Stp12 => format!("stp();\n"),
+			| Inst::Stp12 => format!("stp(state);\n"),
 			Inst::StxAbsolute(a) => format!("stx_absolute(state, {a});\n"),
 			Inst::StxZeroPage(x) => format!("stx_zero_page(state, {x});\n"),
 			Inst::StxZeroPageY(x) => format!("stx_zero_page_y(state, {x});\n"),
