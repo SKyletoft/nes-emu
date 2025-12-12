@@ -1,9 +1,10 @@
 use std::{
 	collections::{BTreeSet, VecDeque},
-	fmt::{self, Write},
+	fs::File,
+	io::Write,
 };
 
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Result, bail};
 use emu_core::{graphics, inst::Inst, interpret::State, nes_file::Mapper};
 
 #[derive(Debug)]
@@ -14,19 +15,19 @@ struct Block {
 	otherwise: Option<u16>,
 }
 
-fn to_h(Block { starting_at, .. }: &Block, out: &mut String) -> Result<()> {
+fn to_h<T: Write>(Block { starting_at, .. }: &Block, out: &mut T) -> Result<()> {
 	writeln!(out, "void bb_{starting_at:04X}(State *state);")?;
 	Ok(())
 }
 
-fn to_c(
+fn to_c<T: Write>(
 	Block {
 		starting_at,
 		insts,
 		then,
 		otherwise,
 	}: &Block,
-	out: &mut String,
+	out: &mut T,
 ) -> Result<()> {
 	writeln!(out, "void bb_{starting_at:04X}(State *state) {{")?;
 
@@ -34,7 +35,7 @@ fn to_c(
 		write!(out, "\t{}", inst.instruction_representation())?;
 	}
 
-	fn branch(out: &mut String, cond: &str, then: u16, other: u16) -> fmt::Result {
+	fn branch<T: Write>(out: &mut T, cond: &str, then: u16, other: u16) -> Result<()> {
 		writeln!(out, "\tif ({cond}) {{")?;
 		writeln!(out, "\t\t[[clang::musttail]] return bb_{then:04X}(state);")?;
 		writeln!(out, "\t}} else {{")?;
@@ -55,9 +56,10 @@ fn to_c(
 		(Inst::JmpAbsolute(_), None) => {
 			writeln!(out, "\t[[clang::musttail]] return bb_{then:04X}(state);")?
 		}
-		(Inst::JmpIndirect(to), None) => {
-			writeln!(out, "\t[[clang::musttail]] return return_jmp_indirect(to, state);")?
-		}
+		(Inst::JmpIndirect(to), None) => writeln!(
+			out,
+			"\t[[clang::musttail]] return return_jmp_indirect({to}, state);"
+		)?,
 		(Inst::Jsr(_), Some(other)) => {
 			writeln!(out, "\tpush_pc({other});")?;
 			writeln!(out, "\t[[clang::musttail]] return bb_{then:04X}(state);")?;
@@ -65,9 +67,18 @@ fn to_c(
 		(Inst::Rti, None) => writeln!(out, "\t[[clang::musttail]] return return_rti(state);")?,
 		(Inst::Rts, None) => writeln!(out, "\t[[clang::musttail]] return return_rts(state);")?,
 		(
-			Inst::Stp | Inst::Stp2 | Inst::Stp3 | Inst::Stp4
-			| Inst::Stp5 | Inst::Stp6 | Inst::Stp7 | Inst::Stp8
-			| Inst::Stp9 | Inst::Stp10 | Inst::Stp11 | Inst::Stp12,
+			Inst::Stp
+			| Inst::Stp2
+			| Inst::Stp3
+			| Inst::Stp4
+			| Inst::Stp5
+			| Inst::Stp6
+			| Inst::Stp7
+			| Inst::Stp8
+			| Inst::Stp9
+			| Inst::Stp10
+			| Inst::Stp11
+			| Inst::Stp12,
 			None,
 		) => writeln!(out, "\t[[clang::musttail]] return return_stp(state);")?,
 		e => bail!("Invalid bb ({e:?})"),
@@ -78,11 +89,14 @@ fn to_c(
 	Ok(())
 }
 
-fn jump_table(blocks: &[Block], out: &mut String) -> Result<()> {
-	writeln!(out, "void jump_table(u16 to, State *state) {{")?;
+fn jump_table<T: Write>(blocks: &[Block], out: &mut T) -> Result<()> {
+	writeln!(out, "void jump_table(uint16_t to, State *state) {{")?;
 	writeln!(out, "\tswitch (to) {{")?;
-	for &Block {starting_at, .. } in blocks.iter() {
-		writeln!(out, "\tcase 0x{starting_at:04X}: [[clang::musttail]] return bb_{starting_at:04X}(state);")?;
+	for &Block { starting_at, .. } in blocks.iter() {
+		writeln!(
+			out,
+			"\tcase 0x{starting_at:04X}: [[clang::musttail]] return bb_{starting_at:04X}(state);"
+		)?;
 	}
 	writeln!(out, "\tdefault: {{")?;
 	writeln!(out, "\t\tprintf(\"Unknown block %X\\n\", to);")?;
@@ -93,21 +107,7 @@ fn jump_table(blocks: &[Block], out: &mut String) -> Result<()> {
 	Ok(())
 }
 
-fn main() -> Result<()> {
-	let path = std::env::args().nth(1).unwrap_or_else(|| {
-		concat!(
-			env!("CARGO_MANIFEST_DIR"),
-			"/../non-free/SMB1.nes" // "/../non-free/AccuracyCoin.nes"
-		)
-		.into()
-	});
-	let buffer = std::fs::read(path).unwrap();
-	let rom = Mapper::parse_ines(buffer).unwrap();
-	assert!(
-		matches!(&*rom, Mapper::NROM256 { .. }),
-		"Blocks are currently identified exclusively by address"
-	);
-
+fn find_blocks(rom: Box<Mapper>) -> Vec<Block> {
 	let mut blocks = Vec::new();
 	let mut queue = VecDeque::new();
 	queue.push_back(u16::from_le_bytes([
@@ -195,21 +195,45 @@ fn main() -> Result<()> {
 
 	blocks.sort_unstable_by_key(|b| b.starting_at);
 
-	let mut c_code = String::new();
-	writeln!(&mut c_code, "#include \"evaluate_instruction.c\"\n")?;
+	blocks
+}
+
+fn write_to_c(blocks: &[Block]) -> Result<File> {
+	let mut tmpfile = tempfile::tempfile()?;
+
+	writeln!(&mut tmpfile, "#include \"evaluate_instruction.c\"\n")?;
 
 	for block in blocks.iter() {
-		to_h(block, &mut c_code)?;
+		to_h(block, &mut tmpfile)?;
 	}
-	writeln!(&mut c_code)?;
+	writeln!(&mut tmpfile)?;
 
 	for block in blocks.iter() {
-		to_c(block, &mut c_code)?;
+		to_c(block, &mut tmpfile)?;
 	}
 
-	jump_table(&blocks, &mut c_code)?;
+	jump_table(blocks, &mut tmpfile)?;
 
-	println!("{c_code}");
+	Ok(tmpfile)
+}
+
+fn main() -> Result<()> {
+	let path = std::env::args().nth(1).unwrap_or_else(|| {
+		concat!(
+			env!("CARGO_MANIFEST_DIR"),
+			"/../non-free/SMB1.nes" // "/../non-free/AccuracyCoin.nes"
+		)
+		.into()
+	});
+	let buffer = std::fs::read(path)?;
+	let rom = Mapper::parse_ines(buffer)?;
+	assert!(
+		matches!(&*rom, Mapper::NROM256 { .. }),
+		"Blocks are currently identified exclusively by address"
+	);
+
+	let blocks = find_blocks(rom);
+	let c = write_to_c(&blocks)?;
 
 	Ok(())
 }
