@@ -209,7 +209,7 @@ IMMEDIATE(cpy);
 ZERO_PAGE(cpy);
 ABSOLUTE(cpy);
 
-[[clang::always_inline]] static inline void dec_impl(State *state, uint8_t* val) {
+[[clang::always_inline]] static inline void dec_impl(State *state, uint8_t *val) {
 	(*val)--;
 	state->cpu.p.Z = 0 == *val;
 	state->cpu.p.N = (*val & 0x80) >> 7;
@@ -757,7 +757,7 @@ STATIC_INLINE void ign(State *state) {
 STATIC_INLINE void ign_absolute_x(State *state, uint16_t adr) {
 	uint16_t actual_adr = (uint16_t) state->cpu.x + adr;
 	bool page_crossed   = state->cpu.x + (adr & 0xFF) > 0xFF;
-	(void)state_get_mem(state, actual_adr);
+	(void) state_get_mem(state, actual_adr);
 	state->cpu.pc += 3;
 	state_step_ppu_many(state, 4 + page_crossed);
 }
