@@ -187,7 +187,18 @@ fn find_blocks(rom: Box<Mapper>) -> Vec<Block> {
 			}
 			Inst::Rti => {}
 			Inst::Rts => {}
-			Inst::Stp | Inst::Stp2 => {}
+			Inst::Stp
+			| Inst::Stp2
+			| Inst::Stp3
+			| Inst::Stp4
+			| Inst::Stp5
+			| Inst::Stp6
+			| Inst::Stp7
+			| Inst::Stp8
+			| Inst::Stp9
+			| Inst::Stp10
+			| Inst::Stp11
+			| Inst::Stp12 => {}
 			e => panic!("Not a valid basic block end: {e:X?}\n{block:#?}"),
 		}
 
