@@ -1,11 +1,11 @@
 use std::{
 	collections::{BTreeSet, VecDeque},
-	fs::File,
-	io::Write,
+	io::{Seek, SeekFrom, Write},
 };
 
 use anyhow::{Result, bail};
 use emu_core::{graphics, inst::Inst, interpret::State, nes_file::Mapper};
+use tempfile::NamedTempFile;
 
 #[derive(Debug)]
 struct Block {
@@ -53,19 +53,10 @@ fn to_c<T: Write>(
 		(Inst::Beq(_), Some(other)) => branch(out, "state->cpu.p.Z != 0", *then, *other)?,
 		(Inst::Bvc(_), Some(other)) => branch(out, "state->cpu.p.V == 0", *then, *other)?,
 		(Inst::Bvs(_), Some(other)) => branch(out, "state->cpu.p.V != 0", *then, *other)?,
-		(Inst::JmpAbsolute(_), None) => {
-			writeln!(out, "\t[[clang::musttail]] return bb_{then:04X}(state);")?
-		}
-		(Inst::JmpIndirect(to), None) => writeln!(
-			out,
-			"\t[[clang::musttail]] return return_jmp_indirect({to}, state);"
-		)?,
-		(Inst::Jsr(_), Some(other)) => {
-			writeln!(out, "\tpush_pc({other});")?;
+		(inst @ Inst::Jsr(_), Some(_)) => {
+			writeln!(out, "\t{}", inst.instruction_representation())?;
 			writeln!(out, "\t[[clang::musttail]] return bb_{then:04X}(state);")?;
 		}
-		(Inst::Rti, None) => writeln!(out, "\t[[clang::musttail]] return return_rti(state);")?,
-		(Inst::Rts, None) => writeln!(out, "\t[[clang::musttail]] return return_rts(state);")?,
 		(
 			Inst::Stp
 			| Inst::Stp2
@@ -81,6 +72,10 @@ fn to_c<T: Write>(
 			| Inst::Stp12,
 			None,
 		) => writeln!(out, "\t[[clang::musttail]] return return_stp(state);")?,
+		(inst @ (Inst::JmpAbsolute(_) | Inst::JmpIndirect(_) | Inst::Rti | Inst::Rts), None) => {
+			write!(out, "\t{}", inst.instruction_representation())?;
+			writeln!(out, "\t[[clang::musttail]] return jump_table(state);")?
+		}
 		e => bail!("Invalid bb ({e:?})"),
 	}
 
@@ -89,9 +84,9 @@ fn to_c<T: Write>(
 	Ok(())
 }
 
-fn jump_table<T: Write>(blocks: &[Block], out: &mut T) -> Result<()> {
-	writeln!(out, "void jump_table(uint16_t to, State *state) {{")?;
-	writeln!(out, "\tswitch (to) {{")?;
+fn c_helpers<T: Write>(blocks: &[Block], out: &mut T) -> Result<()> {
+	writeln!(out, "void jump_table(State *state) {{")?;
+	writeln!(out, "\tswitch (state->cpu.pc) {{")?;
 	for &Block { starting_at, .. } in blocks.iter() {
 		writeln!(
 			out,
@@ -99,11 +94,17 @@ fn jump_table<T: Write>(blocks: &[Block], out: &mut T) -> Result<()> {
 		)?;
 	}
 	writeln!(out, "\tdefault: {{")?;
-	writeln!(out, "\t\tprintf(\"Unknown block %X\\n\", to);")?;
+	writeln!(out, "\t\tprintf(\"Unknown block %X\\n\", state->cpu.pc);")?;
 	writeln!(out, "\t\texit(-1);")?;
 	writeln!(out, "\t}}")?;
 	writeln!(out, "\t}}")?;
-	writeln!(out, "}}")?;
+	writeln!(out, "}}\n")?;
+
+	writeln!(out, "void return_stp(State *state) {{")?;
+	writeln!(out, "\t\tprintf(\"Unimplemented\\n\");")?;
+	writeln!(out, "\t\texit(-1);")?;
+	writeln!(out, "}}\n")?;
+
 	Ok(())
 }
 
@@ -198,10 +199,18 @@ fn find_blocks(rom: Box<Mapper>) -> Vec<Block> {
 	blocks
 }
 
-fn write_to_c(blocks: &[Block]) -> Result<File> {
-	let mut tmpfile = tempfile::tempfile()?;
+fn write_to_c(blocks: &[Block]) -> Result<NamedTempFile> {
+	let mut tmpfile = NamedTempFile::new()?;
 
-	writeln!(&mut tmpfile, "#include \"evaluate_instruction.c\"\n")?;
+	writeln!(&mut tmpfile, "#include \"evaluate_instruction.c\"")?;
+	writeln!(&mut tmpfile, "#include <stdio.h>")?;
+	writeln!(&mut tmpfile, "#include <stdlib.h>")?;
+	writeln!(&mut tmpfile)?;
+
+	writeln!(&mut tmpfile, "void jump_table(State *state);")?;
+	writeln!(&mut tmpfile, "void return_stp(State *state);")?;
+
+	writeln!(&mut tmpfile)?;
 
 	for block in blocks.iter() {
 		to_h(block, &mut tmpfile)?;
@@ -212,7 +221,9 @@ fn write_to_c(blocks: &[Block]) -> Result<File> {
 		to_c(block, &mut tmpfile)?;
 	}
 
-	jump_table(blocks, &mut tmpfile)?;
+	c_helpers(blocks, &mut tmpfile)?;
+
+	tmpfile.seek(SeekFrom::Start(0))?;
 
 	Ok(tmpfile)
 }
