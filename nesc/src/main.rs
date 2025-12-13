@@ -139,20 +139,27 @@ fn find_blocks(rom: Box<Mapper>) -> Vec<Block> {
 			&& !inst.ends_bb()
 		{
 			block.insts.push(inst);
-			system_state.cpu.pc = system_state.cpu.pc.wrapping_add(inst.len() as _);
+			system_state.next();
 		}
 
 		let inst = system_state.next_inst_pure();
 		block.insts.push(inst);
 		match inst {
-			Inst::Bcc(offset)
-			| Inst::Bcs(offset)
-			| Inst::Bmi(offset)
-			| Inst::Bne(offset)
-			| Inst::Beq(offset)
-			| Inst::Bpl(offset) => {
-				let then = system_state.cpu.pc.wrapping_add(offset as u16);
-				let otherwise = system_state.cpu.pc.wrapping_add(inst.len() as _);
+			Inst::Bcc(_)
+			| Inst::Bcs(_)
+			| Inst::Bmi(_)
+			| Inst::Bne(_)
+			| Inst::Beq(_)
+			| Inst::Bpl(_) => {
+				let pc = system_state.cpu.pc;
+				system_state.cpu.p.set_bits(0);
+				system_state.next();
+				let then = system_state.cpu.pc;
+				system_state.cpu.pc = pc;
+				system_state.cpu.p.set_bits(0b1111_1111);
+				system_state.next();
+				let otherwise = system_state.cpu.pc;
+
 				queue.push_back(otherwise);
 				queue.push_back(then);
 				block.then = then;
