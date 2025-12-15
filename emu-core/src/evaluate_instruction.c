@@ -794,18 +794,18 @@ STATIC_INLINE void lax_zero_page_y(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void lax_absolute(State *state, uint8_t val) {
-	state->cpu.a = val;
-	state->cpu.x = val;
+STATIC_INLINE void lax_absolute(State *state, uint16_t val) {
+	state->cpu.a = (uint8_t) val;
+	state->cpu.x = (uint8_t) val;
 	// Update flags
-	state->cpu.p.Z = (val == 0);
-	state->cpu.p.N = ((val & 0x80) != 0);
+	state->cpu.p.Z = ((uint8_t) val == 0);
+	state->cpu.p.N = (((uint8_t) val & 0x80) != 0);
 	state->cpu.pc += 2;
 }
 
 STATIC_INLINE void lax_absolute_y(State *state, uint16_t val) {
-	state->cpu.a = (uint8_t)val;
-	state->cpu.x = (uint8_t)val;
+	state->cpu.a = (uint8_t) val;
+	state->cpu.x = (uint8_t) val;
 	// Update flags
 	state->cpu.p.Z = (val == 0);
 	state->cpu.p.N = ((val & 0x80) != 0);
@@ -844,7 +844,7 @@ STATIC_INLINE void sax_zero_page_y(State *state, uint8_t val) {
 
 STATIC_INLINE void sax_absolute(State *state, uint16_t val) {
 	uint8_t result = state->cpu.a & state->cpu.x;
-	state_set_mem(state, (uint8_t)val, result);
+	state_set_mem(state, (uint8_t) val, result);
 	state->cpu.pc += 2;
 }
 
@@ -879,6 +879,18 @@ STATIC_INLINE void dcp_zero_page_x(State *state, uint8_t val) {
 }
 
 STATIC_INLINE void dcp_absolute(State *state, uint16_t val) {
+	uint8_t result = (uint8_t) val - 1;
+	state_set_mem(state, (uint8_t) val, result);
+
+	// Compare
+	uint8_t temp   = state->cpu.a - result;
+	state->cpu.p.C = (temp < state->cpu.a);
+	state->cpu.p.Z = (temp == 0);
+	state->cpu.p.N = ((temp & 0x80) != 0);
+	state->cpu.pc += 2;
+}
+
+STATIC_INLINE void dcp_absolute_x(State *state, uint16_t val) {
 	uint8_t result = (uint8_t)val - 1;
 	state_set_mem(state, (uint8_t)val, result);
 
@@ -890,21 +902,9 @@ STATIC_INLINE void dcp_absolute(State *state, uint16_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void dcp_absolute_x(State *state, uint8_t val) {
-	uint8_t result = val - 1;
-	state_set_mem(state, val, result);
-
-	// Compare
-	uint8_t temp   = state->cpu.a - result;
-	state->cpu.p.C = (temp < state->cpu.a);
-	state->cpu.p.Z = (temp == 0);
-	state->cpu.p.N = ((temp & 0x80) != 0);
-	state->cpu.pc += 2;
-}
-
-STATIC_INLINE void dcp_absolute_y(State *state, uint8_t val) {
-	uint8_t result = val - 1;
-	state_set_mem(state, val, result);
+STATIC_INLINE void dcp_absolute_y(State *state, uint16_t val) {
+	uint8_t result = (uint8_t) val - 1;
+	state_set_mem(state, (uint8_t) val, result);
 
 	// Compare
 	uint8_t temp   = state->cpu.a - result;
@@ -965,8 +965,8 @@ STATIC_INLINE void isc_zero_page_x(State *state, uint8_t val) {
 }
 
 STATIC_INLINE void isc_absolute(State *state, uint16_t val) {
-	uint8_t result = (uint8_t)val + 1;
-	state_set_mem(state, (uint8_t)val, result);
+	uint8_t result = (uint8_t) val + 1;
+	state_set_mem(state, (uint8_t) val, result);
 
 	// Subtract with borrow
 	uint8_t temp   = state->cpu.a - result - (1 - state->cpu.p.C);
@@ -978,7 +978,7 @@ STATIC_INLINE void isc_absolute(State *state, uint16_t val) {
 }
 
 STATIC_INLINE void isc_absolute_x(State *state, uint16_t val) {
-	uint8_t result = (uint8_t)val + 1;
+	uint8_t result = (uint8_t) val + 1;
 	state_set_mem(state, val, result);
 
 	// Subtract with borrow
@@ -991,7 +991,7 @@ STATIC_INLINE void isc_absolute_x(State *state, uint16_t val) {
 }
 
 STATIC_INLINE void isc_absolute_y(State *state, uint16_t val) {
-	uint8_t result = (uint8_t)val + 1;
+	uint8_t result = (uint8_t) val + 1;
 	state_set_mem(state, val, result);
 
 	// Subtract with borrow
@@ -1029,9 +1029,9 @@ STATIC_INLINE void isc_indirect_y(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void rla_zero_page(State *state, uint8_t val) {
+STATIC_INLINE void rla_zero_page(State *state, uint16_t val) {
 	// Rotate left
-	uint8_t carry  = (val & 0x80) ? 1 : 0;
+	uint8_t carry  = ((uint8_t) val & 0x80) ? 1 : 0;
 	uint8_t result = (uint8_t) ((val << 1) | (uint8_t) state->cpu.p.C);
 	state->cpu.p.C = carry;
 
@@ -1042,14 +1042,14 @@ STATIC_INLINE void rla_zero_page(State *state, uint8_t val) {
 	state->cpu.p.Z = (result == 0);
 	state->cpu.p.N = ((result & 0x80) != 0);
 
-	state_set_mem(state, val, result);
+	state_set_mem(state, (uint8_t) val, result);
 	state->cpu.a = result;
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void rla_zero_page_x(State *state, uint8_t val) {
+STATIC_INLINE void rla_zero_page_x(State *state, uint16_t val) {
 	// Rotate left
-	uint8_t carry  = (val & 0x80) ? 1 : 0;
+	uint8_t carry  = ((uint8_t) val & 0x80) ? 1 : 0;
 	uint8_t result = (uint8_t) ((val << 1) | (uint8_t) state->cpu.p.C);
 	state->cpu.p.C = carry;
 
@@ -1060,14 +1060,14 @@ STATIC_INLINE void rla_zero_page_x(State *state, uint8_t val) {
 	state->cpu.p.Z = (result == 0);
 	state->cpu.p.N = ((result & 0x80) != 0);
 
-	state_set_mem(state, val, result);
+	state_set_mem(state, (uint8_t) val, result);
 	state->cpu.a = result;
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void rla_absolute(State *state, uint8_t val) {
+STATIC_INLINE void rla_absolute(State *state, uint16_t val) {
 	// Rotate left
-	uint8_t carry  = (val & 0x80) ? 1 : 0;
+	uint8_t carry  = ((uint8_t) val & 0x80) ? 1 : 0;
 	uint8_t result = (uint8_t) ((val << 1) | (uint8_t) state->cpu.p.C);
 	state->cpu.p.C = carry;
 
@@ -1078,14 +1078,14 @@ STATIC_INLINE void rla_absolute(State *state, uint8_t val) {
 	state->cpu.p.Z = (result == 0);
 	state->cpu.p.N = ((result & 0x80) != 0);
 
-	state_set_mem(state, val, result);
+	state_set_mem(state, (uint8_t) val, result);
 	state->cpu.a = result;
 	state->cpu.pc += 2;
 }
 
 STATIC_INLINE void rla_absolute_x(State *state, uint16_t val) {
 	// Rotate left
-	uint8_t carry  = ((uint8_t)val & 0x80) ? 1 : 0;
+	uint8_t carry  = ((uint8_t) val & 0x80) ? 1 : 0;
 	uint8_t result = (uint8_t) ((val << 1) | (uint8_t) state->cpu.p.C);
 	state->cpu.p.C = carry;
 
@@ -1096,14 +1096,14 @@ STATIC_INLINE void rla_absolute_x(State *state, uint16_t val) {
 	state->cpu.p.Z = (result == 0);
 	state->cpu.p.N = ((result & 0x80) != 0);
 
-	state_set_mem(state, (uint8_t)val, result);
+	state_set_mem(state, (uint8_t) val, result);
 	state->cpu.a = result;
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void rla_absolute_y(State *state, uint8_t val) {
+STATIC_INLINE void rla_absolute_y(State *state, uint16_t val) {
 	// Rotate left
-	uint8_t carry  = (val & 0x80) ? 1 : 0;
+	uint8_t carry  = ((uint8_t) val & 0x80) ? 1 : 0;
 	uint8_t result = (uint8_t) ((val << 1) | (uint8_t) state->cpu.p.C);
 	state->cpu.p.C = carry;
 
@@ -1114,7 +1114,7 @@ STATIC_INLINE void rla_absolute_y(State *state, uint8_t val) {
 	state->cpu.p.Z = (result == 0);
 	state->cpu.p.N = ((result & 0x80) != 0);
 
-	state_set_mem(state, val, result);
+	state_set_mem(state, (uint8_t) val, result);
 	state->cpu.a = result;
 	state->cpu.pc += 2;
 }
@@ -1191,7 +1191,7 @@ STATIC_INLINE void rra_zero_page_x(State *state, uint8_t val) {
 
 STATIC_INLINE void rra_absolute(State *state, uint16_t val) {
 	// Rotate right
-	uint8_t carry  = ((uint8_t)val & 0x01) ? 0x80 : 0;
+	uint8_t carry  = ((uint8_t) val & 0x01) ? 0x80 : 0;
 	uint8_t result = (uint8_t) ((val >> 1) | ((uint8_t) state->cpu.p.C << 7));
 	state->cpu.p.C = carry;
 
@@ -1208,7 +1208,7 @@ STATIC_INLINE void rra_absolute(State *state, uint16_t val) {
 
 STATIC_INLINE void rra_absolute_x(State *state, uint16_t val) {
 	// Rotate right
-	uint8_t carry  = ((uint8_t)val & 0x01) ? 0x80 : 0;
+	uint8_t carry  = ((uint8_t) val & 0x01) ? 0x80 : 0;
 	uint8_t result = (uint8_t) ((val >> 1) | ((uint8_t) state->cpu.p.C << 7));
 	state->cpu.p.C = carry;
 
@@ -1218,14 +1218,14 @@ STATIC_INLINE void rra_absolute_x(State *state, uint16_t val) {
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
 
-	state_set_mem(state, (uint8_t)val, result);
+	state_set_mem(state, (uint8_t) val, result);
 	state->cpu.a = temp;
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void rra_absolute_y(State *state, uint8_t val) {
+STATIC_INLINE void rra_absolute_y(State *state, uint16_t val) {
 	// Rotate right
-	uint8_t carry  = (val & 0x01) ? 0x80 : 0;
+	uint8_t carry  = ((uint8_t) val & 0x01) ? 0x80 : 0;
 	uint8_t result = (uint8_t) ((val >> 1) | ((uint8_t) state->cpu.p.C << 7));
 	state->cpu.p.C = carry;
 
@@ -1235,7 +1235,7 @@ STATIC_INLINE void rra_absolute_y(State *state, uint8_t val) {
 	state->cpu.p.Z = (temp == 0);
 	state->cpu.p.N = ((temp & 0x80) != 0);
 
-	state_set_mem(state, val, result);
+	state_set_mem(state, (uint8_t) val, result);
 	state->cpu.a = temp;
 	state->cpu.pc += 2;
 }
@@ -1436,10 +1436,10 @@ STATIC_INLINE void sre_zero_page_x(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void sre_absolute(State *state, uint8_t val) {
+STATIC_INLINE void sre_absolute(State *state, uint16_t val) {
 	// Shift right
-	uint8_t carry  = (val & 0x01) ? 0x80 : 0;
-	uint8_t result = val >> 1;
+	uint8_t carry  = ((uint8_t) val & 0x01) ? 0x80 : 0;
+	uint8_t result = (uint8_t) val >> 1;
 	state->cpu.p.C = carry;
 
 	// XOR with accumulator
@@ -1449,15 +1449,15 @@ STATIC_INLINE void sre_absolute(State *state, uint8_t val) {
 	state->cpu.p.Z = (result == 0);
 	state->cpu.p.N = ((result & 0x80) != 0);
 
-	state_set_mem(state, val, result);
+	state_set_mem(state, (uint8_t) val, result);
 	state->cpu.a = result;
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void sre_absolute_x(State *state, uint8_t val) {
+STATIC_INLINE void sre_absolute_x(State *state, uint16_t val) {
 	// Shift right
-	uint8_t carry  = (val & 0x01) ? 0x80 : 0;
-	uint8_t result = val >> 1;
+	uint8_t carry  = ((uint8_t) val & 0x01) ? 0x80 : 0;
+	uint8_t result = (uint8_t) val >> 1;
 	state->cpu.p.C = carry;
 
 	// XOR with accumulator
@@ -1467,15 +1467,15 @@ STATIC_INLINE void sre_absolute_x(State *state, uint8_t val) {
 	state->cpu.p.Z = (result == 0);
 	state->cpu.p.N = ((result & 0x80) != 0);
 
-	state_set_mem(state, val, result);
+	state_set_mem(state, (uint8_t) val, result);
 	state->cpu.a = result;
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void sre_absolute_y(State *state, uint8_t val) {
+STATIC_INLINE void sre_absolute_y(State *state, uint16_t val) {
 	// Shift right
-	uint8_t carry  = (val & 0x01) ? 0x80 : 0;
-	uint8_t result = val >> 1;
+	uint8_t carry  = ((uint8_t) val & 0x01) ? 0x80 : 0;
+	uint8_t result = (uint8_t) val >> 1;
 	state->cpu.p.C = carry;
 
 	// XOR with accumulator
@@ -1485,7 +1485,7 @@ STATIC_INLINE void sre_absolute_y(State *state, uint8_t val) {
 	state->cpu.p.Z = (result == 0);
 	state->cpu.p.N = ((result & 0x80) != 0);
 
-	state_set_mem(state, val, result);
+	state_set_mem(state, (uint8_t) val, result);
 	state->cpu.a = result;
 	state->cpu.pc += 2;
 }
@@ -1641,8 +1641,8 @@ STATIC_INLINE void shx_absolute_y(State *state, uint16_t) {
 
 STATIC_INLINE void ahx_absolute_y(State *state, uint16_t val) {
 	// Store A and X registers with high byte of adress
-	uint8_t adr_low  = (uint8_t)val;
-	uint8_t adr_high = ((uint8_t)val + 1) & 0xFF;
+	uint8_t adr_low  = (uint8_t) val;
+	uint8_t adr_high = ((uint8_t) val + 1) & 0xFF;
 
 	// Store (A & X) in memory
 	state_set_mem(state, (uint16_t) (adr_low | (adr_high << 8)), state->cpu.a & state->cpu.x);
