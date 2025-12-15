@@ -285,32 +285,30 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 	writeln!(&mut tmpfile)?;
 
 	writeln!(&mut tmpfile, "void nes_game(State *state) {{")?;
-	writeln!(&mut tmpfile, "\tfor (;;) {{")?;
-	writeln!(&mut tmpfile, "\t\tswitch (state->cpu.pc) {{")?;
+	writeln!(&mut tmpfile, "\tswitch (state->cpu.pc) {{")?;
 	for ((starting_point, inst), (next, _)) in sorted_instructions
 		.iter()
 		.zip(sorted_instructions.iter().skip(1))
 	{
 		write!(
 			&mut tmpfile,
-			"\t\tcase 0x{starting_point:04X}: b{starting_point:04X}: {}",
+			"\tcase 0x{starting_point:04X}: b{starting_point:04X}: {}",
 			inst.instruction_representation(),
 		)?;
 		if inst.ends_bb() {
-			writeln!(&mut tmpfile, "\t\t\tbreak;")?;
+			writeln!(&mut tmpfile, "\t\tbreak;")?;
 		} else if starting_point + inst.len() as u16 != *next {
 			// All loops must reasonably often go through the switch
 			// to communicate with the input and graphics systems
 			assert_ne!(inst.len(), 0);
 			writeln!(
 				&mut tmpfile,
-				"\t\t\tgoto b{:04X};",
+				"\t\tgoto b{:04X};",
 				starting_point + inst.len() as u16
 			)?;
 		}
 	}
-	writeln!(&mut tmpfile, "\t\tdefault: bFFFE: bFFFF:")?;
-	writeln!(&mut tmpfile, "\t\t}}")?;
+	writeln!(&mut tmpfile, "\tdefault: bFFFE: bFFFF:")?;
 	writeln!(&mut tmpfile, "\t}}")?;
 	writeln!(&mut tmpfile, "}}")?;
 
