@@ -242,6 +242,37 @@ fn write_to_c(blocks: &[Block]) -> Result<NamedTempFile> {
 fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 	let mut tmpfile = NamedTempFile::new()?;
 
+	let sorted_instructions: Vec<(u16, Inst)> = {
+		let mut instructions: VecDeque<(u16, Inst)> = (0x8000..=0xFFFD)
+			.map(|i| {
+				let inst: Inst = [
+					rom.get_cpu(i).ok_or_else(|| anyhow!("Can't read rom"))?,
+					rom.get_cpu(i + 1)
+						.ok_or_else(|| anyhow!("Can't read rom"))?,
+					rom.get_cpu(i + 2)
+						.ok_or_else(|| anyhow!("Can't read rom"))?,
+				]
+				.into();
+				Ok((i, inst))
+			})
+			.collect::<Result<_>>()?;
+		let mut sorted = Vec::new();
+
+		while let Some(i) = instructions.pop_front() {
+			let mut next = i.0 + i.1.len() as u16;
+			sorted.push(i);
+			while let Ok(j) = instructions.binary_search_by_key(&next, |(x, _)| *x) {
+				let i = instructions
+					.remove(j)
+					.expect("Literally just binary searched for it");
+				next = i.0 + i.1.len() as u16;
+				sorted.push(i);
+			}
+		}
+
+		sorted
+	};
+
 	writeln!(&mut tmpfile, "#include \"evaluate_instruction.c\"")?;
 	writeln!(&mut tmpfile, "#include <stdio.h>")?;
 	writeln!(&mut tmpfile, "#include <stdlib.h>")?;
@@ -250,24 +281,21 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 	writeln!(&mut tmpfile, "void nes_game(State *state) {{")?;
 	writeln!(&mut tmpfile, "\tfor (;;) {{")?;
 	writeln!(&mut tmpfile, "\t\tswitch (state->cpu.pc) {{")?;
-	for starting_point in 0x8000..=0xFFFD {
-		let inst: Inst = [
-			rom.get_cpu(starting_point)
-				.ok_or_else(|| anyhow!("Can't read rom"))?,
-			rom.get_cpu(starting_point + 1)
-				.ok_or_else(|| anyhow!("Can't read rom"))?,
-			rom.get_cpu(starting_point + 2)
-				.ok_or_else(|| anyhow!("Can't read rom"))?,
-		]
-		.into();
+	for ((starting_point, inst), (next, _)) in sorted_instructions
+		.iter()
+		.zip(sorted_instructions.iter().skip(1))
+	{
 		write!(
 			&mut tmpfile,
-			"\t\tcase 0x{starting_point:04X}: b{starting_point:04X}:\n\t\t\t{}",
+			"\t\tcase 0x{starting_point:04X}: b{starting_point:04X}: {}",
 			inst.instruction_representation(),
 		)?;
 		if inst.ends_bb() {
 			writeln!(&mut tmpfile, "\t\t\tbreak;")?;
-		} else if inst.len() != 1 {
+		} else if starting_point + inst.len() as u16 != *next {
+			// All loops must reasonably often go through the switch
+			// to communicate with the input and graphics systems
+			assert_ne!(inst.len(), 0);
 			writeln!(
 				&mut tmpfile,
 				"\t\t\tgoto b{:04X};",
@@ -305,11 +333,11 @@ fn main() -> Result<()> {
 	// c.disable_cleanup(true);
 
 	let mut c = write_to_switch(&rom)?;
-	// c.disable_cleanup(true);
+	c.disable_cleanup(true);
 
-	// let mut buf = String::new();
-	// c.read_to_string(&mut buf)?;
-	// println!("{buf}");
+	let mut buf = String::new();
+	c.read_to_string(&mut buf)?;
+	println!("{buf}");
 
 	let cc_output = std::process::Command::new("clang")
 		.args([
