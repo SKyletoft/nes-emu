@@ -749,8 +749,18 @@ STATIC_INLINE void skb(State *state) {
 	state_step_ppu_many(state, 2);
 }
 
-STATIC_INLINE void ign(State *state) {
+STATIC_INLINE void ign(State *state, uint16_t) {
 	state->cpu.pc += 3;
+	state_step_ppu_many(state, 4);
+}
+
+STATIC_INLINE void ign_direct(State *state, uint8_t) {
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 4);
+}
+
+STATIC_INLINE void ign_direct_x(State *state, uint8_t) {
+	state->cpu.pc += 2;
 	state_step_ppu_many(state, 4);
 }
 
@@ -760,6 +770,10 @@ STATIC_INLINE void ign_absolute_x(State *state, uint16_t adr) {
 	(void) state_get_mem(state, actual_adr);
 	state->cpu.pc += 3;
 	state_step_ppu_many(state, 4 + page_crossed);
+}
+
+STATIC_INLINE void lax_immediate(State *state, uint8_t) {
+	state->cpu.pc += 2;
 }
 
 STATIC_INLINE void lax_zero_page(State *state, uint8_t val) {
@@ -789,7 +803,7 @@ STATIC_INLINE void lax_absolute(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void lax_absolute_y(State *state, uint8_t val) {
+STATIC_INLINE void lax_absolute_y(State *state, uint16_t val) {
 	state->cpu.a = val;
 	state->cpu.x = val;
 	// Update flags
@@ -963,7 +977,7 @@ STATIC_INLINE void isc_absolute(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void isc_absolute_x(State *state, uint8_t val) {
+STATIC_INLINE void isc_absolute_x(State *state, uint16_t val) {
 	uint8_t result = val + 1;
 	state_set_mem(state, val, result);
 
@@ -976,7 +990,7 @@ STATIC_INLINE void isc_absolute_x(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void isc_absolute_y(State *state, uint8_t val) {
+STATIC_INLINE void isc_absolute_y(State *state, uint16_t val) {
 	uint8_t result = val + 1;
 	state_set_mem(state, val, result);
 
@@ -1296,7 +1310,7 @@ STATIC_INLINE void slo_zero_page_x(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void slo_absolute(State *state, uint8_t val) {
+STATIC_INLINE void slo_absolute(State *state, uint16_t val) {
 	// Shift left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
 	uint8_t result = (uint8_t) (val << 1);
@@ -1314,7 +1328,7 @@ STATIC_INLINE void slo_absolute(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void slo_absolute_x(State *state, uint8_t val) {
+STATIC_INLINE void slo_absolute_x(State *state, uint16_t val) {
 	// Shift left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
 	uint8_t result = (uint8_t) (val << 1);
@@ -1332,7 +1346,7 @@ STATIC_INLINE void slo_absolute_x(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void slo_absolute_y(State *state, uint8_t val) {
+STATIC_INLINE void slo_absolute_y(State *state, uint16_t val) {
 	// Shift left
 	uint8_t carry  = (val & 0x80) ? 1 : 0;
 	uint8_t result = (uint8_t) (val << 1);
@@ -1512,7 +1526,7 @@ STATIC_INLINE void sre_indirect_y(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void anc(State *state, uint8_t val) {
+STATIC_INLINE void anc_immediate(State *state, uint8_t val) {
 	// AND with accumulator
 	state->cpu.a &= val;
 
@@ -1525,7 +1539,7 @@ STATIC_INLINE void anc(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void alr(State *state, uint8_t val) {
+STATIC_INLINE void alr_immediate(State *state, uint8_t val) {
 	// AND with accumulator
 	state->cpu.a &= val;
 
@@ -1540,7 +1554,7 @@ STATIC_INLINE void alr(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void arr(State *state, uint8_t val) {
+STATIC_INLINE void arr_immediate(State *state, uint8_t val) {
 	// AND with accumulator
 	state->cpu.a &= val;
 
@@ -1556,7 +1570,7 @@ STATIC_INLINE void arr(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void axs(State *state, uint8_t val) {
+STATIC_INLINE void axs_immediate(State *state, uint8_t val) {
 	// AND accumulator with X register
 	uint8_t temp = state->cpu.a & state->cpu.x;
 
@@ -1571,7 +1585,7 @@ STATIC_INLINE void axs(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void las(State *state, uint8_t val) {
+STATIC_INLINE void las_immediate(State *state, uint8_t val) {
 	// AND with accumulator and store in A, X, and S
 	state->cpu.a &= val;
 	state->cpu.x = state->cpu.a;
@@ -1583,7 +1597,7 @@ STATIC_INLINE void las(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void tas(State *state, uint8_t val) {
+STATIC_INLINE void tas_immediate(State *state, uint8_t val) {
 	// AND accumulator with X register and store in S
 	uint8_t temp = state->cpu.a & state->cpu.x;
 	state->cpu.s = temp;
@@ -1593,7 +1607,11 @@ STATIC_INLINE void tas(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void shy(State *state, uint8_t val) {
+STATIC_INLINE void tas_absolute_y(State *state, uint16_t) {
+	state->cpu.pc += 3;
+}
+
+STATIC_INLINE void shy_immediate(State *state, uint8_t val) {
 	// Store Y register with high byte of adress
 	uint8_t adr_low  = val;
 	uint8_t adr_high = (val + 1) & 0xFF;
@@ -1603,7 +1621,11 @@ STATIC_INLINE void shy(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void shx(State *state, uint8_t val) {
+STATIC_INLINE void shy_absolute_x(State *state, uint16_t) {
+	state->cpu.pc += 3;
+}
+
+STATIC_INLINE void shx_immediate(State *state, uint8_t val) {
 	// Store X register with high byte of adress
 	uint8_t adr_low  = val;
 	uint8_t adr_high = (val + 1) & 0xFF;
@@ -1613,7 +1635,11 @@ STATIC_INLINE void shx(State *state, uint8_t val) {
 	state->cpu.pc += 2;
 }
 
-STATIC_INLINE void ahx_absolute_y(State *state, uint8_t val) {
+STATIC_INLINE void shx_absolute_y(State *state, uint16_t) {
+	state->cpu.pc += 3;
+}
+
+STATIC_INLINE void ahx_absolute_y(State *state, uint16_t val) {
 	// Store A and X registers with high byte of adress
 	uint8_t adr_low  = val;
 	uint8_t adr_high = (val + 1) & 0xFF;
@@ -1635,5 +1661,15 @@ STATIC_INLINE void ahx_indirect_y(State *state, uint8_t val) {
 
 STATIC_INLINE void stp(State *state) {
 	state->cpu.pc += 1;
+	state_step_ppu_many(state, 1);
+}
+
+STATIC_INLINE void xaa_immediate(State *state, uint8_t) {
+	state->cpu.pc += 2;
+	state_step_ppu_many(state, 1);
+}
+
+STATIC_INLINE void las_absolute_y(State *state, uint16_t) {
+	state->cpu.pc += 2;
 	state_step_ppu_many(state, 1);
 }
