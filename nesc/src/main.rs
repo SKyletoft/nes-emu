@@ -332,9 +332,14 @@ fn main() -> Result<()> {
 		// .args(["-D", "STATIC_INLINE=[[clang::always_inline]] static inline"])
 		.args(["-D", "STATIC_INLINE=[[clang::noinline]]"])
 		.output()?;
-
 	println!("{}", String::from_utf8(cc_output.stdout)?);
 	eprintln!("{}", String::from_utf8(cc_output.stderr)?);
+
+	let ar_output = std::process::Command::new("ar")
+		.args(["rcs", "libmario.a", "mario.o"])
+		.output()?;
+	println!("{}", String::from_utf8(ar_output.stdout)?);
+	eprintln!("{}", String::from_utf8(ar_output.stderr)?);
 
 	Ok(())
 }
