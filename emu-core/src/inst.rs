@@ -1126,26 +1126,7 @@ impl Inst {
 			Inst::Txs => format!("txs(state);\n"),
 			Inst::Tya => format!("tya(state);\n"),
 			Inst::XaaImmediate(x) => format!("xaa_immediate(state, {x});\n"),
-
-			// Inst::ANC(x) => anc(cpu, *x),
-			// Inst::Alr(x) => alr(cpu, *x),
-			// Inst::ARR(x) => arr(cpu, *x),
-			// Inst::Axs(x) => axs(cpu, *x),
-			// Inst::LAS(x) => las(cpu, *x),
-			// Inst::TAS(x) => tas(cpu, *x),
-			// Inst::SHY(x) => shy(cpu, *x),
-			// Inst::SHX(x) => shx(cpu, *x),
-			// Inst::Ahx(Ahx::AbsoluteY(a)) => ahx_absolute_y(cpu, *a),
-			// Inst::Ahx(Ahx::IndirectY(x)) => ahx_indirect_y(cpu, *x),
-			// Inst::NOPU(..) => {}
 			Inst::Stp => "\n".into(),
-
-			_ => {
-				todo!(
-					"No support for unofficial instructions yet ({self:?}, {:02X?})",
-					unsafe { std::mem::transmute::<Inst, [u8; 3]>(*self) }
-				)
-			}
 		}
 	}
 }
