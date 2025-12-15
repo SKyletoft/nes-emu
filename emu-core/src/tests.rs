@@ -363,7 +363,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "JMP (${adr:04X}) [${res:04X}] = ${mem:02X}")
 		}
 		Inst::Jsr(adr) => write!(f, "JSR ${:04X}", adr),
-		Inst::LASAbsoluteY(adr) => {
+		Inst::LasAbsoluteY(adr) => {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "LAS ${:04X},Y = ${:02X}", adr, mem)
 		}
@@ -375,7 +375,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "LAX ${:04X},Y = ${:02X}", adr, mem)
 		}
-		Inst::LAXImmediate(val) => write!(f, "LAX ${:02X}", val),
+		Inst::LaxImmediate(val) => write!(f, "LAX ${:02X}", val),
 		Inst::LaxIndirectX(adr) => {
 			let mem = state.mem_pure(adr as u16);
 			write!(f, "LAX (${:02X},X) = ${:02X}", adr, mem)

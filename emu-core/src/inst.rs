@@ -170,8 +170,8 @@ pub enum Inst {
 	JmpAbsolute(UnalignedU16) = 0x4C,
 	JmpIndirect(UnalignedU16) = 0x6C,
 	Jsr(UnalignedU16) = 0x20,
-	LASAbsoluteY(UnalignedU16) = 0xBB,
-	LAXImmediate(u8) = 0xAB,
+	LasAbsoluteY(UnalignedU16) = 0xBB,
+	LaxImmediate(u8) = 0xAB,
 	LaxAbsolute(UnalignedU16) = 0xAF,
 	LaxAbsoluteY(UnalignedU16) = 0xBF,
 	LaxIndirectX(u8) = 0xA3,
@@ -470,7 +470,7 @@ impl Inst {
 			| Inst::IscIndirectY(..)
 			| Inst::IscZeroPage(..)
 			| Inst::IscZeroPageX(..)
-			| Inst::LAXImmediate(..)
+			| Inst::LaxImmediate(..)
 			| Inst::LaxIndirectX(..)
 			| Inst::LaxIndirectY(..)
 			| Inst::LaxZeroPage(..)
@@ -575,7 +575,7 @@ impl Inst {
 			| Inst::JmpAbsolute(..)
 			| Inst::JmpIndirect(..)
 			| Inst::Jsr(..)
-			| Inst::LASAbsoluteY(..)
+			| Inst::LasAbsoluteY(..)
 			| Inst::LaxAbsolute(..)
 			| Inst::LaxAbsoluteY(..)
 			| Inst::LdaAbsolute(..)
@@ -875,6 +875,12 @@ impl Inst {
 			Inst::AdcIndirectY(x) => format!("adc_indirect_y(state, {x});\n"),
 			Inst::AdcZeroPage(x) => format!("adc_zero_page(state, {x});\n"),
 			Inst::AdcZeroPageX(x) => format!("adc_zero_page_x(state, {x});\n"),
+			Inst::AhxAbsoluteY(x) => format!("ahx_absolute_y(state, {x});\n"),
+			Inst::AhxIndirectY(x) => format!("ahx_indirect_y(state, {x});\n"),
+			Inst::AlrImmediate(x) => format!("alr_immediate(state, {x});\n"),
+			Inst::AncImmediate(x) | Inst::AncImmediate2(x) => {
+				format!("anc_immediate(state, {x});\n")
+			}
 			Inst::AndAbsolute(a) => format!("and_absolute(state, {a});\n"),
 			Inst::AndAbsoluteX(a) => format!("and_absolute_x(state, {a});\n"),
 			Inst::AndAbsoluteY(a) => format!("and_absolute_y(state, {a});\n"),
@@ -883,11 +889,13 @@ impl Inst {
 			Inst::AndIndirectY(x) => format!("and_indirect_y(state, {x});\n"),
 			Inst::AndZeroPage(x) => format!("and_zero_page(state, {x});\n"),
 			Inst::AndZeroPageX(x) => format!("and_zero_page_x(state, {x});\n"),
+			Inst::ArrImmediate(x) => format!("arr_immediate(state, {x});\n"),
 			Inst::AslAbsolute(a) => format!("asl_absolute(state, {a});\n"),
 			Inst::AslAbsoluteX(a) => format!("asl_absolute_x(state, {a});\n"),
 			Inst::AslAccumulator => format!("asl_accumulator(state);\n"),
 			Inst::AslZeroPage(x) => format!("asl_zero_page(state, {x});\n"),
 			Inst::AslZeroPageX(x) => format!("asl_zero_page_x(state, {x});\n"),
+			Inst::AxsImmediate(x) => format!("axs_immediate(state, {x});\n"),
 			Inst::Bcc(x) => format!("bcc(state, {x});\n"),
 			Inst::Bcs(x) => format!("bcs(state, {x});\n"),
 			Inst::Beq(x) => format!("beq(state, {x});\n"),
@@ -938,13 +946,22 @@ impl Inst {
 			Inst::EorIndirectY(x) => format!("eor_indirect_y(state, {x});\n"),
 			Inst::EorZeroPage(x) => format!("eor_zero_page(state, {x});\n"),
 			Inst::EorZeroPageX(x) => format!("eor_zero_page_x(state, {x});\n"),
-			Inst::Ign(_) => format!("ign(state);\n"),
+			Inst::Ign(x) => format!("ign(state, {x});\n"),
 			Inst::IgnAbsoluteX(x) => format!("ign_absolute_x(state, {x});\n"),
 			Inst::IgnAbsoluteX2(x) => format!("ign_absolute_x(state, {x});\n"),
 			Inst::IgnAbsoluteX3(x) => format!("ign_absolute_x(state, {x});\n"),
 			Inst::IgnAbsoluteX4(x) => format!("ign_absolute_x(state, {x});\n"),
 			Inst::IgnAbsoluteX5(x) => format!("ign_absolute_x(state, {x});\n"),
 			Inst::IgnAbsoluteX6(x) => format!("ign_absolute_x(state, {x});\n"),
+			Inst::IgnDirect(x) | Inst::IgnDirect2(x) | Inst::IgnDirect3(x) => {
+				format!("ign_direct(state, {x});\n")
+			}
+			Inst::IgnDirectX(x)
+			| Inst::IgnDirectX2(x)
+			| Inst::IgnDirectX3(x)
+			| Inst::IgnDirectX4(x)
+			| Inst::IgnDirectX5(x)
+			| Inst::IgnDirectX6(x) => format!("ign_direct_x(state, {x});\n"),
 			Inst::IncAbsolute(a) => format!("inc_absolute(state, {a});\n"),
 			Inst::IncAbsoluteX(a) => format!("inc_absolute_x(state, {a});\n"),
 			Inst::IncZeroPage(x) => format!("inc_zero_page(state, {x});\n"),
@@ -961,8 +978,10 @@ impl Inst {
 			Inst::JmpAbsolute(a) => format!("jmp_absolute(state, 0x{a:X});\n"),
 			Inst::JmpIndirect(x) => format!("jmp_indirect(state, 0x{x:X});\n"),
 			Inst::Jsr(x) => format!("jsr(state, 0x{x:X});\n"),
+			Inst::LasAbsoluteY(x) => format!("las_absolute_y(state, {x});\n"),
 			Inst::LaxAbsolute(x) => format!("lax_absolute(state, {x});\n"),
 			Inst::LaxAbsoluteY(x) => format!("lax_absolute_y(state, {x});\n"),
+			Inst::LaxImmediate(x) => format!("lax_immediate(state, {x});\n"),
 			Inst::LaxIndirectX(x) => format!("lax_indirect_x(state, {x});\n"),
 			Inst::LaxIndirectY(x) => format!("lax_indirect_y(state, {x});\n"),
 			Inst::LaxZeroPage(x) => format!("lax_zero_page(state, {x});\n"),
@@ -1043,6 +1062,9 @@ impl Inst {
 			Inst::SbcAbsoluteX(a) => format!("sbc_absolute_x(state, {a});\n"),
 			Inst::SbcAbsoluteY(a) => format!("sbc_absolute_y(state, {a});\n"),
 			Inst::SbcImmediate(x) => format!("sbc_immediate(state, {x});\n"),
+			Inst::SbcImmediate(x) | Inst::SbcImmediate2(x) => {
+				format!("sbc_immediate(state, {x});\n")
+			}
 			Inst::SbcIndirectX(x) => format!("sbc_indirect_x(state, {x});\n"),
 			Inst::SbcIndirectY(x) => format!("sbc_indirect_y(state, {x});\n"),
 			Inst::SbcZeroPage(x) => format!("sbc_zero_page(state, {x});\n"),
@@ -1050,6 +1072,8 @@ impl Inst {
 			Inst::Sec => format!("sec(state);\n"),
 			Inst::Sed => format!("sed(state);\n"),
 			Inst::Sei => format!("sei(state);\n"),
+			Inst::ShxAbsoluteY(x) => format!("shx_absolute_y(state, {x});\n"),
+			Inst::ShyAbsoluteX(x) => format!("shy_absolute_x(state, {x});\n"),
 			Inst::Skb(_) => format!("skb(state);\n"),
 			Inst::Skb2(_) => format!("skb(state);\n"),
 			Inst::Skb3(_) => format!("skb(state);\n"),
@@ -1094,12 +1118,14 @@ impl Inst {
 			Inst::StyAbsolute(a) => format!("sty_absolute(state, {a});\n"),
 			Inst::StyZeroPage(x) => format!("sty_zero_page(state, {x});\n"),
 			Inst::StyZeroPageX(x) => format!("sty_zero_page_x(state, {x});\n"),
+			Inst::TasAbsoluteY(x) => format!("tas_absolute_y(state, {x});\n"),
 			Inst::Tax => format!("tax(state);\n"),
 			Inst::Tay => format!("tay(state);\n"),
 			Inst::Tsx => format!("tsx(state);\n"),
 			Inst::Txa => format!("txa(state);\n"),
 			Inst::Txs => format!("txs(state);\n"),
 			Inst::Tya => format!("tya(state);\n"),
+			Inst::XaaImmediate(x) => format!("xaa_immediate(state, {x});\n"),
 
 			// Inst::ANC(x) => anc(cpu, *x),
 			// Inst::Alr(x) => alr(cpu, *x),
