@@ -356,6 +356,7 @@ fn main() -> Result<()> {
 			"-Wall",
 			"-Wextra",
 			"-Wno-unused-label",
+			"-Werror=conversion",
 		])
 		.arg(c.path())
 		.arg("-I")
