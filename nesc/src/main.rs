@@ -369,11 +369,19 @@ fn main() -> Result<()> {
 	println!("{}", String::from_utf8(cc_output.stdout)?);
 	eprintln!("{}", String::from_utf8(cc_output.stderr)?);
 
+	if !cc_output.status.success() {
+		bail!("Clang failed");
+	}
+
 	let ar_output = std::process::Command::new("ar")
 		.args(["rcs", "libmario.a", "mario.o"])
 		.output()?;
 	println!("{}", String::from_utf8(ar_output.stdout)?);
 	eprintln!("{}", String::from_utf8(ar_output.stderr)?);
+
+	if !ar_output.status.success() {
+		bail!("Ar failed");
+	}
 
 	Ok(())
 }
