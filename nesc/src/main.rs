@@ -1,9 +1,11 @@
+#![allow(dead_code)]
+
 use std::{
 	collections::{BTreeSet, VecDeque},
-	io::{Seek, SeekFrom, Write},
+	io::{Read, Seek, SeekFrom, Write},
 };
 
-use anyhow::{Result, bail};
+use anyhow::{Result, anyhow, bail};
 use emu_core::{graphics, inst::Inst, interpret::State, nes_file::Mapper};
 use tempfile::NamedTempFile;
 
@@ -168,22 +170,12 @@ fn find_blocks(rom: Box<Mapper>) -> Vec<Block> {
 				block.then = then;
 				block.otherwise = Some(otherwise);
 			}
-			Inst::JmpAbsolute(adr) => {
-				let then = adr.as_u16();
-				block.then = then;
-				queue.push_back(then);
+			Inst::JmpAbsolute(_) => {
+				system_state.next();
+				queue.push_back(system_state.cpu.pc);
 			}
 			Inst::JmpIndirect(_) => {
-				// let then = u16::from_le_bytes([
-				//	system_state.rom.get_cpu(adr.as_u16()).ok_or(anyhow!(
-				//		"Cannot read indirect jump (is it in RAM? 0x{adr:04X})"
-				//	))?,
-				//	system_state.rom.get_cpu(adr.as_u16() + 1).ok_or(anyhow!(
-				//		"Cannot read indirect jump (2) (is it in RAM? 0x{adr:04X})"
-				//	))?,
-				// ]);
-				// block.then = then;
-				// queue.push_back(then);
+				// Todo: Figure out how to deal with this. This should always be an escape hatch for ACE
 			}
 			Inst::Jsr(fn_adr) => {
 				let then = fn_adr.as_u16();
@@ -247,6 +239,52 @@ fn write_to_c(blocks: &[Block]) -> Result<NamedTempFile> {
 	Ok(tmpfile)
 }
 
+fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
+	let mut tmpfile = NamedTempFile::new()?;
+
+	writeln!(&mut tmpfile, "#include \"evaluate_instruction.c\"")?;
+	writeln!(&mut tmpfile, "#include <stdio.h>")?;
+	writeln!(&mut tmpfile, "#include <stdlib.h>")?;
+	writeln!(&mut tmpfile)?;
+
+	writeln!(&mut tmpfile, "void nes_game(State *state) {{")?;
+	writeln!(&mut tmpfile, "\tfor (;;) {{")?;
+	writeln!(&mut tmpfile, "\t\tswitch (state->cpu.pc) {{")?;
+	for starting_point in 0x8000..=0xFFFD {
+		let inst: Inst = [
+			rom.get_cpu(starting_point)
+				.ok_or_else(|| anyhow!("Can't read rom"))?,
+			rom.get_cpu(starting_point + 1)
+				.ok_or_else(|| anyhow!("Can't read rom"))?,
+			rom.get_cpu(starting_point + 2)
+				.ok_or_else(|| anyhow!("Can't read rom"))?,
+		]
+		.into();
+		write!(
+			&mut tmpfile,
+			"\t\tcase 0x{starting_point:04X}: b{starting_point:04X}:\n\t\t\t{}",
+			inst.instruction_representation(),
+		)?;
+		if inst.ends_bb() {
+			writeln!(&mut tmpfile, "\t\t\tbreak;")?;
+		} else if inst.len() != 1 {
+			writeln!(
+				&mut tmpfile,
+				"\t\t\tgoto b{:04X};",
+				starting_point + inst.len() as u16
+			)?;
+		}
+	}
+	writeln!(&mut tmpfile, "\t\tdefault: bFFFE: bFFFF:")?;
+	writeln!(&mut tmpfile, "\t\t}}")?;
+	writeln!(&mut tmpfile, "\t}}")?;
+	writeln!(&mut tmpfile, "}}")?;
+
+	tmpfile.seek(SeekFrom::Start(0))?;
+
+	Ok(tmpfile)
+}
+
 fn main() -> Result<()> {
 	let path = std::env::args().nth(1).unwrap_or_else(|| {
 		concat!(
@@ -262,13 +300,28 @@ fn main() -> Result<()> {
 		"Blocks are currently identified exclusively by address"
 	);
 
-	let blocks = find_blocks(rom);
-	let mut c = write_to_c(&blocks)?;
-	c.disable_cleanup(true);
+	// let blocks = find_blocks(rom);
+	// let mut c = write_to_c(&blocks)?;
+	// c.disable_cleanup(true);
+
+	let mut c = write_to_switch(&rom)?;
+	// c.disable_cleanup(true);
+
+	// let mut buf = String::new();
+	// c.read_to_string(&mut buf)?;
+	// println!("{buf}");
 
 	let cc_output = std::process::Command::new("clang")
 		.args([
-			"-x", "c", "-std=c23", "-c", "-Og", "-g3", "-Wall", "-Wextra",
+			"-x",
+			"c",
+			"-std=c23",
+			"-c",
+			"-Oz",
+			"-g0",
+			"-Wall",
+			"-Wextra",
+			"-Wno-unused-label",
 		])
 		.arg(c.path())
 		.arg("-I")
@@ -276,7 +329,8 @@ fn main() -> Result<()> {
 		.arg("-I")
 		.arg(concat!(env!("CARGO_MANIFEST_DIR"), "/../emu-core/src"))
 		.args(["-o", "mario.o"])
-		.args(["-D", "STATIC_INLINE=[[clang::always_inline]] static inline"])
+		// .args(["-D", "STATIC_INLINE=[[clang::always_inline]] static inline"])
+		.args(["-D", "STATIC_INLINE=[[clang::noinline]]"])
 		.output()?;
 
 	println!("{}", String::from_utf8(cc_output.stdout)?);
