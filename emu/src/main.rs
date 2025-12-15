@@ -7,6 +7,12 @@ use std::sync::{
 
 use emu_core::{graphics::Bitmap, interpret::State, nes_file::Mapper};
 
+#[cfg(feature = "precompiled")]
+#[link(name = "mario", kind = "static")]
+unsafe extern "C" {
+	pub fn nes_game(state: &mut State);
+}
+
 fn emulation_loop(
 	shared_texture: Arc<Mutex<Box<Bitmap>>>,
 	controller_state: &AtomicU8,
@@ -27,7 +33,13 @@ fn emulation_loop(
 	// let mut buf = String::new();
 	while kill.load(Ordering::Relaxed) {
 		*system_state.controller1.state_mut() = controller_state.load(Ordering::SeqCst);
+
+		#[cfg(not(feature = "precompiled"))]
 		system_state.next();
+
+		#[cfg(feature = "precompiled")]
+		unsafe { nes_game(&mut system_state); }
+
 		// print!("{}", system_state.display());
 		// buf.clear();
 		// std::io::stdin().read_line(&mut buf).unwrap();
