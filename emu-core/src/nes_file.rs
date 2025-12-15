@@ -281,7 +281,7 @@ impl Mapper {
 			} => {
 				match adr {
 					0x6000..=0x7FFF => ram[adr as usize % ram.len()] = val,
-					0x8000..=0xFFFF => {},
+					0x8000..=0xFFFF => {}
 					_ => panic!("Out of bounds read from mapper, check against actual emulators"),
 				}
 				Some(())
