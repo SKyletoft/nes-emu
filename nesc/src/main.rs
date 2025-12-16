@@ -402,6 +402,11 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 		}
 	}
 	writeln!(&mut tmpfile, "\tdefault: bFFFE: bFFFF:")?;
+	writeln!(
+		&mut tmpfile,
+		"\t\tprintf(\"ERROR: Hit default case (0x%X)\\n\", state->cpu.pc);"
+	)?;
+	writeln!(&mut tmpfile, "\t\texit(-1);")?;
 	writeln!(&mut tmpfile, "\t}}")?;
 	writeln!(&mut tmpfile, "}}")?;
 
