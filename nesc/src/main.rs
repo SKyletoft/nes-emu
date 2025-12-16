@@ -401,6 +401,25 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 			)?;
 		}
 	}
+	// for (is_start, pc, inst, end) in sorted_instructions {
+	//	match is_start {
+	//		IsStart::Yes => write!(
+	//			&mut tmpfile,
+	//			"\tcase 0x{pc:04X}: b{pc:04X}: {}",
+	//			inst.instruction_representation(),
+	//		)?,
+	//		IsStart::No => write!(
+	//			&mut tmpfile,
+	//			"\t                    {}",
+	//			inst.instruction_representation()
+	//		)?,
+	//	};
+	//	match end {
+	//		End::Goto => writeln!(&mut tmpfile, "\t\tgoto b{:04X};", pc + inst.len() as u16)?,
+	//		End::Break => writeln!(&mut tmpfile, "\t\tbreak;")?,
+	//		End::None => {}
+	//	}
+	// }
 	writeln!(&mut tmpfile, "\tdefault: bFFFE: bFFFF:")?;
 	writeln!(
 		&mut tmpfile,
