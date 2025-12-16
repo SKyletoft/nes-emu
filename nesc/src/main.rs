@@ -242,7 +242,20 @@ fn write_to_c(blocks: &[Block]) -> Result<NamedTempFile> {
 fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 	let mut tmpfile = NamedTempFile::new()?;
 
-	let sorted_instructions: Vec<(u16, Inst)> = {
+	#[derive(Debug)]
+	enum End {
+		Goto,
+		Break,
+		None,
+	}
+
+	#[derive(Debug)]
+	enum IsStart {
+		Yes,
+		No,
+	}
+
+	let sorted_instructions: Vec<(IsStart, u16, Inst, End)> = {
 		let mut instructions: VecDeque<(u16, Inst)> = (0x8000..=0xFFFD)
 			.map(|i| {
 				let inst: Inst = [
@@ -260,7 +273,7 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 
 		while let Some((idx, inst)) = instructions.pop_front() {
 			let mut next = idx + inst.len() as u16;
-			sorted.push((idx, inst));
+			sorted.push((IsStart::No, idx, inst, End::None));
 			if inst.ends_bb() {
 				continue;
 			}
@@ -269,7 +282,7 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 					.remove(j)
 					.expect("Literally just binary searched for it");
 				next = idx + inst.len() as u16;
-				sorted.push((idx, inst));
+				sorted.push((IsStart::No, idx, inst, End::None));
 				if inst.ends_bb() {
 					break;
 				}
@@ -286,7 +299,7 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 
 	writeln!(&mut tmpfile, "void nes_game(State *state) {{")?;
 	writeln!(&mut tmpfile, "\tswitch (state->cpu.pc) {{")?;
-	for ((starting_point, inst), (next, _)) in sorted_instructions
+	for ((_, starting_point, inst, _), (_, next, _, _)) in sorted_instructions
 		.iter()
 		.zip(sorted_instructions.iter().skip(1))
 	{
