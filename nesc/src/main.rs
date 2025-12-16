@@ -289,6 +289,86 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 			}
 		}
 
+		for i in 0..(sorted.len() - 1) {
+			let next = sorted[i].1 + sorted[i].2.len() as u16;
+			if sorted[i].2.ends_bb() {
+				sorted[i].3 = End::Break;
+				sorted[i + 1].0 = IsStart::Yes;
+				match sorted[i].2 {
+					Inst::Bcc(y)
+					| Inst::Bcs(y)
+					| Inst::Beq(y)
+					| Inst::Bmi(y)
+					| Inst::Bne(y)
+					| Inst::Bpl(y)
+					| Inst::Bvc(y)
+					| Inst::Bvs(y) => {
+						let next = sorted[i]
+							.1
+							.wrapping_add(sorted[i].2.len() as u16)
+							.wrapping_add(y as i16 as u16);
+						let Some(j) = sorted.iter().position(|(_, x, _, _)| *x == next) else {
+							continue;
+						};
+						sorted[j].0 = IsStart::Yes;
+					}
+					Inst::JmpAbsolute(adr) | Inst::Jsr(adr) => {
+						let Some(j) = sorted.iter().position(|(_, x, _, _)| *x == adr.as_u16())
+						else {
+							continue;
+						};
+						sorted[j].0 = IsStart::Yes;
+					}
+					Inst::JmpIndirect(_) => {}
+					Inst::Brk => {}
+					Inst::Rti => {}
+					Inst::Rts => {}
+					Inst::Stp => {}
+					Inst::Stp10 => {}
+					Inst::Stp11 => {}
+					Inst::Stp12 => {}
+					Inst::Stp2 => {}
+					Inst::Stp3 => {}
+					Inst::Stp4 => {}
+					Inst::Stp5 => {}
+					Inst::Stp6 => {}
+					Inst::Stp7 => {}
+					Inst::Stp8 => {}
+					Inst::Stp9 => {}
+					_ => panic!(),
+				}
+			} else if next != sorted[i + 1].1 {
+				sorted[i].3 = End::Goto;
+				sorted[i + 1].0 = IsStart::Yes;
+				let Some(j) = sorted.iter().position(|(_, x, _, _)| *x == next) else {
+					continue;
+				};
+				sorted[j].0 = IsStart::Yes;
+			}
+		}
+
+		let reset = sorted
+			.iter()
+			.position(|(_, x, _, _)| {
+				*x == u16::from_le_bytes([
+					rom.get_cpu(0xFFFC).expect("Cannot read reset vector"),
+					rom.get_cpu(0xFFFD).expect("Cannot read reset vector (2)"),
+				])
+			})
+			.ok_or_else(|| anyhow!("Can't find reset vector"))?;
+		let interrupt = sorted
+			.iter()
+			.position(|(_, x, _, _)| {
+				*x == u16::from_le_bytes([
+					rom.get_cpu(0xFFFA).expect("Cannot read interrupt vector"),
+					rom.get_cpu(0xFFFB)
+						.expect("Cannot read interrupt vector (2)"),
+				])
+			})
+			.ok_or_else(|| anyhow!("Can't find interrupt vector"))?;
+		sorted[reset].0 = IsStart::Yes;
+		sorted[interrupt].0 = IsStart::Yes;
+
 		sorted
 	};
 
