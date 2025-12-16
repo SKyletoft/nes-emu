@@ -258,19 +258,19 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 			.collect::<Result<_>>()?;
 		let mut sorted = Vec::new();
 
-		while let Some(i) = instructions.pop_front() {
-			let mut next = i.0 + i.1.len() as u16;
-			sorted.push(i);
-			if i.1.ends_bb() {
+		while let Some((idx, inst)) = instructions.pop_front() {
+			let mut next = idx + inst.len() as u16;
+			sorted.push((idx, inst));
+			if inst.ends_bb() {
 				continue;
 			}
 			while let Ok(j) = instructions.binary_search_by_key(&next, |(x, _)| *x) {
-				let i = instructions
+				let (idx, inst) = instructions
 					.remove(j)
 					.expect("Literally just binary searched for it");
-				next = i.0 + i.1.len() as u16;
-				sorted.push(i);
-				if i.1.ends_bb() {
+				next = idx + inst.len() as u16;
+				sorted.push((idx, inst));
+				if inst.ends_bb() {
 					break;
 				}
 			}
