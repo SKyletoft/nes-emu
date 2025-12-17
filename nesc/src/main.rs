@@ -146,52 +146,62 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 	writeln!(&mut tmpfile)?;
 
 	writeln!(&mut tmpfile, "void nes_game(State *state) {{")?;
+	writeln!(&mut tmpfile, "\tstatic uint16_t history[10] = {{}};")?;
+	writeln!(&mut tmpfile, "\tstatic size_t history_index = 0;")?;
+	writeln!(&mut tmpfile)?;
+	writeln!(&mut tmpfile, "\thistory[history_index] = state->cpu.pc;")?;
+	writeln!(&mut tmpfile, "\thistory_index = (history_index + 1) % 10;")?;
+	writeln!(&mut tmpfile)?;
 	writeln!(&mut tmpfile, "\tswitch (state->cpu.pc) {{")?;
-	for ((_, starting_point, inst, _), (_, next, _, _)) in sorted_instructions
-		.iter()
-		.zip(sorted_instructions.iter().skip(1))
-	{
-		write!(
-			&mut tmpfile,
-			"\tcase 0x{starting_point:04X}: b{starting_point:04X}: {}",
-			inst.instruction_representation(),
-		)?;
-		if inst.ends_bb() {
-			writeln!(&mut tmpfile, "\t\tbreak;")?;
-		} else if starting_point + inst.len() as u16 != *next {
-			// All loops must reasonably often go through the switch
-			// to communicate with the input and graphics systems
-			assert_ne!(inst.len(), 0);
-			writeln!(
-				&mut tmpfile,
-				"\t\tgoto b{:04X};",
-				starting_point + inst.len() as u16
-			)?;
-		}
-	}
-	// for (is_start, pc, inst, end) in sorted_instructions {
-	//	match is_start {
-	//		IsStart::Yes => write!(
+	// for ((_, starting_point, inst, _), (_, next, _, _)) in sorted_instructions
+	//	.iter()
+	//	.zip(sorted_instructions.iter().skip(1))
+	// {
+	//	write!(
+	//		&mut tmpfile,
+	//		"\tcase 0x{starting_point:04X}: b{starting_point:04X}: {}",
+	//		inst.instruction_representation(),
+	//	)?;
+	//	if inst.ends_bb() {
+	//		writeln!(&mut tmpfile, "\t\tbreak;")?;
+	//	} else if starting_point + inst.len() as u16 != *next {
+	//		// All loops must reasonably often go through the switch
+	//		// to communicate with the input and graphics systems
+	//		assert_ne!(inst.len(), 0);
+	//		writeln!(
 	//			&mut tmpfile,
-	//			"\tcase 0x{pc:04X}: b{pc:04X}: {}",
-	//			inst.instruction_representation(),
-	//		)?,
-	//		IsStart::No => write!(
-	//			&mut tmpfile,
-	//			"\t                    {}",
-	//			inst.instruction_representation()
-	//		)?,
-	//	};
-	//	match end {
-	//		End::Goto => writeln!(&mut tmpfile, "\t\tgoto b{:04X};", pc + inst.len() as u16)?,
-	//		End::Break => writeln!(&mut tmpfile, "\t\tbreak;")?,
-	//		End::None => {}
+	//			"\t\tgoto b{:04X};",
+	//			starting_point + inst.len() as u16
+	//		)?;
 	//	}
 	// }
+	for (is_start, pc, inst, end) in sorted_instructions {
+		match is_start {
+			IsStart::Yes => write!(
+				&mut tmpfile,
+				"\tcase 0x{pc:04X}: b{pc:04X}: {}",
+				inst.instruction_representation(),
+			)?,
+			IsStart::No => write!(
+				&mut tmpfile,
+				"\t                    {}",
+				inst.instruction_representation()
+			)?,
+		};
+		match end {
+			End::Goto => writeln!(&mut tmpfile, "\t\tgoto b{:04X};", pc + inst.len() as u16)?,
+			End::Break => writeln!(&mut tmpfile, "\t\tbreak;")?,
+			End::None => {}
+		}
+	}
 	writeln!(&mut tmpfile, "\tdefault: bFFFE: bFFFF:")?;
 	writeln!(
 		&mut tmpfile,
 		"\t\tprintf(\"ERROR: Hit default case (0x%X)\\n\", state->cpu.pc);"
+	)?;
+	writeln!(
+		&mut tmpfile,
+		"\t\tprintf(\n\t\t\t\"%X %X %X %X %X\\n\",\n\t\t\thistory[(history_index + 9) % 10],\n\t\t\thistory[(history_index + 8) % 10],\n\t\t\thistory[(history_index + 7) % 10],\n\t\t\thistory[(history_index + 6) % 10],\n\t\t\thistory[(history_index + 5) % 10],\n\t\t\thistory[(history_index + 4) % 10]\n\t\t);"
 	)?;
 	writeln!(&mut tmpfile, "\t\texit(-1);")?;
 	writeln!(&mut tmpfile, "\t}}")?;
