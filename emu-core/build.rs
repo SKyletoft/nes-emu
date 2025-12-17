@@ -34,9 +34,8 @@ fn main() {
 			// Debug build
 			build.flag("-Og").flag("-g3");
 		}
-		"1" | "2" | "3" | "s" | "z" => {
-			// Release build
-			build.flag("-O3");
+		o @ ("1" | "2" | "3" | "s" | "z") => {
+			build.flag(format!("-O{o}"));
 		}
 		_ => {
 			panic!("Unknown opt_level!");
