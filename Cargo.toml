@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = [ "emu-core", "nesc", "emu" ]
+members = [ "emu-core", "nesc", "emu", "emu-3ds" ]
 
 [profile.dev]
 opt-level = 1
