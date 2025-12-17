@@ -6,7 +6,12 @@ fn main() {
 	let mut build = cc::Build::new();
 	build.file("src/evaluate_instruction.c");
 
-	build.compiler("clang");
+	let target = std::env::var("TARGET").unwrap_or_default();
+	let compiler = match target.as_str() {
+		"armv6k-nintendo-3ds" => "arm-none-eabi-gcc",
+		_ => "clang",
+	};
+	build.compiler(compiler);
 
 	// build.flag("-w");
 	build.flag("-Wall").flag("-Wextra").flag("-Wconversion");
