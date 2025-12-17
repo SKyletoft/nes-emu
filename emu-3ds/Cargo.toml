@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 ctru-rs = { git = "https://github.com/rust3ds/ctru-rs" }
+emu-core = { path = "../emu-core" }
+bytemuck = { version = "1.23", features = [ "derive" ] }
 
 [package.metadata.cargo-3ds]
 romfs_dir = "romfs"
