@@ -2,18 +2,32 @@
 	inputs = {
 		nixpkgs.url     = "github:nixos/nixpkgs/nixpkgs-unstable";
 		flake-utils.url = "github:numtide/flake-utils";
+		devkitnix.url   = "github:SKyletoft/devkitnix";
+		rust-overlay = {
+			url = "github:oxalica/rust-overlay";
+			inputs.nixpkgs.follows = "nixpkgs";
+		};
 	};
 
-	outputs = { self, nixpkgs, flake-utils }:
+	outputs = { self, nixpkgs, devkitnix, rust-overlay, flake-utils }:
 		flake-utils.lib.eachDefaultSystem(system:
 			let
-				pkgs = nixpkgs.legacyPackages.${system};
+				pkgs = import nixpkgs {
+					inherit system;
+					overlays = [( import rust-overlay )];
+				};
+				rustToolchain = pkgs.rust-bin.selectLatestNightlyWith (toolchain: toolchain.default.override {
+					extensions = [ "rust-src" ];
+					targets = [
+						"x86_64-unknown-linux-gnu"
+					];
+				});
+				devkitARM = devkitnix.packages.${system}.devkitARM;
 				shellInputs = with pkgs; [
-					rustc
-					cargo
-					clippy
-					rustfmt
-					rust-analyzer
+					rustToolchain
+					cargo-3ds
+
+					devkitARM
 
 					python3
 
@@ -22,6 +36,8 @@
 
 					fceux # For comparison
 					mesen
+
+					azahar
 
 					kdePackages.kcachegrind
 				];
@@ -37,6 +53,8 @@
 				devShells.default = pkgs.mkShell {
 					packages = buildInputs ++ nativeBuildInputs ++ shellInputs;
 					LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
+					DEVKITARM = "${devkitARM}/devkitARM";
+					DEVKITPRO = "${devkitARM}";
 				};
 				packages.default = pkgs.rustPlatform.buildRustPackage {
 					pname = "nes-emu";
