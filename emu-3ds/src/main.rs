@@ -1,3 +1,8 @@
+use std::sync::{
+	Arc, Mutex,
+	atomic::{AtomicBool, AtomicU8, Ordering},
+};
+
 use ctru::{
 	prelude::*,
 	services::{
@@ -14,6 +19,10 @@ fn main() {
 
 	println!("Hello, World!");
 	println!("\x1b[29;16HPress Start to exit");
+
+	let shared_texture = emu_core::graphics::new_bitmap();
+	let controller_state = AtomicU8::new(0);
+	let kill_predicate = AtomicBool::new(true);
 
 	let mut offset = 0;
 	while apt.main_loop() {
