@@ -6,21 +6,16 @@ fn main() {
 	let mut build = cc::Build::new();
 	build.file("src/evaluate_instruction.c");
 
-	let target = std::env::var("TARGET").unwrap_or_default();
+	build.compiler("clang");
 
-	match target.as_str() {
-		"armv6k-nintendo-3ds" => {
-			build.compiler("arm-none-eabi-gcc");
-			build.flags([
-				"-mfloat-abi=hard",
-				"-mtune=mpcore",
-				"-mtp=soft",
-				"-march=armv6k",
-			]);
-		}
-		_ => {
-			build.compiler("clang");
-		}
+	if &std::env::var("TARGET").unwrap_or_default() == "armv6k-nintendo-3ds" {
+		build.flags([
+			"--target=arm-none-eabi",
+			"-mfloat-abi=hard",
+			"-mtune=mpcore",
+			"-mtp=soft",
+			"-march=armv6k",
+		]);
 	};
 
 	// build.flag("-w");

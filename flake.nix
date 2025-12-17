@@ -18,9 +18,7 @@
 				};
 				rustToolchain = pkgs.rust-bin.selectLatestNightlyWith (toolchain: toolchain.default.override {
 					extensions = [ "rust-src" ];
-					targets = [
-						"x86_64-unknown-linux-gnu"
-					];
+					targets = [ "x86_64-unknown-linux-gnu" ];
 				});
 				devkitARM = devkitnix.packages.${system}.devkitARM;
 				shellInputs = with pkgs; [
@@ -42,11 +40,11 @@
 					kdePackages.kcachegrind
 				];
 				nativeBuildInputs = with pkgs; [
-					clang
+					llvmPackages_21.clang-unwrapped
 					pkg-config
 				];
 				buildInputs = with pkgs; [
-					clang
+					llvmPackages_21.clang-unwrapped
 					SDL2
 				];
 			in {
