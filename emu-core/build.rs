@@ -7,11 +7,21 @@ fn main() {
 	build.file("src/evaluate_instruction.c");
 
 	let target = std::env::var("TARGET").unwrap_or_default();
-	let compiler = match target.as_str() {
-		"armv6k-nintendo-3ds" => "arm-none-eabi-gcc",
-		_ => "clang",
+
+	match target.as_str() {
+		"armv6k-nintendo-3ds" => {
+			build.compiler("arm-none-eabi-gcc");
+			build.flags([
+				"-mfloat-abi=hard",
+				"-mtune=mpcore",
+				"-mtp=soft",
+				"-march=armv6k",
+			]);
+		}
+		_ => {
+			build.compiler("clang");
+		}
 	};
-	build.compiler(compiler);
 
 	// build.flag("-w");
 	build.flag("-Wall").flag("-Wextra").flag("-Wconversion");
