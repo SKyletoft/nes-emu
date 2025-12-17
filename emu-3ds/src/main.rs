@@ -81,11 +81,11 @@ fn main() {
 		c.set_b(hid.keys_held().contains(KeyPad::B));
 		c.set_start(hid.keys_held().contains(KeyPad::START));
 		c.set_select(hid.keys_held().contains(KeyPad::SELECT));
-		c.set_up(hid.keys_held().contains(KeyPad::UP));
-		c.set_down(hid.keys_held().contains(KeyPad::DOWN));
-		c.set_left(hid.keys_held().contains(KeyPad::LEFT));
-		c.set_right(hid.keys_held().contains(KeyPad::RIGHT));
-		controller_state.store(c.into_bits(), Ordering::SeqCst);
+		c.set_up(hid.keys_held().contains(KeyPad::DPAD_UP));
+		c.set_down(hid.keys_held().contains(KeyPad::DPAD_DOWN));
+		c.set_left(hid.keys_held().contains(KeyPad::DPAD_LEFT));
+		c.set_right(hid.keys_held().contains(KeyPad::DPAD_RIGHT));
+		*system_state.controller1.state_mut() = c.into_bits();
 
 		if hid.keys_down().contains(KeyPad::SELECT) {
 			break;
