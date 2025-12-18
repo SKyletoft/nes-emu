@@ -18,15 +18,17 @@ fn emulation_loop(
 	controller_state: &AtomicU8,
 	kill: &AtomicBool,
 ) {
-	let path = std::env::args().nth(1).unwrap_or_else(|| {
-		concat!(
-			env!("CARGO_MANIFEST_DIR"),
-			"/../non-free/SMB1.nes" // "/../non-free/AccuracyCoin.nes"
-		)
-		.into()
-	});
-	dbg!(&path);
-	let buffer = std::fs::read(path).unwrap();
+	// let path = std::env::args().nth(1).unwrap_or_else(|| {
+	//	concat!(
+	//		env!("CARGO_MANIFEST_DIR"),
+	//		"/../non-free/SMB1.nes" // "/../non-free/AccuracyCoin.nes"
+	//	)
+	//	.into()
+	// });
+	// dbg!(&path);
+	// let buffer = std::fs::read(path).unwrap();
+
+	let buffer = *include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../non-free/SMB1.nes"));
 	let game = Mapper::parse_ines(&buffer).unwrap();
 	let mut system_state = State::new(game, shared_texture);
 

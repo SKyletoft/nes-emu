@@ -234,18 +234,24 @@ fn main() -> Result<()> {
 	c.read_to_string(&mut buf)?;
 	println!("{buf}");
 
-	let cc_output = std::process::Command::new("clang")
+	let cc_output = std::process::Command::new("arm-none-eabi-gcc")
 		.args([
 			"-x",
 			"c",
 			"-std=c23",
 			"-c",
-			"-Oz",
+			"-O3",
 			"-g0",
 			"-Wall",
 			"-Wextra",
 			"-Wno-unused-label",
-			"-Werror=conversion",
+			"-Wno-implicit-fallthrough",
+			// "-Werror=conversion",
+
+			"-mfloat-abi=hard",
+			"-mtune=mpcore",
+			"-mtp=soft",
+			"-march=armv6k",
 		])
 		.arg(c.path())
 		.arg("-I")
@@ -263,7 +269,7 @@ fn main() -> Result<()> {
 		bail!("Clang failed");
 	}
 
-	let ar_output = std::process::Command::new("ar")
+	let ar_output = std::process::Command::new("arm-none-eabi-ar")
 		.args(["rcs", "libmario.a", "mario.o"])
 		.output()?;
 	println!("{}", String::from_utf8(ar_output.stdout)?);
