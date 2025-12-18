@@ -141,17 +141,9 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 	};
 
 	writeln!(&mut tmpfile, "#include \"evaluate_instruction.c\"")?;
-	writeln!(&mut tmpfile, "#include <stdio.h>")?;
-	writeln!(&mut tmpfile, "#include <stdlib.h>")?;
 	writeln!(&mut tmpfile)?;
 
 	writeln!(&mut tmpfile, "void nes_game(State *state) {{")?;
-	writeln!(&mut tmpfile, "\tstatic uint16_t history[10] = {{}};")?;
-	writeln!(&mut tmpfile, "\tstatic size_t history_index = 0;")?;
-	writeln!(&mut tmpfile)?;
-	writeln!(&mut tmpfile, "\thistory[history_index] = state->cpu.pc;")?;
-	writeln!(&mut tmpfile, "\thistory_index = (history_index + 1) % 10;")?;
-	writeln!(&mut tmpfile)?;
 	writeln!(&mut tmpfile, "\tswitch (state->cpu.pc) {{")?;
 	// for ((_, starting_point, inst, _), (_, next, _, _)) in sorted_instructions
 	//	.iter()
@@ -195,15 +187,6 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 		}
 	}
 	writeln!(&mut tmpfile, "\tdefault: bFFFE: bFFFF:")?;
-	writeln!(
-		&mut tmpfile,
-		"\t\tprintf(\"ERROR: Hit default case (0x%X)\\n\", state->cpu.pc);"
-	)?;
-	writeln!(
-		&mut tmpfile,
-		"\t\tprintf(\n\t\t\t\"%X %X %X %X %X\\n\",\n\t\t\thistory[(history_index + 9) % 10],\n\t\t\thistory[(history_index + 8) % 10],\n\t\t\thistory[(history_index + 7) % 10],\n\t\t\thistory[(history_index + 6) % 10],\n\t\t\thistory[(history_index + 5) % 10],\n\t\t\thistory[(history_index + 4) % 10]\n\t\t);"
-	)?;
-	writeln!(&mut tmpfile, "\t\texit(-1);")?;
 	writeln!(&mut tmpfile, "\t}}")?;
 	writeln!(&mut tmpfile, "}}")?;
 
