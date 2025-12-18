@@ -11,6 +11,11 @@ use emu_core::{
 	nes_file::Mapper,
 };
 
+#[link(name = "mario", kind = "static")]
+unsafe extern "C" {
+	pub fn nes_game(state: &mut State);
+}
+
 #[repr(C)]
 struct Bgr8 {
 	blue: u8,
@@ -57,7 +62,10 @@ fn main() {
 	let mut frame_timing = Instant::now();
 
 	while apt.main_loop() {
-		system_state.next();
+		unsafe {
+			nes_game(&mut system_state);
+		}
+
 		let frame = system_state.ppu.frame;
 		if last_frame == frame {
 			continue;
