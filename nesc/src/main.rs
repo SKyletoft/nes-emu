@@ -1,11 +1,13 @@
 use std::{
 	collections::VecDeque,
-	io::{Write, Read, Seek, SeekFrom},
+	io::{Read, Seek, SeekFrom, Write},
 };
 
 use anyhow::{Result, anyhow, bail};
 use emu_core::{inst::Inst, nes_file::Mapper};
 use tempfile::NamedTempFile;
+
+const LABEL_EVERYTHING: bool = true;
 
 fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 	let mut tmpfile = NamedTempFile::new()?;
@@ -75,13 +77,13 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 							.1
 							.wrapping_add(sorted[i].2.len() as u16)
 							.wrapping_add(y as i16 as u16);
-						let Some(j) = sorted.iter().position(|(_, x, _, _)| *x == next) else {
+						let Some(j) = sorted.iter().position(|(_, x, ..)| *x == next) else {
 							continue;
 						};
 						sorted[j].0 = IsStart::Yes;
 					}
 					Inst::JmpAbsolute(adr) | Inst::Jsr(adr) => {
-						let Some(j) = sorted.iter().position(|(_, x, _, _)| *x == adr.as_u16())
+						let Some(j) = sorted.iter().position(|(_, x, ..)| *x == adr.as_u16())
 						else {
 							continue;
 						};
@@ -108,7 +110,7 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 			} else if next != sorted[i + 1].1 {
 				sorted[i].3 = End::Goto;
 				sorted[i + 1].0 = IsStart::Yes;
-				let Some(j) = sorted.iter().position(|(_, x, _, _)| *x == next) else {
+				let Some(j) = sorted.iter().position(|(_, x, ..)| *x == next) else {
 					continue;
 				};
 				sorted[j].0 = IsStart::Yes;
@@ -117,7 +119,7 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 
 		let reset = sorted
 			.iter()
-			.position(|(_, x, _, _)| {
+			.position(|(_, x, ..)| {
 				*x == u16::from_le_bytes([
 					rom.get_cpu(0xFFFC).expect("Cannot read reset vector"),
 					rom.get_cpu(0xFFFD).expect("Cannot read reset vector (2)"),
@@ -126,7 +128,7 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 			.ok_or_else(|| anyhow!("Can't find reset vector"))?;
 		let interrupt = sorted
 			.iter()
-			.position(|(_, x, _, _)| {
+			.position(|(_, x, ..)| {
 				*x == u16::from_le_bytes([
 					rom.get_cpu(0xFFFA).expect("Cannot read interrupt vector"),
 					rom.get_cpu(0xFFFB)
@@ -145,45 +147,49 @@ fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
 
 	writeln!(&mut tmpfile, "void nes_game(State *state) {{")?;
 	writeln!(&mut tmpfile, "\tswitch (state->cpu.pc) {{")?;
-	// for ((_, starting_point, inst, _), (_, next, _, _)) in sorted_instructions
-	//	.iter()
-	//	.zip(sorted_instructions.iter().skip(1))
-	// {
-	//	write!(
-	//		&mut tmpfile,
-	//		"\tcase 0x{starting_point:04X}: b{starting_point:04X}: {}",
-	//		inst.instruction_representation(),
-	//	)?;
-	//	if inst.ends_bb() {
-	//		writeln!(&mut tmpfile, "\t\tbreak;")?;
-	//	} else if starting_point + inst.len() as u16 != *next {
-	//		// All loops must reasonably often go through the switch
-	//		// to communicate with the input and graphics systems
-	//		assert_ne!(inst.len(), 0);
-	//		writeln!(
-	//			&mut tmpfile,
-	//			"\t\tgoto b{:04X};",
-	//			starting_point + inst.len() as u16
-	//		)?;
-	//	}
-	// }
-	for (is_start, pc, inst, end) in sorted_instructions {
-		match is_start {
-			IsStart::Yes => write!(
+
+	if LABEL_EVERYTHING {
+		for ((_, starting_point, inst, _), (_, next, ..)) in sorted_instructions
+			.iter()
+			.zip(sorted_instructions.iter().skip(1))
+		{
+			write!(
 				&mut tmpfile,
-				"\tcase 0x{pc:04X}: b{pc:04X}: {}",
+				"\tcase 0x{starting_point:04X}: b{starting_point:04X}: {}",
 				inst.instruction_representation(),
-			)?,
-			IsStart::No => write!(
-				&mut tmpfile,
-				"\t                    {}",
-				inst.instruction_representation()
-			)?,
-		};
-		match end {
-			End::Goto => writeln!(&mut tmpfile, "\t\tgoto b{:04X};", pc + inst.len() as u16)?,
-			End::Break => writeln!(&mut tmpfile, "\t\tbreak;")?,
-			End::None => {}
+			)?;
+			if inst.ends_bb() {
+				writeln!(&mut tmpfile, "\t\tbreak;")?;
+			} else if starting_point + inst.len() as u16 != *next {
+				// All loops must reasonably often go through the switch
+				// to communicate with the input and graphics systems
+				assert_ne!(inst.len(), 0);
+				writeln!(
+					&mut tmpfile,
+					"\t\tgoto b{:04X};",
+					starting_point + inst.len() as u16
+				)?;
+			}
+		}
+	} else {
+		for (is_start, pc, inst, end) in sorted_instructions {
+			match is_start {
+				IsStart::Yes => write!(
+					&mut tmpfile,
+					"\tcase 0x{pc:04X}: b{pc:04X}: {}",
+					inst.instruction_representation(),
+				)?,
+				IsStart::No => write!(
+					&mut tmpfile,
+					"\t                    {}",
+					inst.instruction_representation()
+				)?,
+			};
+			match end {
+				End::Goto => writeln!(&mut tmpfile, "\t\tgoto b{:04X};", pc + inst.len() as u16)?,
+				End::Break => writeln!(&mut tmpfile, "\t\tbreak;")?,
+				End::None => {}
+			}
 		}
 	}
 	writeln!(&mut tmpfile, "\tdefault: bFFFE: bFFFF:")?;
@@ -230,7 +236,6 @@ fn main() -> Result<()> {
 			"-Wno-unused-label",
 			"-Wno-implicit-fallthrough",
 			// "-Werror=conversion",
-
 			"-mfloat-abi=hard",
 			"-mtune=mpcore",
 			"-mtp=soft",
