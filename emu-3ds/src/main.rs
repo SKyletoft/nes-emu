@@ -1,17 +1,8 @@
-use std::{
-	sync::{
-		Arc, Mutex,
-		atomic::{AtomicBool, AtomicU8, Ordering},
-	},
-	u8,
-};
+use std::time::Instant;
 
 use ctru::{
 	prelude::*,
-	services::{
-		gfx::{Screen, Swap},
-		gspgpu::FramebufferFormat,
-	},
+	services::gfx::{Screen, Swap},
 };
 use emu_core::{
 	controller::ControllerState,
@@ -56,23 +47,28 @@ fn main() {
 	let _console = Console::new(gfx.bottom_screen.borrow_mut());
 
 	let shared_texture = emu_core::graphics::new_bitmap();
-	let controller_state = AtomicU8::new(0);
-	let kill_predicate = AtomicBool::new(true);
 
 	let buffer = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../non-free/SMB1.nes"));
 	let game = Mapper::parse_ines(buffer).unwrap();
 	let mut system_state = State::new(game, shared_texture);
 
 	let mut last_frame = u64::MAX;
-	let mut last_line = i16::MAX;
+
+	let mut frame_timing = Instant::now();
+
 	while apt.main_loop() {
 		system_state.next();
 		let frame = system_state.ppu.frame;
-		if last_frame != frame {
-			update_screen(&gfx, system_state.current_texture.as_ref());
-			last_frame = frame;
-			gfx.wait_for_vblank();
+		if last_frame == frame {
+			continue;
 		}
+
+		last_frame = frame;
+		update_screen(&gfx, system_state.current_texture.as_ref());
+		let now = Instant::now();
+		println!("{frame:5}: {:?}", now - frame_timing);
+		frame_timing = now;
+		// gfx.wait_for_vblank();
 
 		hid.scan_input();
 
