@@ -361,19 +361,19 @@ mod test {
 
 	#[test]
 	fn load_smb3() {
-		let buffer = std::fs::read("non-free/SMB3.nes").unwrap();
-		Mapper::parse_ines(buffer).unwrap();
+		let buffer = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../non-free/SMB3.nes")).unwrap();
+		Mapper::parse_ines(&buffer).unwrap();
 	}
 
 	#[test]
 	fn load_smb1() {
-		let buffer = std::fs::read("non-free/SMB1.nes").unwrap();
-		Mapper::parse_ines(buffer).unwrap();
+		let buffer = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../non-free/SMB1.nes")).unwrap();
+		Mapper::parse_ines(&buffer).unwrap();
 	}
 
 	#[test]
 	fn load_fe1() {
-		let buffer = std::fs::read("non-free/FE1EN.nes").unwrap();
-		Mapper::parse_ines(buffer).unwrap();
+		let buffer = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../non-free/FE1EN.nes")).unwrap();
+		Mapper::parse_ines(&buffer).unwrap();
 	}
 }

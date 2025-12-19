@@ -1,6 +1,6 @@
 use std::fmt::{self, Write};
 
-use crate::{cpu, drawing, inst::Inst, interpret::State, nes_file::Mapper};
+use crate::{cpu, graphics, inst::Inst, interpret::State, nes_file::Mapper};
 
 fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 	let instruction = state.next_inst_pure();
@@ -489,92 +489,14 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 			write!(f, "LSR ${:02X},X = ${:02X}", adr, mem)
 		}
 		Inst::Nop2 => write!(f, "NOP"),
-		Inst::NOP3 => write!(f, "NOP"),
-		Inst::NOP4 => write!(f, "NOP"),
-		Inst::NOP5 => write!(f, "NOP"),
-		Inst::NOP6 => write!(f, "NOP"),
-		Inst::NOP7 => write!(f, "NOP"),
-		Inst::NOP8 => write!(f, "NOP"),
-		Inst::NOP9 => write!(f, "NOP"),
-		Inst::NOP10 => write!(f, "NOP"),
-		Inst::NOP11 => write!(f, "NOP"),
-		Inst::NOP12 => write!(f, "NOP"),
-		Inst::NOP13 => write!(f, "NOP"),
-		Inst::NOP14 => write!(f, "NOP"),
-		Inst::NOP15 => write!(f, "NOP"),
-		Inst::NOP16 => write!(f, "NOP"),
-		Inst::NOP17 => write!(f, "NOP"),
-		Inst::NOP18 => write!(f, "NOP"),
-		Inst::NOP19 => write!(f, "NOP"),
-		Inst::NOP20 => write!(f, "NOP"),
-		Inst::NOP21 => write!(f, "NOP"),
-		Inst::NOP22 => write!(f, "NOP"),
+		Inst::Nop3 => write!(f, "NOP"),
+		Inst::Nop4 => write!(f, "NOP"),
+		Inst::Nop5 => write!(f, "NOP"),
+		Inst::Nop6 => write!(f, "NOP"),
+		Inst::Nop7 => write!(f, "NOP"),
 		Inst::Ign(adr) => {
 			let mem = state.mem_pure(adr.into());
 			write!(f, "NOP ${:04X} = ${:02X}", adr, mem)
-		}
-		Inst::NOPAbsoluteX(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "NOP ${:04X},X = ${:02X}", adr, mem)
-		}
-		Inst::NOPAbsoluteX2(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "NOP ${:04X},X = ${:02X}", adr, mem)
-		}
-		Inst::NOPAbsoluteX3(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "NOP ${:04X},X = ${:02X}", adr, mem)
-		}
-		Inst::NOPAbsoluteX4(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "NOP ${:04X},X = ${:02X}", adr, mem)
-		}
-		Inst::NOPAbsoluteX5(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "NOP ${:04X},X = ${:02X}", adr, mem)
-		}
-		Inst::NOPAbsoluteX6(adr) => {
-			let mem = state.mem_pure(adr.into());
-			write!(f, "NOP ${:04X},X = ${:02X}", adr, mem)
-		}
-		Inst::NopImmediate(val) => write!(f, "NOP ${:02X}", val),
-		Inst::NopImmediate2(val) => write!(f, "NOP ${:02X}", val),
-		Inst::NopImmediate3(_val) => write!(f, "NOP"),
-		Inst::NOPZeroPage(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "NOP ${:02X} = ${:02X}", adr, mem)
-		}
-		Inst::NOPZeroPage3(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "NOP ${:02X} = ${:02X}", adr, mem)
-		}
-		Inst::NOPZeroPage4(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "NOP ${:02X} = ${:02X}", adr, mem)
-		}
-		Inst::NOPZeroPageX(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "NOP ${:02X},X = ${:02X}", adr, mem)
-		}
-		Inst::NOPZeroPageX2(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "NOP ${:02X},X = ${:02X}", adr, mem)
-		}
-		Inst::NOPZeroPageX3(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "NOP ${:02X},X = ${:02X}", adr, mem)
-		}
-		Inst::NOPZeroPageX4(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "NOP ${:02X},X = ${:02X}", adr, mem)
-		}
-		Inst::NOPZeroPageX5(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "NOP ${:02X},X = ${:02X}", adr, mem)
-		}
-		Inst::NOPZeroPageX6(adr) => {
-			let mem = state.mem_pure(adr as u16);
-			write!(f, "NOP ${:02X},X = ${:02X}", adr, mem)
 		}
 		Inst::OraAbsolute(unaligned_u16) => {
 			let adr = unaligned_u16;
@@ -921,6 +843,8 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 		Inst::Txs => write!(f, "TXS"),
 		Inst::Tya => write!(f, "TYA"),
 		Inst::XaaImmediate(val) => write!(f, "XAA ${:02X}", val),
+
+		_ => panic!("Unsupported unofficial instruction"),
 	}
 }
 
@@ -961,10 +885,10 @@ macro_rules! make_log_test {
 				io::{BufRead, BufReader},
 			};
 
-			let buffer = std::fs::read($game).unwrap();
-			let game = Mapper::parse_ines(buffer).unwrap();
-			let mut state = State::new(game, drawing::new_bitmap());
-			let file = File::open($log).unwrap();
+			let buffer = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), $game)).unwrap();
+			let game = Mapper::parse_ines(&buffer).unwrap();
+			let mut state = State::new(game, graphics::new_bitmap());
+			let file = File::open(concat!(env!("CARGO_MANIFEST_DIR"), $log)).unwrap();
 			let reader = BufReader::new(file);
 			let mut ours = String::new();
 
@@ -1009,12 +933,12 @@ macro_rules! make_log_test {
 
 make_log_test!(
 	mesen_log_1,
-	"non-free/SMB1.nes",
-	"reference-logs/SMB1-Mesen.txt"
+	"/../non-free/SMB1.nes",
+	"/../reference-logs/SMB1-Mesen.txt"
 );
 
 make_log_test!(
 	mesen_log_2,
-	"non-free/SMB1.nes",
-	"reference-logs/SMB1-Mesen-long.log"
+	"/../non-free/SMB1.nes",
+	"/../reference-logs/SMB1-Mesen-long.log"
 );
