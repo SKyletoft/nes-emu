@@ -5,12 +5,12 @@ use std::sync::{
 	atomic::{AtomicBool, AtomicU8, Ordering},
 };
 
-use emu_core::{graphics::Bitmap, interpret::State, nes_file::Mapper};
+use emu_core::{graphics::Bitmap, interpret::State, nrom256::NROM256};
 
 #[cfg(feature = "precompiled")]
 #[link(name = "mario", kind = "static")]
 unsafe extern "C" {
-	pub fn nes_game(state: &mut State);
+	pub fn nes_game(state: &mut State<NROM256>);
 }
 
 fn emulation_loop(
@@ -29,7 +29,7 @@ fn emulation_loop(
 	// let buffer = std::fs::read(path).unwrap();
 
 	let buffer = *include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../non-free/SMB1.nes"));
-	let game = Mapper::parse_ines(&buffer).unwrap();
+	let game = NROM256::parse_ines(&buffer).unwrap();
 	let mut system_state = State::new(game, shared_texture);
 
 	// let mut buf = String::new();

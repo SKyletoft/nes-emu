@@ -1,8 +1,8 @@
 use std::fmt::{self, Write};
 
-use crate::{cpu, graphics, inst::Inst, interpret::State, nes_file::Mapper};
+use crate::{cpu, graphics, inst::Inst, interpret::State, mapper::Mapper, nrom256::NROM256};
 
-fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
+fn print_instruction<M: Mapper>(state: &State<M>, f: &mut String) -> fmt::Result {
 	let instruction = state.next_inst_pure();
 	match instruction {
 		Inst::AdcAbsolute(adr) => {
@@ -848,7 +848,7 @@ fn print_instruction(state: &State, f: &mut String) -> fmt::Result {
 	}
 }
 
-fn mesen_log(state: &State, out: &mut String) {
+fn mesen_log(state: &State<NROM256>, out: &mut String) {
 	let cpu::Cpu { a, x, y, s, p, pc } = state.cpu;
 	let stack_depth = (0xFF - s) as usize / 2;
 	let inst = {
@@ -886,7 +886,7 @@ macro_rules! make_log_test {
 			};
 
 			let buffer = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), $game)).unwrap();
-			let game = Mapper::parse_ines(&buffer).unwrap();
+			let game = NROM256::parse_ines(&buffer).unwrap();
 			let mut state = State::new(game, graphics::new_bitmap());
 			let file = File::open(concat!(env!("CARGO_MANIFEST_DIR"), $log)).unwrap();
 			let reader = BufReader::new(file);

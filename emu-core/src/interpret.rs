@@ -6,17 +6,18 @@ use std::{
 	time::{Duration, Instant},
 };
 
+use bitfields::bitfield;
+
 use crate::{
 	apu::Apu,
 	controller::Controller,
 	cpu::{Cpu, P},
 	graphics::{self, Bitmap},
 	inst::Inst,
-	nes_file::Mapper,
+	mapper::Mapper,
+	nrom256::NROM256,
 	ppu::{DoubleWriter, NesColour, Ppu, Scroll, Sprite},
 };
-
-use bitfields::bitfield;
 
 pub const PPU_STARTUP_TIME: u64 = 2500;
 const PPUADDR_MASK: u16 = (1 << 14) - 1;
@@ -28,13 +29,13 @@ pub enum InterruptTiming {
 
 // REMEMBER TO REFLECT ANY CHANGES IN `cpu.h`
 #[repr(C)]
-pub struct State {
+pub struct State<M: Mapper> {
 	pub cpu: Cpu,
 	pub ppu: Ppu,
 	pub apu: Apu,
 	pub controller1: Controller,
 	pub controller2: Controller,
-	pub rom: Box<Mapper>,
+	pub rom: Box<M>,
 	pub ram: [u8; 2048],
 	pub cpu_bus: u8,
 	pub ppu_bus: u8,
@@ -45,19 +46,19 @@ pub struct State {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn state_get_mem(ptr: *mut State, adr: u16) -> u8 {
+pub unsafe extern "C" fn state_get_mem(ptr: *mut State<NROM256>, adr: u16) -> u8 {
 	let state = unsafe { &mut *ptr };
 	state.mem(adr)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn state_set_mem(ptr: *mut State, adr: u16, val: u8) {
+pub unsafe extern "C" fn state_set_mem(ptr: *mut State<NROM256>, adr: u16, val: u8) {
 	let state = unsafe { &mut *ptr };
 	state.set_mem(adr, val);
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn state_step_ppu(ptr: *mut State) {
+pub unsafe extern "C" fn state_step_ppu(ptr: *mut State<NROM256>) {
 	let state = unsafe { &mut *ptr };
 	state.cycles += 1;
 	state.step_ppu();
@@ -66,12 +67,12 @@ pub unsafe extern "C" fn state_step_ppu(ptr: *mut State) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn state_set_bus(ptr: *mut State, val: u8) {
+pub unsafe extern "C" fn state_set_bus(ptr: *mut State<NROM256>, val: u8) {
 	unsafe { &mut *ptr }.cpu_bus = val;
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn state_step_ppu_many(ptr: *mut State, times: u32) {
+pub unsafe extern "C" fn state_step_ppu_many(ptr: *mut State<NROM256>, times: u32) {
 	let state = unsafe { &mut *ptr };
 	for _ in 0..times {
 		state.cycles += 1;
@@ -83,24 +84,39 @@ pub unsafe extern "C" fn state_step_ppu_many(ptr: *mut State, times: u32) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn state_check_interrupt(ptr: *mut State) {
+pub unsafe extern "C" fn state_check_interrupt(ptr: *mut State<NROM256>) {
 	let state = unsafe { &mut *ptr };
 	state.check_interrupt();
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn new_state_from_file_name(name: *const c_char) -> *mut State {
+pub unsafe extern "C" fn new_state_from_file_name(name: *const c_char) -> *mut State<NROM256> {
 	let c_name = unsafe { std::ffi::CStr::from_ptr(name) };
 	let name = c_name.to_str().unwrap();
 	let buffer = std::fs::read(name).unwrap();
-	let game = Mapper::parse_ines(&buffer).unwrap();
+	let game = NROM256::parse_ines(&buffer).unwrap();
 	let shared_texture = graphics::new_bitmap();
 	let system_state = State::new(game, shared_texture);
 	Box::leak(Box::new(system_state))
 }
 
-impl State {
-	pub fn new(rom: Box<Mapper>, output_texture: Arc<Mutex<Box<Bitmap>>>) -> Self {
+impl State<NROM256> {
+	pub fn next_step(mut self) -> Self {
+		let inst = self.next_inst();
+		inst.evaluate(&mut self);
+
+		self
+	}
+
+	pub fn next(&mut self) {
+		let inst = self.next_inst();
+		inst.evaluate(self);
+	}
+}
+
+
+impl<M: Mapper> State<M> {
+	pub fn new(rom: Box<M>, output_texture: Arc<Mutex<Box<Bitmap>>>) -> Self {
 		let pc = u16::from_le_bytes([
 			rom.get_cpu(0xFFFC).expect("Cannot read reset vector"),
 			rom.get_cpu(0xFFFD).expect("Cannot read reset vector (2)"),
@@ -162,18 +178,6 @@ impl State {
 			self.mem_pure(self.cpu.pc.wrapping_add(2)),
 		];
 		code.into()
-	}
-
-	pub fn next_step(mut self) -> Self {
-		let inst = self.next_inst();
-		inst.evaluate(&mut self);
-
-		self
-	}
-
-	pub fn next(&mut self) {
-		let inst = self.next_inst();
-		inst.evaluate(self);
 	}
 
 	fn read_ppu_pure(&self, adr: u16) -> u8 {

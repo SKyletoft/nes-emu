@@ -8,12 +8,12 @@ use emu_core::{
 	controller::ControllerState,
 	graphics::{Bitmap, Colour},
 	interpret::State,
-	nes_file::Mapper,
+	nrom256::NROM256,
 };
 
 #[link(name = "mario", kind = "static")]
 unsafe extern "C" {
-	pub fn nes_game(state: &mut State);
+	pub fn nes_game(state: &mut State<NROM256>);
 }
 
 #[repr(C)]
@@ -54,7 +54,7 @@ fn main() {
 	let shared_texture = emu_core::graphics::new_bitmap();
 
 	let buffer = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../non-free/SMB1.nes"));
-	let game = Mapper::parse_ines(buffer).unwrap();
+	let game = NROM256::parse_ines(buffer).unwrap();
 	let mut system_state = State::new(game, shared_texture);
 
 	let mut last_frame = u64::MAX;

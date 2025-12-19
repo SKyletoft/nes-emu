@@ -5,7 +5,9 @@ pub mod evaluate_instruction;
 pub mod graphics;
 pub mod inst;
 pub mod interpret;
-pub mod nes_file;
+pub mod mapper;
+pub mod mmc3;
+pub mod nrom256;
 pub mod ppu;
 
 #[cfg(test)]

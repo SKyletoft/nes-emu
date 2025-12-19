@@ -10,4 +10,4 @@ bytemuck = { version = "1.23", features = [ "derive" ] }
 
 [features]
 precompiled = []
-default = [ "precompiled" ]
+# default = [ "precompiled" ]

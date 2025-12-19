@@ -4,12 +4,12 @@ use std::{
 };
 
 use anyhow::{Result, anyhow, bail};
-use emu_core::{inst::Inst, nes_file::Mapper};
+use emu_core::{inst::Inst, mapper::Mapper, nrom256::NROM256};
 use tempfile::NamedTempFile;
 
 const LABEL_EVERYTHING: bool = true;
 
-fn write_to_switch(rom: &Mapper) -> Result<NamedTempFile> {
+fn write_to_switch<M: Mapper>(rom: &M) -> Result<NamedTempFile> {
 	let mut tmpfile = NamedTempFile::new()?;
 
 	#[derive(Debug)]
@@ -210,13 +210,9 @@ fn main() -> Result<()> {
 		.into()
 	});
 	let buffer = std::fs::read(path)?;
-	let rom = Mapper::parse_ines(&buffer)?;
-	assert!(
-		matches!(&*rom, Mapper::NROM256 { .. }),
-		"Blocks are currently identified exclusively by address"
-	);
+	let rom = NROM256::parse_ines(&buffer)?;
 
-	let mut c = write_to_switch(&rom)?;
+	let mut c = write_to_switch(&*rom)?;
 	c.disable_cleanup(true);
 
 	let mut buf = String::new();
