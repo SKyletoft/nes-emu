@@ -24,6 +24,7 @@
 				shellInputs = with pkgs; [
 					rustToolchain
 					cargo-3ds
+					cargo-expand
 
 					devkitARM
 
