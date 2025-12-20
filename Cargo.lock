@@ -223,6 +223,7 @@ dependencies = [
  "bytemuck",
  "ctru-rs",
  "emu-core",
+ "nesc-macro",
 ]
 
 [[package]]
@@ -380,6 +381,18 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "emu-core",
+ "tempfile",
+]
+
+[[package]]
+name = "nesc-macro"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "emu-core",
+ "proc-macro2",
+ "quote",
+ "syn",
  "tempfile",
 ]
 
