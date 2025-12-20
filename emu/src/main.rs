@@ -1,8 +1,9 @@
 mod drawing;
 
-use std::sync::{
-	Arc, Mutex,
-	atomic::{AtomicBool, AtomicU8, Ordering},
+use std::{
+	collections::BTreeSet, ffi::c_int, sync::{
+		atomic::{AtomicBool, AtomicU8, Ordering}, Arc, Mutex
+	}
 };
 
 use emu_core::{graphics::Bitmap, interpret::State, nrom256::NROM256};
@@ -31,6 +32,7 @@ fn emulation_loop(
 	let buffer = *include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../non-free/SMB1.nes"));
 	let game = NROM256::parse_ines(&buffer).unwrap();
 	let mut system_state = State::new(game, shared_texture);
+	let mut visited = BTreeSet::new();
 
 	// let mut buf = String::new();
 	while kill.load(Ordering::Relaxed) {
@@ -45,6 +47,9 @@ fn emulation_loop(
 				nes_game(&mut system_state)
 			};
 			if broke != 0 {
+				if visited.insert(broke) {
+					println!("0x{broke:04X}");
+				}
 				while !system_state.next_inst_pure().ends_bb() {
 					system_state.next();
 				}
