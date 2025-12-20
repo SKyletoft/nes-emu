@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{hint::assert_unchecked, time::Instant};
 
 use ctru::{
 	prelude::*,
@@ -39,7 +39,11 @@ fn update_screen(gfx: &Gfx, nes_screen: &Bitmap) {
 		.enumerate()
 		.flat_map(|(x, line)| line.iter().enumerate().map(move |(y, px)| (x, y, *px)))
 	{
-		screen[(400 - 256) / 2 + y][239 - x] = Bgr8 { blue, green, red };
+		let x = 239 - x;
+		let y = (400 - 256) / 2 + y;
+		debug_assert!(y < 400 && x < 240);
+		unsafe { assert_unchecked(y < 400 && x < 240) };
+		screen[y][x] = Bgr8 { blue, green, red };
 	}
 
 	top_screen.swap_buffers();
