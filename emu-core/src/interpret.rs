@@ -459,18 +459,6 @@ impl<M: Mapper> State<M> {
 			self.ppu.frame += 1;
 			let mut texture = self.output_texture.lock().unwrap();
 			std::mem::swap(&mut self.current_texture, &mut texture);
-
-			static LAST_TIME: Mutex<Option<Instant>> = Mutex::new(None);
-			let mut last_time = LAST_TIME.lock().unwrap();
-			let to_sleep = match &mut *last_time {
-				None => Duration::from_millis(16),
-				Some(last_time) => {
-					let now = Instant::now();
-					(Duration::from_millis(1000) / 60).saturating_sub(now - *last_time)
-				}
-			};
-			std::thread::sleep(to_sleep);
-			*last_time = Some(Instant::now());
 		}
 	}
 

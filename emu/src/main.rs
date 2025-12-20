@@ -2,8 +2,8 @@ mod drawing;
 
 use std::{
 	collections::BTreeSet, ffi::c_int, sync::{
-		atomic::{AtomicBool, AtomicU8, Ordering}, Arc, Mutex
-	}
+		Arc, Mutex, atomic::{AtomicBool, AtomicU8, Ordering}
+	}, time::{Duration, Instant}
 };
 
 use emu_core::{graphics::Bitmap, interpret::State, nrom256::NROM256};
@@ -34,6 +34,8 @@ fn emulation_loop(
 	let mut system_state = State::new(game, shared_texture);
 	let mut visited = BTreeSet::new();
 
+	let mut last_frame = 0;
+
 	// let mut buf = String::new();
 	while kill.load(Ordering::Relaxed) {
 		*system_state.controller1.state_mut() = controller_state.load(Ordering::SeqCst);
@@ -55,6 +57,23 @@ fn emulation_loop(
 				}
 				system_state.next();
 			}
+		}
+
+
+		if system_state.ppu.frame != last_frame {
+			static LAST_TIME: Mutex<Option<Instant>> = Mutex::new(None);
+			let mut last_time = LAST_TIME.lock().unwrap();
+			let to_sleep = match &mut *last_time {
+				None => Duration::from_millis(16),
+				Some(last_time) => {
+					let now = Instant::now();
+					(Duration::from_millis(1000) / 60).saturating_sub(now - *last_time)
+				}
+			};
+			std::thread::sleep(to_sleep);
+			*last_time = Some(Instant::now());
+
+			last_frame = system_state.ppu.frame;
 		}
 
 		// print!("{}", system_state.display());
