@@ -40,7 +40,17 @@ fn emulation_loop(
 		system_state.next();
 
 		#[cfg(feature = "precompiled")]
-		unsafe { nes_game(&mut system_state); }
+		{
+			let broke = unsafe {
+				nes_game(&mut system_state)
+			};
+			if broke != 0 {
+				while !system_state.next_inst_pure().ends_bb() {
+					system_state.next();
+				}
+				system_state.next();
+			}
+		}
 
 		// print!("{}", system_state.display());
 		// buf.clear();

@@ -62,8 +62,9 @@ fn main() {
 	let mut frame_timing = Instant::now();
 
 	while apt.main_loop() {
-		unsafe {
-			nes_game(&mut system_state);
+		let res = unsafe { nes_game(&mut system_state) };
+		if res != 0 {
+			system_state.next();
 		}
 
 		let frame = system_state.ppu.frame;
