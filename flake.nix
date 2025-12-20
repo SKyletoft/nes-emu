@@ -32,6 +32,7 @@
 
 					llvmPackages_21.clang-tools
 					valgrind
+					perf
 
 					fceux # For comparison
 					mesen
