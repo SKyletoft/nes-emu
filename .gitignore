@@ -6,5 +6,7 @@ non-free/
 **.a
 Makefile
 Main
+callgrind
+perf.data*
 
 reference-logs/SMB1-Mesen-long.log
