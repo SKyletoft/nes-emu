@@ -13,7 +13,7 @@ use emu_core::{
 
 #[link(name = "mario", kind = "static")]
 unsafe extern "C" {
-	pub fn nes_game(state: &mut State<NROM256>);
+	pub fn nes_game(state: &mut State<NROM256>) -> i32;
 }
 
 #[repr(C)]

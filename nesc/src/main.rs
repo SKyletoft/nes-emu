@@ -145,7 +145,7 @@ fn write_to_switch<M: Mapper>(rom: &M) -> Result<NamedTempFile> {
 	writeln!(&mut tmpfile, "#include \"evaluate_instruction.c\"")?;
 	writeln!(&mut tmpfile)?;
 
-	writeln!(&mut tmpfile, "void nes_game(State *state) {{")?;
+	writeln!(&mut tmpfile, "int32_t nes_game(State *state) {{")?;
 	writeln!(&mut tmpfile, "\tswitch (state->cpu.pc) {{")?;
 
 	if LABEL_EVERYTHING {
@@ -193,7 +193,9 @@ fn write_to_switch<M: Mapper>(rom: &M) -> Result<NamedTempFile> {
 		}
 	}
 	writeln!(&mut tmpfile, "\tdefault: bFFFE: bFFFF:")?;
+	writeln!(&mut tmpfile, "\t\treturn state->cpu.pc;")?;
 	writeln!(&mut tmpfile, "\t}}")?;
+	writeln!(&mut tmpfile, "\treturn 0;")?;
 	writeln!(&mut tmpfile, "}}")?;
 
 	tmpfile.seek(SeekFrom::Start(0))?;

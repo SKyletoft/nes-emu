@@ -10,7 +10,7 @@ use emu_core::{graphics::Bitmap, interpret::State, nrom256::NROM256};
 #[cfg(feature = "precompiled")]
 #[link(name = "mario", kind = "static")]
 unsafe extern "C" {
-	pub fn nes_game(state: &mut State<NROM256>);
+	pub fn nes_game(state: &mut State<NROM256>) -> c_int;
 }
 
 fn emulation_loop(
