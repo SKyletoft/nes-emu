@@ -14,4 +14,4 @@ opt-level = 3
 codegen-units = 1
 lto = "fat"
 overflow-checks = false
-panic = "abort"
+# panic = "abort"
