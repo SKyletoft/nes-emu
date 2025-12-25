@@ -888,8 +888,8 @@ macro_rules! make_log_test {
 			let buffer = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), $game)).unwrap();
 			let game = NROM256::parse_ines(&buffer).unwrap();
 			let mut state = State::new(game, graphics::new_bitmap());
-			let file = File::open(concat!(env!("CARGO_MANIFEST_DIR"), $log)).unwrap();
-			let reader = BufReader::new(file);
+			let reader = BufReader::new(File::open(concat!(env!("CARGO_MANIFEST_DIR"), $log)).unwrap());
+			let backup_reader = BufReader::new(File::open(concat!(env!("CARGO_MANIFEST_DIR"), $log)).unwrap());
 			let mut ours = String::new();
 
 			for (i, line) in reader.lines().enumerate() {
@@ -909,7 +909,7 @@ macro_rules! make_log_test {
 						|| (ours.contains("STA $2007 = ") && line.contains("STA $2007 = "))
 						|| (ours.contains("LDA $4016") && line.contains("LDA $4016"))
 						|| (ours.contains("LDA $4017") && line.contains("LDA $4017")),
-					"Mismatch at\n{}:{i}:\n ours: {ours}\n ref : {line}\n       {}\n{}",
+					"Mismatch at\n{}:{i}:\n ours: {ours}\n ref : {line}\n       {}\n{}\nPrev:\n{}",
 					$log,
 					ours.chars()
 						.zip(line.chars())
@@ -918,6 +918,7 @@ macro_rules! make_log_test {
 						.take(ours.len().max(line.len()))
 						.collect::<String>(),
 					state.display(),
+					backup_reader.lines().nth(i - 2).unwrap().unwrap(),
 				);
 				if state.cycles == 116745 {
 					assert_eq!(state.mem_pure(0x01FF), 0x80, "\n{}", state.display());
