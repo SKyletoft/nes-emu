@@ -224,7 +224,7 @@ dependencies = [
  "bytemuck",
  "ctru-rs",
  "emu-core",
- "nesc-macro",
+ "macro-expanded",
 ]
 
 [[package]]
@@ -234,7 +234,6 @@ dependencies = [
  "anyhow",
  "bitfields",
  "bytemuck",
- "cc",
  "derive_more",
  "paste",
 ]

@@ -10,12 +10,6 @@ use emu_core::{
 	interpret::State,
 	nrom256::NROM256,
 };
-use nesc_macro::compile_nes_to_rust;
-
-#[link(name = "mario", kind = "static")]
-unsafe extern "C" {
-	pub fn nes_game(state: &mut State<NROM256>) -> i32;
-}
 
 #[repr(C)]
 struct Bgr8 {
@@ -67,7 +61,7 @@ fn main() {
 	let mut frame_timing = Instant::now();
 
 	while apt.main_loop() {
-		let res = unsafe { nes_game(&mut system_state) };
+		let res = macro_expanded::nes_game(&mut system_state);
 		if res != 0 {
 			system_state.next();
 		}
