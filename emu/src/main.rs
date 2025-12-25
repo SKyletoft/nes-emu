@@ -45,9 +45,7 @@ fn emulation_loop(
 
 		#[cfg(feature = "precompiled")]
 		{
-			let broke = unsafe {
-				nes_game(&mut system_state)
-			};
+			let broke = unsafe { nes_game(&mut system_state) };
 			if broke != 0 {
 				if visited.insert(broke) {
 					println!("0x{broke:04X}");

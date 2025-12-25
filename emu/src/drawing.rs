@@ -3,6 +3,10 @@ use std::sync::{
 	atomic::{AtomicU8, Ordering},
 };
 
+use emu_core::{
+	controller::ControllerState,
+	graphics::{Bitmap, HEIGHT, WIDTH},
+};
 use sdl2::{
 	controller::Button,
 	event::Event,
@@ -11,11 +15,6 @@ use sdl2::{
 	rect::Rect,
 	render::Canvas,
 	video::Window,
-};
-
-use emu_core::{
-	controller::ControllerState,
-	graphics::{Bitmap, HEIGHT, WIDTH},
 };
 
 fn draw_horizontal_gradient(
