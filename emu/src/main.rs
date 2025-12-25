@@ -1,9 +1,13 @@
 mod drawing;
 
 use std::{
-	collections::BTreeSet, ffi::c_int, sync::{
-		Arc, Mutex, atomic::{AtomicBool, AtomicU8, Ordering}
-	}, time::{Duration, Instant}
+	collections::BTreeSet,
+	ffi::c_int,
+	sync::{
+		Arc, Mutex,
+		atomic::{AtomicBool, AtomicU8, Ordering},
+	},
+	time::{Duration, Instant},
 };
 
 use emu_core::{graphics::Bitmap, interpret::State, nrom256::NROM256};
