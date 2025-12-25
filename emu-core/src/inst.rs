@@ -694,7 +694,7 @@ impl Inst {
 			Inst::EorIndirectY(x) => eor_indirect_y(state, *x),
 			Inst::EorZeroPage(x) => eor_zero_page(state, *x),
 			Inst::EorZeroPageX(x) => eor_zero_page_x(state, *x),
-			Inst::Ign(_) => ign(state),
+			Inst::Ign(x) => ign(state, x.as_u16()),
 			Inst::IgnAbsoluteX(x) => ign_absolute_x(state, x.as_u16()),
 			Inst::IgnAbsoluteX2(x) => ign_absolute_x(state, x.as_u16()),
 			Inst::IgnAbsoluteX3(x) => ign_absolute_x(state, x.as_u16()),

@@ -1240,7 +1240,7 @@ pub fn isc_indirect_y<M: Mapper>(state: &mut State<M>, adr: u8) {
 	state.cpu.pc += 2;
 }
 
-pub fn rla_zero_page<M: Mapper>(state: &mut State<M>, val: u16) {
+pub fn rla_zero_page<M: Mapper>(state: &mut State<M>, val: u8) {
 	// Rotate left
 	let carry = val & 0x80 != 0;
 	let mut result = (val << 1) as u8 | state.cpu.p.c() as u8;
@@ -1253,12 +1253,12 @@ pub fn rla_zero_page<M: Mapper>(state: &mut State<M>, val: u16) {
 	state.cpu.p.set_z(result == 0);
 	state.cpu.p.set_n((result & 0x80) != 0);
 
-	state.set_mem(val & 0xFF, result);
+	state.set_mem(val as u16, result);
 	state.cpu.a = result;
 	state.cpu.pc += 2;
 }
 
-pub fn rla_zero_page_x<M: Mapper>(state: &mut State<M>, val: u16) {
+pub fn rla_zero_page_x<M: Mapper>(state: &mut State<M>, val: u8) {
 	// Rotate left
 	let carry = val & 0x80 != 0;
 	let mut result = (val << 1) as u8 | state.cpu.p.c() as u8;
@@ -1271,7 +1271,7 @@ pub fn rla_zero_page_x<M: Mapper>(state: &mut State<M>, val: u16) {
 	state.cpu.p.set_z(result == 0);
 	state.cpu.p.set_n((result & 0x80) != 0);
 
-	state.set_mem(val & 0xFF, result);
+	state.set_mem(val as u16, result);
 	state.cpu.a = result;
 	state.cpu.pc += 2;
 }
