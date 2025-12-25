@@ -2,7 +2,6 @@ mod drawing;
 
 use std::{
 	collections::BTreeSet,
-	ffi::c_int,
 	sync::{
 		Arc, Mutex,
 		atomic::{AtomicBool, AtomicU8, Ordering},
@@ -17,15 +16,6 @@ fn emulation_loop(
 	controller_state: &AtomicU8,
 	kill: &AtomicBool,
 ) {
-	// let path = std::env::args().nth(1).unwrap_or_else(|| {
-	//	concat!(
-	//		env!("CARGO_MANIFEST_DIR"),
-	//		"/../non-free/SMB1.nes" // "/../non-free/AccuracyCoin.nes"
-	//	)
-	//	.into()
-	// });
-	// dbg!(&path);
-	// let buffer = std::fs::read(path).unwrap();
 
 	let buffer = *include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../non-free/SMB1.nes"));
 	let game = NROM256::parse_ines(&buffer).unwrap();
