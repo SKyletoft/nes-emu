@@ -1261,7 +1261,7 @@ pub fn rla_zero_page<M: Mapper>(state: &mut State<M>, val: u8) {
 pub fn rla_zero_page_x<M: Mapper>(state: &mut State<M>, val: u8) {
 	// Rotate left
 	let carry = val & 0x80 != 0;
-	let mut result = (val << 1) as u8 | state.cpu.p.c() as u8;
+	let mut result = (val << 1) | state.cpu.p.c() as u8;
 	state.cpu.p.set_c(carry);
 
 	// AND with accumulator
