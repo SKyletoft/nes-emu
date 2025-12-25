@@ -51,7 +51,7 @@ impl MMC3 {
 			b'S',
 			0x1A,
 			prg_size,
-			chr_size,
+			_chr_size,
 			flags_6,
 			flags_7,
 			_,
@@ -71,7 +71,7 @@ impl MMC3 {
 		assert!(!trainer_present); // Not really, but please error early when I hit a game with one.
 		let trainer_offset = if trainer_present { 512 } else { 0 };
 		let prg_offset = 16 + trainer_offset;
-		let chr_offset = prg_offset + (*prg_size as usize * 16 * 1024);
+		let _chr_offset = prg_offset + (*prg_size as usize * 16 * 1024);
 		let mapper_type = (*flags_7 & 0xF0) | *flags_6 >> 4;
 
 		match mapper_type {
@@ -176,7 +176,7 @@ impl Mapper for MMC3 {
 		Some(())
 	}
 
-	fn get_ppu(&self, adr: u16, ppu: &Ppu) -> Option<u8> {
+	fn get_ppu(&self, _adr: u16, _ppu: &Ppu) -> Option<u8> {
 		// let MMC3 {
 		//	chr_2k_banks,
 		//	chr_1k_banks,
@@ -201,7 +201,7 @@ impl Mapper for MMC3 {
 		None
 	}
 
-	fn set_ppu(&mut self, adr: u16, ppu: &mut Ppu, val: u8) -> Option<()> {
+	fn set_ppu(&mut self, _adr: u16, _ppu: &mut Ppu, _val: u8) -> Option<()> {
 		None
 	}
 }
