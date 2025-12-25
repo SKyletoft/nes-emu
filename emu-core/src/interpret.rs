@@ -114,7 +114,6 @@ impl State<NROM256> {
 	}
 }
 
-
 impl<M: Mapper> State<M> {
 	pub fn new(rom: Box<M>, output_texture: Arc<Mutex<Box<Bitmap>>>) -> Self {
 		let pc = u16::from_le_bytes([

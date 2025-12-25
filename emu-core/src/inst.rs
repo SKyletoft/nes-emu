@@ -2,9 +2,9 @@
 
 use std::fmt::{self, Display};
 
-use crate::{cpu::Cpu, evaluate_instruction::*, interpret::State, nrom256::NROM256};
-
 use anyhow::{Result, bail};
+
+use crate::{cpu::Cpu, evaluate_instruction::*, interpret::State, nrom256::NROM256};
 
 #[repr(C)]
 #[derive(Copy, Clone, Eq, PartialEq)]

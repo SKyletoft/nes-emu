@@ -57,7 +57,6 @@ fn emulation_loop(
 			}
 		}
 
-
 		if system_state.ppu.frame != last_frame {
 			static LAST_TIME: Mutex<Option<Instant>> = Mutex::new(None);
 			let mut last_time = LAST_TIME.lock().unwrap();

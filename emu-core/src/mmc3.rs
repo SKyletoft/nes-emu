@@ -1,9 +1,6 @@
 use anyhow::{Result, bail};
 
-use crate::{
-	mapper::Mapper,
-	ppu::Ppu,
-};
+use crate::{mapper::Mapper, ppu::Ppu};
 
 #[derive(Debug, Clone)]
 pub struct MMC3 {
