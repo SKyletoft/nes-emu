@@ -22,7 +22,6 @@ fn emulation_loop(
 
 	let mut last_frame = 0;
 
-	// let mut buf = String::new();
 	while kill.load(Ordering::Relaxed) {
 		*system_state.controller1.state_mut() = controller_state.load(Ordering::SeqCst);
 
@@ -52,10 +51,6 @@ fn emulation_loop(
 
 			last_frame = system_state.ppu.frame;
 		}
-
-		// print!("{}", system_state.display());
-		// buf.clear();
-		// std::io::stdin().read_line(&mut buf).unwrap();
 	}
 }
 
