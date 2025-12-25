@@ -23,85 +23,77 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 	let mut branches = Vec::new();
 
 	let sorted_instructions = collect_starting_points(&*rom);
-	for (is_start, pc, inst, end) in sorted_instructions {
-		match is_start {
-			IsStart::Yes => write!(
-				&mut tmpfile,
-				"\tcase 0x{pc:04X}: b{pc:04X}: {}",
-				inst.instruction_representation(),
-			)?,
-			IsStart::No => write!(
-				&mut tmpfile,
-				"\t                    {}",
-				inst.instruction_representation()
-			)?,
-		};
-		match end {
-			End::Goto => writeln!(&mut tmpfile, "\t\tgoto b{:04X};", pc + inst.len() as u16)?,
-			End::Break => writeln!(&mut tmpfile, "\t\tbreak;")?,
-			End::None => {}
-		}
-	}
 
-	for starting_point in (0x8000u16..=0xFFF0u16) {
-		let name = syn::Ident::new(
-			&format!("b{starting_point:04X}"),
-			proc_macro2::Span::call_site(),
+	for func in sorted_instructions.chunk_by(|_, (is_start, ..)| *is_start != IsStart::Yes) {
+		assert!(
+			func.iter()
+				.skip(1)
+				.all(|(is_start, ..)| *is_start == IsStart::No)
 		);
-
-		let mut stmts = Vec::new();
-		stmts.push(quote! {
-			debug_assert_eq!(state.cpu.pc, #starting_point);
-		});
-
-		let mut pc = starting_point;
-		loop {
-			let inst: Inst = [
-				rom.get_cpu(pc).unwrap(),
-				rom.get_cpu(pc + 1).unwrap(),
-				rom.get_cpu(pc + 2).unwrap(),
-			]
-			.into();
-
-			let stmt: proc_macro2::TokenStream = inst.instruction_representation().parse().unwrap();
-			stmts.push(stmt);
-
-			pc = pc.wrapping_add(inst.len() as u16);
-			if inst.ends_bb() || pc >= 0xFFF0 {
-				break;
+		assert!(
+			func.iter()
+				.take(func.len() - 1)
+				.all(|(_, _, _, end)| *end == End::Continue)
+		);
+		let Some((_, pc, ..)) = func.first() else {
+			panic!()
+		};
+		let Some((_, _, _, end)) = func.last() else {
+			panic!()
+		};
+		let end = match end {
+			End::Goto(adr) => {
+				let next = syn::Ident::new(&format!("b{adr:04X}"), proc_macro2::Span::call_site());
+				quote! { #next(state) }
 			}
-		}
+			End::Break => quote! {},
+			End::Continue => quote! {},
+		};
 
+		let insts = func
+			.iter()
+			.map(|(_, _, i, _)| {
+				i.instruction_representation()
+					.parse::<proc_macro2::TokenStream>()
+					.unwrap()
+			})
+			.collect::<Vec<_>>();
+
+		let ident = syn::Ident::new(&format!("b{pc:04X}"), proc_macro2::Span::call_site());
+
+		branches.push(quote! { #pc => {
+			#ident(state);
+			0
+		}});
 		fns.push(quote! {
-			pub fn #name<M: Mapper>(state: &mut State<M>) {
-				#(#stmts)*
+			fn #ident(state: &mut State<NROM256>) {
+				#(#insts)*
+				#end
 			}
 		});
-		branches.push(quote! {
-			#starting_point => #name(state),
-		})
 	}
 
 	quote! {
 		#(#fns)*
 
-		fn nes_game(state: &mut State) {
+		fn nes_game(state: &mut State<NROM256>) -> i32 {
 			match state.cpu.pc {
 				#(#branches)*
+				pc => pc as i32,
 			}
 		}
 	}
 	.into()
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum End {
-	Goto,
+	Goto(u16),
 	Break,
-	None,
+	Continue,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum IsStart {
 	Yes,
 	No,
@@ -123,7 +115,7 @@ fn collect_starting_points<M: Mapper>(rom: &M) -> Vec<(IsStart, u16, Inst, End)>
 
 	while let Some((idx, inst)) = instructions.pop_front() {
 		let mut next = idx + inst.len() as u16;
-		sorted.push((IsStart::No, idx, inst, End::None));
+		sorted.push((IsStart::No, idx, inst, End::Continue));
 		if inst.ends_bb() {
 			continue;
 		}
@@ -132,7 +124,7 @@ fn collect_starting_points<M: Mapper>(rom: &M) -> Vec<(IsStart, u16, Inst, End)>
 				.remove(j)
 				.expect("Literally just binary searched for it");
 			next = idx + inst.len() as u16;
-			sorted.push((IsStart::No, idx, inst, End::None));
+			sorted.push((IsStart::No, idx, inst, End::Continue));
 			if inst.ends_bb() {
 				break;
 			}
@@ -161,12 +153,20 @@ fn collect_starting_points<M: Mapper>(rom: &M) -> Vec<(IsStart, u16, Inst, End)>
 						continue;
 					};
 					sorted[j].0 = IsStart::Yes;
+					let adr = sorted[j].1;
+					if let Some((_, _, _, e @ End::Continue)) = sorted.get_mut(j.wrapping_sub(1)) {
+						*e = End::Goto(adr);
+					}
 				}
 				Inst::JmpAbsolute(adr) | Inst::Jsr(adr) => {
 					let Some(j) = sorted.iter().position(|(_, x, ..)| *x == adr.as_u16()) else {
 						continue;
 					};
 					sorted[j].0 = IsStart::Yes;
+					let adr = sorted[j].1;
+					if let Some((_, _, _, e @ End::Continue)) = sorted.get_mut(j.wrapping_sub(1)) {
+						*e = End::Goto(adr);
+					}
 				}
 				Inst::JmpIndirect(_) => {}
 				Inst::Brk => {}
@@ -187,7 +187,7 @@ fn collect_starting_points<M: Mapper>(rom: &M) -> Vec<(IsStart, u16, Inst, End)>
 				_ => panic!(),
 			}
 		} else if next != sorted[i + 1].1 {
-			sorted[i].3 = End::Goto;
+			sorted[i].3 = End::Goto(next);
 			sorted[i + 1].0 = IsStart::Yes;
 			let Some(j) = sorted.iter().position(|(_, x, ..)| *x == next) else {
 				continue;
@@ -722,6 +722,10 @@ fn collect_starting_points<M: Mapper>(rom: &M) -> Vec<(IsStart, u16, Inst, End)>
 	for &adr in hidden_labels.iter() {
 		let idx = sorted.iter().position(|(_, x, ..)| *x == adr).unwrap();
 		sorted[idx].0 = IsStart::Yes;
+		let adr = sorted[idx].1;
+		if let Some((_, _, _, e @ End::Continue)) = sorted.get_mut(idx.wrapping_sub(1)) {
+			*e = End::Goto(adr);
+		}
 	}
 
 	sorted
