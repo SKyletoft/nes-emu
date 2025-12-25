@@ -7,7 +7,7 @@ use anyhow::{Result, anyhow, bail};
 use emu_core::{inst::Inst, mapper::Mapper, nrom256::NROM256};
 use tempfile::NamedTempFile;
 
-const LABEL_EVERYTHING: bool = true;
+const LABEL_EVERYTHING: bool = false;
 
 fn write_to_switch<M: Mapper>(rom: &M) -> Result<NamedTempFile> {
 	let mut tmpfile = NamedTempFile::new()?;
