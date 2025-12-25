@@ -76,7 +76,11 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 	quote! {
 		#(#fns)*
 
-		fn nes_game(state: &mut State<NROM256>) -> i32 {
+		fn bFFFE(state: &mut State<NROM256>) {}
+
+		fn bFFFF(state: &mut State<NROM256>) {}
+
+		pub fn nes_game(state: &mut State<NROM256>) -> i32 {
 			match state.cpu.pc {
 				#(#branches)*
 				pc => pc as i32,

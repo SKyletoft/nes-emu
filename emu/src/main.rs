@@ -12,12 +12,6 @@ use std::{
 
 use emu_core::{graphics::Bitmap, interpret::State, nrom256::NROM256};
 
-#[cfg(feature = "precompiled")]
-#[link(name = "mario", kind = "static")]
-unsafe extern "C" {
-	pub fn nes_game(state: &mut State<NROM256>) -> c_int;
-}
-
 fn emulation_loop(
 	shared_texture: Arc<Mutex<Box<Bitmap>>>,
 	controller_state: &AtomicU8,
@@ -44,21 +38,15 @@ fn emulation_loop(
 	while kill.load(Ordering::Relaxed) {
 		*system_state.controller1.state_mut() = controller_state.load(Ordering::SeqCst);
 
-		#[cfg(not(feature = "precompiled"))]
-		system_state.next();
-
-		#[cfg(feature = "precompiled")]
-		{
-			let broke = unsafe { nes_game(&mut system_state) };
-			if broke != 0 {
-				if visited.insert(broke) {
-					println!("0x{broke:04X}");
-				}
-				while !system_state.next_inst_pure().ends_bb() {
-					system_state.next();
-				}
+		let broke = macro_expanded::nes_game(&mut system_state);
+		if broke != 0 {
+			if visited.insert(broke) {
+				println!("0x{broke:04X}");
+			}
+			while !system_state.next_inst_pure().ends_bb() {
 				system_state.next();
 			}
+			system_state.next();
 		}
 
 		if system_state.ppu.frame != last_frame {

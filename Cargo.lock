@@ -213,6 +213,7 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "emu-core",
+ "macro-expanded",
  "sdl2",
 ]
 
