@@ -9,16 +9,14 @@ use std::{
 	time::{Duration, Instant},
 };
 
-use emu_core::{graphics::Bitmap, interpret::State, nrom256::NROM256};
+use emu_core::{graphics::Bitmap, interpret::State};
 
 fn emulation_loop(
 	shared_texture: Arc<Mutex<Box<Bitmap>>>,
 	controller_state: &AtomicU8,
 	kill: &AtomicBool,
 ) {
-
-	let buffer = *include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../non-free/SMB1.nes"));
-	let game = NROM256::parse_ines(&buffer).unwrap();
+	let game = Box::new(macro_expanded::MAPPER.clone());
 	let mut system_state = State::new(game, shared_texture);
 	let mut visited = BTreeSet::new();
 

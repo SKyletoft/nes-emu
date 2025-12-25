@@ -16,8 +16,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 	let buffer = fs::read(&path)
 		.unwrap_or_else(|e| panic!("failed to read ROM '{}': {}", path.display(), e));
 
-	let rom = NROM256::parse_ines(&buffer)
-		.unwrap_or_else(|e| panic!("failed to parse ROM '{}': {}", path.display(), e));
+	let (mapper, rom, mapper_literal) = parse_ines(&buffer);
 
 	let mut fns = Vec::new();
 	let mut branches = Vec::new();
@@ -66,7 +65,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 			0
 		}});
 		fns.push(quote! {
-			fn #ident(state: &mut State<NROM256>) {
+			fn #ident(state: &mut State<#mapper>) {
 				#(#insts)*
 				#end
 			}
@@ -76,18 +75,67 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 	quote! {
 		#(#fns)*
 
-		fn bFFFE(state: &mut State<NROM256>) {}
+		fn bFFFE(state: &mut State<#mapper>) {}
 
-		fn bFFFF(state: &mut State<NROM256>) {}
+		fn bFFFF(state: &mut State<#mapper>) {}
 
-		pub fn nes_game(state: &mut State<NROM256>) -> i32 {
+		pub fn nes_game(state: &mut State<#mapper>) -> i32 {
 			match state.cpu.pc {
 				#(#branches)*
 				pc => pc as i32,
 			}
 		}
+
+		pub const MAPPER: #mapper = #mapper_literal;
 	}
 	.into()
+}
+
+fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::TokenStream) {
+	let [
+		b'N',
+		b'E',
+		b'S',
+		0x1A,
+		prg_size,
+		_chr_size,
+		flags_6,
+		flags_7,
+		..,
+	] = &buffer[0..16]
+	else {
+		panic!("Invalid file");
+	};
+
+	let trainer_present = flags_6 & (1 << 2) != 0;
+	assert!(!trainer_present); // Not really, but please error early when I hit a game with one.
+	let mapper_type = (*flags_7 & 0xF0) | *flags_6 >> 4;
+	match mapper_type {
+		0 if *prg_size == 2 => {
+			let mapper = syn::Ident::new("NROM256", proc_macro2::Span::call_site());
+			let parsed_file = NROM256::parse_ines(buffer).unwrap();
+			let NROM256 {
+				prg_ram,
+				prg_rom,
+				chr_rom,
+			} = parsed_file.as_ref();
+			let lit1 = proc_macro2::Literal::byte_string(prg_ram);
+			let lit2 = proc_macro2::Literal::byte_string(prg_rom);
+			let lit3 = proc_macro2::Literal::byte_string(chr_rom);
+			let mapper_literal = {
+				quote! {
+					NROM256 {
+						prg_ram: *#lit1,
+						prg_rom: *#lit2,
+						chr_rom: *#lit3,
+					}
+				}
+				.into()
+			};
+			(mapper, parsed_file, mapper_literal)
+		}
+		_ => panic!("Unsupported Mapper"),
+	}
 }
 
 #[derive(Debug, PartialEq)]
@@ -103,7 +151,7 @@ enum IsStart {
 	No,
 }
 
-fn collect_starting_points<M: Mapper>(rom: &M) -> Vec<(IsStart, u16, Inst, End)> {
+fn collect_starting_points(rom: &dyn Mapper) -> Vec<(IsStart, u16, Inst, End)> {
 	let mut instructions: VecDeque<(u16, Inst)> = (0x8000..=0xFFFD)
 		.map(|i| {
 			let inst: Inst = [

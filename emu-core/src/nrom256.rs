@@ -7,9 +7,9 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct NROM256 {
-	prg_ram: [u8; 8 * 1024],
-	prg_rom: [u8; 32 * 1024],
-	chr_rom: [u8; 8 * 1024],
+	pub prg_ram: [u8; 8 * 1024],
+	pub prg_rom: [u8; 32 * 1024],
+	pub chr_rom: [u8; 8 * 1024],
 }
 
 impl NROM256 {

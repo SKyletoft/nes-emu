@@ -8,7 +8,6 @@ use emu_core::{
 	controller::ControllerState,
 	graphics::{Bitmap, Colour},
 	interpret::State,
-	nrom256::NROM256,
 };
 
 #[repr(C)]
@@ -52,8 +51,7 @@ fn main() {
 
 	let shared_texture = emu_core::graphics::new_bitmap();
 
-	let buffer = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../non-free/SMB1.nes"));
-	let game = NROM256::parse_ines(buffer).unwrap();
+	let game = Box::new(macro_expanded::MAPPER.clone());
 	let mut system_state = State::new(game, shared_texture);
 
 	let mut last_frame = u64::MAX;
