@@ -4,6 +4,14 @@ members = [ "emu-core", "emu", "emu-3ds", "nesc-macro", "macro-expanded"]
 
 [profile.dev]
 opt-level = 1
+overflow-checks = false
 
 [profile.dev.package."*"]
 opt-level = 3
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "fat"
+overflow-checks = false
+panic = "abort"
