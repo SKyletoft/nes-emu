@@ -720,11 +720,7 @@ fn main() -> Result<()> {
 	let mut c = write_to_switch(&*rom)?;
 	c.disable_cleanup(true);
 
-	let mut buf = String::new();
-	c.read_to_string(&mut buf)?;
-	println!("{buf}");
-
-	let cc_output = std::process::Command::new("arm-none-eabi-gcc")
+	let cc_output = std::process::Command::new("clang")
 		.args([
 			"-x",
 			"c",
@@ -736,11 +732,6 @@ fn main() -> Result<()> {
 			"-Wextra",
 			"-Wno-unused-label",
 			"-Wno-implicit-fallthrough",
-			// "-Werror=conversion",
-			"-mfloat-abi=hard",
-			"-mtune=mpcore",
-			"-mtp=soft",
-			"-march=armv6k",
 		])
 		.arg(c.path())
 		.arg("-I")
@@ -748,8 +739,6 @@ fn main() -> Result<()> {
 		.arg("-I")
 		.arg(concat!(env!("CARGO_MANIFEST_DIR"), "/../emu-core/src"))
 		.args(["-o", "mario.o"])
-		// .args(["-D", "STATIC_INLINE=[[clang::always_inline]] static inline"])
-		// .args(["-D", "STATIC_INLINE=[[clang::noinline]]"])
 		.output()?;
 	println!("{}", String::from_utf8(cc_output.stdout)?);
 	eprintln!("{}", String::from_utf8(cc_output.stderr)?);
