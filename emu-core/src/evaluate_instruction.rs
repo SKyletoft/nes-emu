@@ -316,7 +316,7 @@ pub fn bmi<M: Mapper>(state: &mut State<M>, offset: i8) {
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
 	let cycles = 2 + taken as u64 + page_crossed as u64;
 	state.cpu.pc = new_pc;
-	state.ppu_runahead += cycles;
+	advance(state, cycles);
 }
 
 #[inline(always)]
@@ -324,10 +324,10 @@ pub fn bpl<M: Mapper>(state: &mut State<M>, offset: i8) {
 	let old_pc = state.cpu.pc;
 	let taken = !state.cpu.p.n();
 	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
-	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
+	let page_crossed = (old_pc + 2) & 0xFF00 != new_pc & 0xFF00;
 	let cycles = 2 + taken as u64 + page_crossed as u64;
 	state.cpu.pc = new_pc;
-	state.ppu_runahead += cycles;
+	advance(state, cycles);
 }
 
 #[inline(always)]
@@ -338,7 +338,7 @@ pub fn bvs<M: Mapper>(state: &mut State<M>, offset: i8) {
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
 	let cycles = 2 + taken as u64 + page_crossed as u64;
 	state.cpu.pc = new_pc;
-	state.ppu_runahead += cycles;
+	advance(state, cycles);
 }
 
 #[inline(always)]
@@ -349,7 +349,7 @@ pub fn bvc<M: Mapper>(state: &mut State<M>, offset: i8) {
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
 	let cycles = 2 + taken as u64 + page_crossed as u64;
 	state.cpu.pc = new_pc;
-	state.ppu_runahead += cycles;
+	advance(state, cycles);
 }
 
 #[inline(always)]
@@ -596,7 +596,7 @@ pub fn lda_absolute_x<M: Mapper>(state: &mut State<M>, adr: u16) {
 	state.cpu.p.set_n(state.cpu.a & 0x80 != 0);
 	state.cpu.pc += 3;
 	let crossed = (res & 0xFF00) == (adr & 0xFF00);
-	state.ppu_runahead += (if crossed { 4 } else { 5 });
+	advance(state, if crossed { 4 } else { 5 });
 }
 
 #[inline(always)]
@@ -608,7 +608,7 @@ pub fn lda_absolute_y<M: Mapper>(state: &mut State<M>, adr: u16) {
 	state.cpu.p.set_n((state.cpu.a & 0x80) >> 7 != 0);
 	state.cpu.pc += 3;
 	let crossed = (res & 0xFF00) == (adr & 0xFF00);
-	state.ppu_runahead += (if crossed { 4 } else { 5 });
+	advance(state, if crossed { 4 } else { 5 });
 }
 
 #[inline(always)]
@@ -635,16 +635,16 @@ pub fn lda_indirect_y<M: Mapper>(state: &mut State<M>, adr: u8) {
 	state.cpu.pc += 2;
 
 	let page_crossed = (adr2 & 0xFF00) != (base & 0xFF00);
-	state.ppu_runahead += (if page_crossed { 6 } else { 5 });
+	advance(state, if page_crossed { 6 } else { 5 });
 }
 
 #[inline(always)]
 pub fn ldx_immediate<M: Mapper>(state: &mut State<M>, val: u8) {
-	advance(state, 2);
 	state.cpu.x = val;
 	state.cpu.p.set_z(0 == state.cpu.x);
 	state.cpu.p.set_n((state.cpu.x & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
