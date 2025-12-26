@@ -1,5 +1,5 @@
 [package]
-name = "emu-3ds"
+name = "console"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,7 +7,7 @@ edition = "2024"
 ctru-rs = { git = "https://github.com/rust3ds/ctru-rs" }
 emu-core = { path = "../emu-core" }
 bytemuck = { version = "1.23", features = [ "derive" ] }
-macro-expanded = { path = "../macro-expanded" }
+game = { path = "../game" }
 
 [package.metadata.cargo-3ds]
 romfs_dir = "romfs"

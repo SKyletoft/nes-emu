@@ -144,6 +144,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "console"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "ctru-rs",
+ "emu-core",
+ "game",
+]
+
+[[package]]
 name = "ctru-rs"
 version = "0.7.1"
 source = "git+https://github.com/rust3ds/ctru-rs#92ee28f3f845a489111fdac94418acb1065bc76d"
@@ -208,26 +218,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
-name = "emu"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "emu-core",
- "macro-expanded",
- "sdl2",
-]
-
-[[package]]
-name = "emu-3ds"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "ctru-rs",
- "emu-core",
- "macro-expanded",
-]
-
-[[package]]
 name = "emu-core"
 version = "0.0.0"
 dependencies = [
@@ -271,6 +261,14 @@ name = "find-msvc-tools"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a3076410a55c90011c298b04d0cfa770b00fa04e1e3c97d3f6c9de105a03844"
+
+[[package]]
+name = "game"
+version = "0.1.0"
+dependencies = [
+ "emu-core",
+ "nesc",
+]
 
 [[package]]
 name = "getrandom"
@@ -347,6 +345,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "linux"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "emu-core",
+ "game",
+ "sdl2",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -365,14 +373,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baee0bbc17ce759db233beb01648088061bf678383130602a298e6998eedb2d8"
 
 [[package]]
-name = "macro-expanded"
-version = "0.1.0"
-dependencies = [
- "emu-core",
- "nesc-macro",
-]
-
-[[package]]
 name = "memchr"
 version = "2.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -385,7 +385,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
-name = "nesc-macro"
+name = "nesc"
 version = "0.1.0"
 dependencies = [
  "anyhow",

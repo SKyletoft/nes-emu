@@ -51,7 +51,7 @@ fn main() {
 
 	let shared_texture = emu_core::graphics::new_bitmap();
 
-	let game = Box::new(macro_expanded::MAPPER.clone());
+	let game = Box::new(game::MAPPER.clone());
 	let mut system_state = State::new(game, shared_texture);
 
 	let mut last_frame = 0;
@@ -59,7 +59,7 @@ fn main() {
 	let mut frame_timing = Instant::now();
 
 	while apt.main_loop() {
-		let res = macro_expanded::nes_game(&mut system_state);
+		let res = game::nes_game(&mut system_state);
 		if res != 0 {
 			system_state.next();
 		}

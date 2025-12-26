@@ -16,7 +16,7 @@ fn emulation_loop(
 	controller_state: &AtomicU8,
 	kill: &AtomicBool,
 ) {
-	let game = Box::new(macro_expanded::MAPPER.clone());
+	let game = Box::new(game::MAPPER.clone());
 	let mut system_state = State::new(game, shared_texture);
 	let mut visited = BTreeSet::new();
 
@@ -26,7 +26,7 @@ fn emulation_loop(
 	while kill.load(Ordering::Relaxed) {
 		*system_state.controller1.state_mut() = controller_state.load(Ordering::SeqCst);
 
-		let broke = macro_expanded::nes_game(&mut system_state);
+		let broke = game::nes_game(&mut system_state);
 		if broke != 0 {
 			if visited.insert(broke) {
 				println!("0x{broke:04X}");
@@ -41,7 +41,6 @@ fn emulation_loop(
 		if ppu_last + 1000 >= ppu_now {
 			continue;
 		}
-		println!("{ppu_last} -> {ppu_now}");
 		ppu_last = ppu_now;
 		system_state.catch_up_ppu();
 
@@ -60,7 +59,6 @@ fn emulation_loop(
 				(Duration::from_millis(1000) / 60).saturating_sub(now - *last_time)
 			}
 		};
-		println!("{to_sleep:?} sleep! {}", system_state.ppu.frame);
 		std::thread::sleep(to_sleep);
 		*last_time = Some(Instant::now());
 	}

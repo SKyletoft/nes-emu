@@ -1,8 +1,8 @@
 [package]
-name = "macro-expanded"
+name = "game"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nesc-macro = { path = "../nesc-macro" }
+nesc = { path = "../nesc" }
 emu-core = { path = "../emu-core" }
