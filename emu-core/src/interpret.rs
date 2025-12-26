@@ -375,25 +375,7 @@ impl<M: Mapper> State<M> {
 		}
 
 		if self.ppu.dot == 0 {
-			let mut sprites: [Sprite; 64] = self.ppu.oam;
-
-			// Stable sort: Primarily by x, then by prio, lastly by index.
-			sprites.sort_by(|l, r| {
-				l.x.cmp(&r.x)
-					.then(l.attr.priority().cmp(&r.attr.priority()))
-			});
-
-			let mut sprite_cache = [None; _];
-			for (cache, sprite) in sprite_cache.iter_mut().zip(
-				sprites
-					.iter()
-					.filter(|sprite| self.ppu.sprite_is_visible_y(sprite))
-					.take(8),
-			) {
-				*cache = Some(*sprite);
-			}
-
-			self.ppu.sprite_cache = sprite_cache;
+			self.update_sprite_cache();
 		}
 
 		if self.ppu.scanline == 241 && self.ppu.dot == 6 {
@@ -411,6 +393,28 @@ impl<M: Mapper> State<M> {
 			let mut texture = self.output_texture.lock().unwrap();
 			std::mem::swap(&mut self.current_texture, &mut texture);
 		}
+	}
+
+	fn update_sprite_cache(&mut self) {
+		let mut sprites: [Sprite; 64] = self.ppu.oam;
+
+		// Stable sort: Primarily by x, then by prio, lastly by index.
+		sprites.sort_by(|l, r| {
+			l.x.cmp(&r.x)
+				.then(l.attr.priority().cmp(&r.attr.priority()))
+		});
+
+		let mut sprite_cache = [None; _];
+		for (cache, sprite) in sprite_cache.iter_mut().zip(
+			sprites
+				.iter()
+				.filter(|sprite| self.ppu.sprite_is_visible_y(sprite))
+				.take(8),
+		) {
+			*cache = Some(*sprite);
+		}
+
+		self.ppu.sprite_cache = sprite_cache;
 	}
 
 	pub fn sprite_get_colour(&self, sprite: &Sprite) -> Option<NesColour> {
