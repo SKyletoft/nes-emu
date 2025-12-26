@@ -137,7 +137,7 @@ macro_rules! absolute_x {
 				let val = state.mem(actual_adr);
 				[<$fn _impl>](state, val);
 				state.cpu.pc += 3;
-				state.ppu_runahead += (4 + page_crossed as u64);
+				advance(state, 4 + page_crossed as u64);
 			}
 		}
 	};
@@ -169,7 +169,7 @@ macro_rules! absolute_y {
 				let val = state.mem(actual_adr);
 				[<$fn _impl>](state, val);
 				state.cpu.pc += 3;
-				state.ppu_runahead += (4 + page_crossed as u64);
+				advance(state, 4 + page_crossed as u64);
 			}
 		}
 	};
@@ -199,14 +199,15 @@ macro_rules! indirect_y {
 			#[inline(always)]
 			pub fn [<$fn _indirect_y>]<M: Mapper>(state: &mut State<M>, adr: u8) {
 				let tmp = state.mem(state.cpu.y.wrapping_add(adr) as u16 & 0x00FF);
-				let lo = state.mem(tmp as u16);
-				let hi = state.mem((tmp.wrapping_add(1)) as u16 & 0x00FF);
-				let adr2 = (lo as u16) | ((hi as u16) << 8);
+				let adr2 = u16::from_le_bytes([
+					state.mem(tmp as u16),
+					state.mem((tmp.wrapping_add(1)) as u16 & 0x00FF),
+				]);
 				let taken = (adr2 & 0x00FF) == 0;
 				let val = state.mem(adr2);
 				[<$fn _impl>](state, val);
 				state.cpu.pc += 2;
-				state.ppu_runahead += (5 + taken as u64);
+				advance(state, 5 + taken as u64);
 			}
 		}
 	};
@@ -254,7 +255,7 @@ indirect_y!(and);
 fn asl_impl<M: Mapper>(state: &mut State<M>, val: &mut u8) {
 	state.cpu.p.set_c(*val & 0x80 != 0);
 	*val <<= 1;
-	state.cpu.p.set_z(*val != 0);
+	state.cpu.p.set_z(*val == 0);
 	state.cpu.p.set_n(*val & 0x80 != 0);
 }
 
@@ -672,13 +673,17 @@ pub fn ldx_zero_page_y<M: Mapper>(state: &mut State<M>, offset: u8) {
 
 #[inline(always)]
 pub fn ldx_absolute<M: Mapper>(state: &mut State<M>, adr: u16) {
-	advance(state, 3);
+	// Same as LDA Absolute, timing sensitive
+	state.ppu_runahead += 9;
+	state.catch_up_ppu();
 	let val = state.mem(adr);
 	state.cpu.x = val;
 	state.cpu.p.set_z(0 == state.cpu.x);
-	state.cpu.p.set_n((state.cpu.x & 0x80) != 0);
+	state.cpu.p.set_n((state.cpu.x & 0x80) >> 7 != 0);
 	state.cpu.pc += 3;
-	state.ppu_runahead += (1);
+	state.cycles += 4;
+	state.ppu_runahead += 3;
+	state.check_interrupt();
 }
 
 #[inline(always)]
@@ -802,17 +807,18 @@ absolute_x_rmw!(ror);
 
 #[inline(always)]
 fn sbc_impl<M: Mapper>(state: &mut State<M>, val: u8) {
-	let (partial, c1) = state.cpu.a.overflowing_sub(val);
-	let (res, c2) = partial.overflowing_sub(state.cpu.p.c() as u8);
+	let res = (state.cpu.a as u16)
+		.wrapping_sub(val as u16)
+		.wrapping_sub(!state.cpu.p.c() as u16);
 
-	state.cpu.p.set_c(c1 || c2);
-	state.cpu.p.set_z(res == 0);
+	state.cpu.p.set_c(res < 256);
+	state.cpu.p.set_z(0 == res as u8);
 	state
 		.cpu
 		.p
-		.set_v((res ^ state.cpu.a) & (res ^ !val) & 0x80 != 0);
+		.set_v((res as u8 ^ state.cpu.a) & (res as u8 ^ !val) & 0x80 != 0);
 	state.cpu.p.set_n(res & 0x80 != 0);
-	state.cpu.a = res;
+	state.cpu.a = res as u8;
 }
 
 immediate!(sbc);
