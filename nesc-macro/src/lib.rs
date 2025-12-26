@@ -122,15 +122,12 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::Token
 			let lit1 = proc_macro2::Literal::byte_string(prg_ram);
 			let lit2 = proc_macro2::Literal::byte_string(prg_rom);
 			let lit3 = proc_macro2::Literal::byte_string(chr_rom);
-			let mapper_literal = {
-				quote! {
-					NROM256 {
-						prg_ram: *#lit1,
-						prg_rom: *#lit2,
-						chr_rom: *#lit3,
-					}
+			let mapper_literal = quote! {
+				NROM256 {
+					prg_ram: *#lit1,
+					prg_rom: *#lit2,
+					chr_rom: *#lit3,
 				}
-				.into()
 			};
 			(mapper, parsed_file, mapper_literal)
 		}

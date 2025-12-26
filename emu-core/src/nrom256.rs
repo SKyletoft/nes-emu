@@ -121,7 +121,7 @@ impl Mapper for NROM256 {
 		let adr = adr & VRAM_MASK;
 		match adr {
 			0x0000..=0x1FFF => Some(()),
-			0x3F00..=0x3FFF if adr % 16 == 0 => {
+			0x3F00..=0x3FFF if adr.is_multiple_of(16) => {
 				let col: NesColour = val.try_into().expect("Writing invalid colour to palette");
 				ppu.palettes[0][0] = col;
 				ppu.palettes[4][0] = col;
