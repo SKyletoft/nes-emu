@@ -874,7 +874,7 @@ fn mesen_log<M: Mapper>(state: &State<M>, out: &mut String) {
 
 	write!(
 		out,
-		"{pc:4X}  {inst:<32} A:{a:02X} X:{x:02X} Y:{y:02X} S:{s:02X} P:{n}{v}--{d}{i}{z}{c} V:{scanline:<3} H:{dot:<3} Fr:{frame} Cycle:{cycle}",
+		"{pc:4X}   {inst:<31} A:{a:02X} X:{x:02X} Y:{y:02X} S:{s:02X} P:{n}{v}--{d}{i}{z}{c} V:{scanline:<3} H:{dot:<3} Fr:{frame} Cycle:{cycle}",
 	).unwrap();
 }
 
