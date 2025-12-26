@@ -574,17 +574,20 @@ pub fn lda_zero_page_x<M: Mapper>(state: &mut State<M>, offset: u8) {
 	advance(state, 4);
 }
 
-#[inline(always)]
+#[inline(never)]
 pub fn lda_absolute<M: Mapper>(state: &mut State<M>, adr: u16) {
-	state.ppu_runahead += 1;
-	state.ppu_runahead += 1;
-	state.ppu_runahead += 1;
+	// LDA Absolute *really* cares about timing,
+	// so actually catch up and step ppu here
+	state.ppu_runahead += 9;
+	state.catch_up_ppu();
 	let val = state.mem(adr);
 	state.cpu.a = val;
 	state.cpu.p.set_z(0 == state.cpu.a);
 	state.cpu.p.set_n((state.cpu.a & 0x80) >> 7 != 0);
 	state.cpu.pc += 3;
-	state.ppu_runahead += 1;
+	state.cycles += 4;
+	state.ppu_runahead += 3;
+	state.check_interrupt();
 }
 
 #[inline(always)]
