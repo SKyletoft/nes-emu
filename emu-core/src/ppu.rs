@@ -31,6 +31,7 @@ pub struct Ppu {
 
 	pub palettes: Palettes,
 	pub sprite_cache: [Option<Sprite>; 8],
+	pub sprite_overflow_latch: bool,
 }
 
 impl Default for Ppu {
@@ -53,6 +54,7 @@ impl Default for Ppu {
 			data_cache: Default::default(),
 			palettes: [[NesColour::DarkGrey; 4]; 8],
 			sprite_cache: Default::default(),
+			sprite_overflow_latch: Default::default(),
 		}
 	}
 }

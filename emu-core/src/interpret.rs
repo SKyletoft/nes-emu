@@ -375,6 +375,7 @@ impl<M: Mapper> State<M> {
 		}
 
 		if self.ppu.dot == 0 {
+			self.calculate_sprite_overflow();
 			self.update_sprite_cache();
 		}
 
@@ -415,6 +416,42 @@ impl<M: Mapper> State<M> {
 		}
 
 		self.ppu.sprite_cache = sprite_cache;
+	}
+
+	fn calculate_sprite_overflow(&mut self) {
+		let scanline = self.ppu.scanline + 1;
+		let height = if self.ppu.ctrl.sprite_size() { 16 } else { 8 };
+
+		let oam = &self.ppu.oam;
+
+		let mut n: usize = 0;
+		// primary OAM byte index
+		let mut m: usize = 0;
+		// secondary OAM byte index
+		let mut overflow = false;
+
+		for _ in 0..64 {
+			let y = if m < 32 {
+				oam[n / 4].y
+			} else {
+				// Bug: misaligned read once secondary OAM is full
+				let idx = (n + (m & 0x1F)) & 0xFF;
+				let spr = &oam[idx / 4];
+				bytemuck::cast_slice(oam)[idx % 4]
+			};
+
+			if scanline >= y as i16 && scanline < (y as i16 + height) {
+				if m >= 32 {
+					overflow = true;
+					break;
+				}
+				m += 4;
+			}
+
+			n += 4;
+		}
+
+		self.ppu.sprite_overflow_latch = overflow;
 	}
 
 	pub fn sprite_get_colour(&self, sprite: &Sprite) -> Option<NesColour> {
