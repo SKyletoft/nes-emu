@@ -42,6 +42,7 @@ pub struct State<M: Mapper> {
 	pub output_texture: Arc<Mutex<Box<Bitmap>>>,
 	pub current_texture: Box<Bitmap>,
 	pub cycles: u64,
+	pub ppu_runahead: u64,
 	pub interrupt_requested: InterruptTiming,
 }
 
@@ -139,6 +140,7 @@ impl<M: Mapper> State<M> {
 		let ppu_bus = 0;
 		let current_texture = Box::new(graphics::empty_bitmap());
 		let cycles = 8;
+		let ppu_runahead = 0;
 		let interrupt_requested = InterruptTiming::Clear;
 
 		Self {
@@ -155,6 +157,7 @@ impl<M: Mapper> State<M> {
 			controller1,
 			controller2,
 			interrupt_requested,
+			ppu_runahead,
 		}
 	}
 
@@ -366,6 +369,13 @@ impl<M: Mapper> State<M> {
 			InterruptTiming::Waiting => self.interrupt_requested = InterruptTiming::Ready,
 			InterruptTiming::Ready => self.set_vblank(),
 		}
+	}
+
+	pub fn catch_up_ppu(&mut self) {
+		while self.ppu_runahead > self.ppu.cycles {
+			self.step_ppu();
+		}
+		self.check_interrupt();
 	}
 
 	pub fn step_ppu(&mut self) {

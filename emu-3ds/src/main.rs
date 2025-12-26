@@ -54,7 +54,7 @@ fn main() {
 	let game = Box::new(macro_expanded::MAPPER.clone());
 	let mut system_state = State::new(game, shared_texture);
 
-	let mut last_frame = u64::MAX;
+	let mut last_frame = 0;
 
 	let mut frame_timing = Instant::now();
 
@@ -64,15 +64,17 @@ fn main() {
 			system_state.next();
 		}
 
-		let frame = system_state.ppu.frame;
-		if last_frame == frame {
+		let frame = system_state.ppu_runahead;
+		if last_frame + 29781 >= frame {
 			continue;
 		}
+		system_state.catch_up_ppu();
 
 		last_frame = frame;
 		update_screen(&gfx, system_state.current_texture.as_ref());
 		let now = Instant::now();
-		println!("{frame:5}: {:?}", now - frame_timing);
+		let frame_count = system_state.ppu.frame;
+		println!("{frame_count:5}: {:?}", now - frame_timing);
 		frame_timing = now;
 		// gfx.wait_for_vblank();
 
