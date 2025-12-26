@@ -313,9 +313,10 @@ impl<M: Mapper> State<M> {
 	}
 
 	pub fn catch_up_ppu(&mut self) {
-		while self.ppu_runahead > self.ppu.cycles {
+		for _ in 0..self.ppu_runahead {
 			self.step_ppu();
 		}
+		self.ppu_runahead = 0;
 		self.check_interrupt();
 	}
 
