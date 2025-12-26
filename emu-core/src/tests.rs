@@ -916,13 +916,7 @@ macro_rules! make_log_test {
 
 				// Mesen's disassembly disagrees with its debugger when reading the APU status register
 				assert!(
-					(&ours[..4] == &line[..4] && &ours[39..] == &line[39..])
-						|| (ours.contains("STA $4015 = ") && line.contains("STA $4015 = "))
-						|| (ours.contains("STA $4016 = ") && line.contains("STA $4016 = "))
-						|| (ours.contains("STA $4017 = ") && line.contains("STA $4017 = "))
-						|| (ours.contains("STA $2007 = ") && line.contains("STA $2007 = "))
-						|| (ours.contains("LDA $4016") && line.contains("LDA $4016"))
-						|| (ours.contains("LDA $4017") && line.contains("LDA $4017")),
+					&ours[..4] == &line[..4] && &ours[39..] == &line[39..],
 					"Mismatch at\n{}:{i}:\n ours: {ours}\n ref : {line}\n       {}\n{}",
 					$log,
 					ours.chars()
@@ -933,12 +927,6 @@ macro_rules! make_log_test {
 						.collect::<String>(),
 					state.display(),
 				);
-				if state.cycles == 116745 {
-					assert_eq!(state.mem_pure(0x01FF), 0x80, "\n{}", state.display());
-					assert_eq!(state.mem_pure(0x01FE), 0x57, "\n{}", state.display());
-					assert_eq!(state.mem_pure(0x01FD), 0xA5, "\n{}", state.display());
-					println!("Stack check passed");
-				}
 				state.next();
 				state.catch_up_ppu();
 			}
