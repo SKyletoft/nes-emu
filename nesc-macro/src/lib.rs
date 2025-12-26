@@ -131,7 +131,7 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::Token
 			};
 			(mapper, parsed_file, mapper_literal)
 		}
-		_ => panic!("Unsupported Mapper"),
+		x => panic!("Unsupported Mapper: {x} ({prg_size})"),
 	}
 }
 
