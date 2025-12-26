@@ -27,8 +27,6 @@ pub enum InterruptTiming {
 	Ready,
 }
 
-// REMEMBER TO REFLECT ANY CHANGES IN `cpu.h`
-#[repr(C)]
 pub struct State<M: Mapper> {
 	pub cpu: Cpu,
 	pub ppu: Ppu,
@@ -44,20 +42,6 @@ pub struct State<M: Mapper> {
 	pub cycles: u64,
 	pub ppu_runahead: u64,
 	pub interrupt_requested: InterruptTiming,
-}
-
-impl State<NROM256> {
-	pub fn next_step(mut self) -> Self {
-		let inst = self.next_inst();
-		inst.evaluate(&mut self);
-
-		self
-	}
-
-	pub fn next(&mut self) {
-		let inst = self.next_inst();
-		inst.evaluate(self);
-	}
 }
 
 impl<M: Mapper> State<M> {
@@ -104,6 +88,18 @@ impl<M: Mapper> State<M> {
 			interrupt_requested,
 			ppu_runahead,
 		}
+	}
+
+	pub fn next_step(mut self) -> Self {
+		let inst = self.next_inst();
+		inst.evaluate(&mut self);
+
+		self
+	}
+
+	pub fn next(&mut self) {
+		let inst = self.next_inst();
+		inst.evaluate(self);
 	}
 
 	pub fn next_inst(&mut self) -> Inst {

@@ -848,7 +848,7 @@ fn print_instruction<M: Mapper>(state: &State<M>, f: &mut String) -> fmt::Result
 	}
 }
 
-fn mesen_log(state: &State<NROM256>, out: &mut String) {
+fn mesen_log<M: Mapper>(state: &State<M>, out: &mut String) {
 	let cpu::Cpu { a, x, y, s, p, pc } = state.cpu;
 	let stack_depth = (0xFF - s) as usize / 2;
 	let inst = {
@@ -877,7 +877,10 @@ fn mesen_log(state: &State<NROM256>, out: &mut String) {
 }
 
 macro_rules! make_log_test {
-	($name:ident, $game:expr, $log:expr) => {
+	($name:ident, $game:expr, $log:expr, $mapper_type:ty) => {
+		make_log_test!($name, $game, $log, $mapper_type, (|_: &mut State<$mapper_type> | {}));
+	};
+	($name:ident, $game:expr, $log:expr, $mapper_type:ty, $post_setup:expr) => {
 		#[test]
 		fn $name() {
 			use std::{
@@ -886,13 +889,15 @@ macro_rules! make_log_test {
 			};
 
 			let buffer = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), $game)).unwrap();
-			let game = NROM256::parse_ines(&buffer).unwrap();
+			let game = <$mapper_type>::parse_ines(&buffer).unwrap();
 			let mut state = State::new(game, graphics::new_bitmap());
 			let reader =
 				BufReader::new(File::open(concat!(env!("CARGO_MANIFEST_DIR"), $log)).unwrap());
 			let backup_reader =
 				BufReader::new(File::open(concat!(env!("CARGO_MANIFEST_DIR"), $log)).unwrap());
 			let mut ours = String::new();
+
+			$post_setup(&mut state);
 
 			for (i, line) in reader.lines().enumerate() {
 				let i = i + 1;
@@ -937,11 +942,13 @@ macro_rules! make_log_test {
 make_log_test!(
 	mesen_log_1,
 	"/../non-free/SMB1.nes",
-	"/../reference-logs/SMB1-Mesen.txt"
+	"/../reference-logs/SMB1-Mesen.txt",
+	NROM256
 );
 
 make_log_test!(
 	mesen_log_2,
 	"/../non-free/SMB1.nes",
-	"/../reference-logs/SMB1-Mesen-long.log"
+	"/../reference-logs/SMB1-Mesen-long.log",
+	NROM256
 );
