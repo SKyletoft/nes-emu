@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
-use emu_core::{inst::Inst, mapper::Mapper, nrom256::NROM256};
+use emu_core::{inst::Inst, mapper::Mapper, nrom128::NROM128, nrom256::NROM256};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{LitStr, parse_macro_input};
@@ -111,6 +111,21 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::Token
 	assert!(!trainer_present); // Not really, but please error early when I hit a game with one.
 	let mapper_type = (*flags_7 & 0xF0) | *flags_6 >> 4;
 	match mapper_type {
+		0 if *prg_size == 1 => {
+			let mapper = syn::Ident::new("NROM128", proc_macro2::Span::call_site());
+			let parsed_file = NROM128::parse_ines(buffer).unwrap();
+			let lit1 = proc_macro2::Literal::byte_string(&parsed_file.prg_ram);
+			let lit2 = proc_macro2::Literal::byte_string(&parsed_file.prg_rom);
+			let lit3 = proc_macro2::Literal::byte_string(&parsed_file.chr_rom);
+			let mapper_literal = quote! {
+				NROM128 {
+					prg_ram: *#lit1,
+					prg_rom: *#lit2,
+					chr_rom: *#lit3,
+				}
+			};
+			(mapper, parsed_file, mapper_literal)
+		}
 		0 if *prg_size == 2 => {
 			let mapper = syn::Ident::new("NROM256", proc_macro2::Span::call_site());
 			let parsed_file = NROM256::parse_ines(buffer).unwrap();
