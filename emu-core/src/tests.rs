@@ -888,8 +888,10 @@ macro_rules! make_log_test {
 			let buffer = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), $game)).unwrap();
 			let game = NROM256::parse_ines(&buffer).unwrap();
 			let mut state = State::new(game, graphics::new_bitmap());
-			let reader = BufReader::new(File::open(concat!(env!("CARGO_MANIFEST_DIR"), $log)).unwrap());
-			let backup_reader = BufReader::new(File::open(concat!(env!("CARGO_MANIFEST_DIR"), $log)).unwrap());
+			let reader =
+				BufReader::new(File::open(concat!(env!("CARGO_MANIFEST_DIR"), $log)).unwrap());
+			let backup_reader =
+				BufReader::new(File::open(concat!(env!("CARGO_MANIFEST_DIR"), $log)).unwrap());
 			let mut ours = String::new();
 
 			for (i, line) in reader.lines().enumerate() {
