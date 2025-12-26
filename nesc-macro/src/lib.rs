@@ -129,14 +129,9 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::Token
 		0 if *prg_size == 2 => {
 			let mapper = syn::Ident::new("NROM256", proc_macro2::Span::call_site());
 			let parsed_file = NROM256::parse_ines(buffer).unwrap();
-			let NROM256 {
-				prg_ram,
-				prg_rom,
-				chr_rom,
-			} = parsed_file.as_ref();
-			let lit1 = proc_macro2::Literal::byte_string(prg_ram);
-			let lit2 = proc_macro2::Literal::byte_string(prg_rom);
-			let lit3 = proc_macro2::Literal::byte_string(chr_rom);
+			let lit1 = proc_macro2::Literal::byte_string(&parsed_file.prg_ram);
+			let lit2 = proc_macro2::Literal::byte_string(&parsed_file.prg_rom);
+			let lit3 = proc_macro2::Literal::byte_string(&parsed_file.chr_rom);
 			let mapper_literal = quote! {
 				NROM256 {
 					prg_ram: *#lit1,
