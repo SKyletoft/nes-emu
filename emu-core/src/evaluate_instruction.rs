@@ -4,6 +4,12 @@ use paste::paste;
 
 use crate::{interpret::State, mapper::Mapper};
 
+#[inline(always)]
+fn advance<M: Mapper>(state: &mut State<M>, by: u64) {
+	state.cycles += by;
+	state.ppu_runahead += by * 3;
+}
+
 macro_rules! accumulator {
 	($fn:ident) => {
 		paste! {
@@ -13,7 +19,7 @@ macro_rules! accumulator {
 				[<$fn _impl>](state, &mut a);
 				state.cpu.a = a;
 				state.cpu.pc += 1;
-				state.ppu_runahead += 2;
+				advance(state, 2);
 			}
 		}
 	};
@@ -26,7 +32,7 @@ macro_rules! immediate {
 			pub fn [<$fn _immediate>]<M: Mapper>(state: &mut State<M>, val: u8) {
 				[<$fn _impl>](state, val);
 				state.cpu.pc += 2;
-				state.ppu_runahead += 2;
+				advance(state, 2);
 			}
 		}
 	};
@@ -40,7 +46,7 @@ macro_rules! zero_page {
 				let val = state.mem(offset as u16);
 				[<$fn _impl>](state, val);
 				state.cpu.pc += 2;
-				state.ppu_runahead += 3;
+				advance(state, 3);
 			}
 		}
 	};
@@ -55,7 +61,7 @@ macro_rules! zero_page_rmw {
 				[<$fn _impl>](state, &mut val);
 				state.set_mem(offset as u16, val);
 				state.cpu.pc += 2;
-				state.ppu_runahead += 5;
+				advance(state, 5);
 			}
 		}
 	};
@@ -70,7 +76,7 @@ macro_rules! zero_page_x {
 				let val = state.mem(adr & 0x00FF);
 				[<$fn _impl>](state, val);
 				state.cpu.pc += 2;
-				state.ppu_runahead += 4;
+				advance(state, 4);
 			}
 		}
 	};
@@ -86,7 +92,7 @@ macro_rules! zero_page_x_rmw {
 				[<$fn _impl>](state, &mut val);
 				state.set_mem(actual_adr, val);
 				state.cpu.pc += 2;
-				state.ppu_runahead += 6;
+				advance(state, 6);
 			}
 		}
 	};
@@ -100,7 +106,7 @@ macro_rules! absolute {
 				let val = state.mem(adr);
 				[<$fn _impl>](state, val);
 				state.cpu.pc += 3;
-				state.ppu_runahead += 4;
+				advance(state, 4);
 			}
 		}
 	};
@@ -115,7 +121,7 @@ macro_rules! absolute_rmw {
 				[<$fn _impl>](state, &mut val);
 				state.set_mem(adr, val);
 				state.cpu.pc += 3;
-				state.ppu_runahead += 6;
+				advance(state, 6);
 			}
 		}
 	};
@@ -147,7 +153,7 @@ macro_rules! absolute_x_rmw {
 				[<$fn _impl>](state, &mut val);
 				state.set_mem(actual_adr, val);
 				state.cpu.pc += 3;
-				state.ppu_runahead += 7;
+				advance(state, 7);
 			}
 		}
 	};
@@ -181,7 +187,7 @@ macro_rules! indirect_x {
 				let val = state.mem(adr2);
 				[<$fn _impl>](state, val);
 				state.cpu.pc += 2;
-				state.ppu_runahead += 6;
+				advance(state, 6);
 			}
 		}
 	};
@@ -359,35 +365,35 @@ absolute!(bit);
 #[inline(always)]
 pub fn brk<M: Mapper>(state: &mut State<M>) {
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
 pub fn clc<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_c(false);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
 pub fn cld<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_d(false);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
 pub fn cli<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_i(false);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
 pub fn clv<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_v(false);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
@@ -449,7 +455,7 @@ pub fn dex<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_z(0 == state.cpu.x);
 	state.cpu.p.set_n((state.cpu.x & 0x80) >> 7 != 0);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
@@ -458,7 +464,7 @@ pub fn dey<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_z(0 == state.cpu.y);
 	state.cpu.p.set_n((state.cpu.y & 0x80) >> 7 != 0);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
@@ -495,7 +501,7 @@ pub fn inx<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_z(0 == state.cpu.x);
 	state.cpu.p.set_n((state.cpu.x & 0x80) >> 7 != 0);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
@@ -504,13 +510,13 @@ pub fn iny<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_z(0 == state.cpu.y);
 	state.cpu.p.set_n((state.cpu.y & 0x80) >> 7 != 0);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
 pub fn jmp_absolute<M: Mapper>(state: &mut State<M>, adr: u16) {
 	state.cpu.pc = adr;
-	state.ppu_runahead += 3;
+	advance(state, 3);
 }
 
 #[inline(always)]
@@ -518,7 +524,7 @@ pub fn jmp_indirect<M: Mapper>(state: &mut State<M>, adr: u16) {
 	let low = state.mem(adr);
 	let hi = state.mem(adr + 1);
 	state.cpu.pc = u16::from_le_bytes([low, hi]);
-	state.ppu_runahead += 5;
+	advance(state, 5);
 }
 
 #[inline(always)]
@@ -536,7 +542,7 @@ pub fn jsr<M: Mapper>(state: &mut State<M>, adr: u16) {
 	state.cpu.s = stack_ptr;
 
 	state.cpu.pc = adr;
-	state.ppu_runahead += 6;
+	advance(state, 6);
 }
 
 #[inline(always)]
@@ -545,7 +551,7 @@ pub fn lda_immediate<M: Mapper>(state: &mut State<M>, val: u8) {
 	state.cpu.p.set_z(0 == state.cpu.a);
 	state.cpu.p.set_n(state.cpu.a & 0x80 != 0);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
@@ -555,7 +561,7 @@ pub fn lda_zero_page<M: Mapper>(state: &mut State<M>, offset: u8) {
 	state.cpu.p.set_z(0 == state.cpu.a);
 	state.cpu.p.set_n((state.cpu.a & 0x80) >> 7 != 0);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 3;
+	advance(state, 3);
 }
 
 #[inline(always)]
@@ -565,7 +571,7 @@ pub fn lda_zero_page_x<M: Mapper>(state: &mut State<M>, offset: u8) {
 	state.cpu.p.set_z(0 == state.cpu.a);
 	state.cpu.p.set_n((state.cpu.a & 0x80) >> 7 != 0);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]
@@ -614,7 +620,7 @@ pub fn lda_indirect_x<M: Mapper>(state: &mut State<M>, adr: u8) {
 	state.cpu.p.set_z(0 == state.cpu.a);
 	state.cpu.p.set_n((state.cpu.a & 0x80) >> 7 != 0);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 6;
+	advance(state, 6);
 }
 
 #[inline(always)]
@@ -634,7 +640,7 @@ pub fn lda_indirect_y<M: Mapper>(state: &mut State<M>, adr: u8) {
 
 #[inline(always)]
 pub fn ldx_immediate<M: Mapper>(state: &mut State<M>, val: u8) {
-	state.ppu_runahead += 2;
+	advance(state, 2);
 	state.cpu.x = val;
 	state.cpu.p.set_z(0 == state.cpu.x);
 	state.cpu.p.set_n((state.cpu.x & 0x80) != 0);
@@ -648,7 +654,7 @@ pub fn ldx_zero_page<M: Mapper>(state: &mut State<M>, offset: u8) {
 	state.cpu.p.set_z(0 == state.cpu.x);
 	state.cpu.p.set_n((state.cpu.x & 0x80) != 0);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 3;
+	advance(state, 3);
 }
 
 #[inline(always)]
@@ -658,12 +664,12 @@ pub fn ldx_zero_page_y<M: Mapper>(state: &mut State<M>, offset: u8) {
 	state.cpu.p.set_z(0 == state.cpu.x);
 	state.cpu.p.set_n((state.cpu.x & 0x80) != 0);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]
 pub fn ldx_absolute<M: Mapper>(state: &mut State<M>, adr: u16) {
-	state.ppu_runahead += 3;
+	advance(state, 3);
 	let val = state.mem(adr);
 	state.cpu.x = val;
 	state.cpu.p.set_z(0 == state.cpu.x);
@@ -679,7 +685,7 @@ pub fn ldx_absolute_y<M: Mapper>(state: &mut State<M>, adr: u16) {
 	state.cpu.p.set_z(0 == state.cpu.x);
 	state.cpu.p.set_n((state.cpu.x & 0x80) != 0);
 	state.cpu.pc += 3;
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]
@@ -730,7 +736,7 @@ pub fn pha<M: Mapper>(state: &mut State<M>) {
 	state.set_mem(state.cpu.s as u16 + 0x100, state.cpu.a);
 	state.cpu.s -= 1;
 	state.cpu.pc += 1;
-	state.ppu_runahead += 3;
+	advance(state, 3);
 }
 
 #[inline(always)]
@@ -739,7 +745,7 @@ pub fn php<M: Mapper>(state: &mut State<M>) {
 	state.set_mem((state.cpu.s as u16 + 0x100), val);
 	state.cpu.s -= 1;
 	state.cpu.pc += 1;
-	state.ppu_runahead += 3;
+	advance(state, 3);
 }
 
 #[inline(always)]
@@ -749,7 +755,7 @@ pub fn pla<M: Mapper>(state: &mut State<M>) {
 	state.cpu.pc += 1;
 	state.cpu.p.set_z(0 == state.cpu.a);
 	state.cpu.p.set_n(state.cpu.a & 0x80 != 0);
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]
@@ -758,7 +764,7 @@ pub fn plp<M: Mapper>(state: &mut State<M>) {
 	let cc = state.mem(state.cpu.s as u16 + 0x100);
 	state.cpu.p.set_bits(cc);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]
@@ -819,56 +825,56 @@ indirect_y!(sbc);
 pub fn sec<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_c(true);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
 pub fn sed<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_d(true);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
 pub fn sei<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_i(true);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
 pub fn sta_zero_page<M: Mapper>(state: &mut State<M>, offset: u8) {
 	state.set_mem(offset as u16, state.cpu.a);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 3;
+	advance(state, 3);
 }
 
 #[inline(always)]
 pub fn sta_zero_page_x<M: Mapper>(state: &mut State<M>, offset: u8) {
 	state.set_mem(state.cpu.x.wrapping_add(offset) as u16, state.cpu.a);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]
 pub fn sta_absolute<M: Mapper>(state: &mut State<M>, adr: u16) {
 	state.set_mem(adr, state.cpu.a);
 	state.cpu.pc += 3;
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]
 pub fn sta_absolute_x<M: Mapper>(state: &mut State<M>, adr: u16) {
 	state.set_mem(state.cpu.x as u16 + adr, state.cpu.a);
 	state.cpu.pc += 3;
-	state.ppu_runahead += 5;
+	advance(state, 5);
 }
 
 #[inline(always)]
 pub fn sta_absolute_y<M: Mapper>(state: &mut State<M>, adr: u16) {
 	state.set_mem(state.cpu.y as u16 + adr, state.cpu.a);
 	state.cpu.pc += 3;
-	state.ppu_runahead += 5;
+	advance(state, 5);
 }
 
 #[inline(always)]
@@ -879,7 +885,7 @@ pub fn sta_indirect_x<M: Mapper>(state: &mut State<M>, adr: u8) {
 	let adr = u16::from_le_bytes([lo, hi]);
 	state.set_mem(adr, state.cpu.a);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 6;
+	advance(state, 6);
 }
 
 #[inline(always)]
@@ -890,49 +896,49 @@ pub fn sta_indirect_y<M: Mapper>(state: &mut State<M>, adr: u8) {
 	let adr = base + state.cpu.y as u16;
 	state.set_mem(adr, state.cpu.a);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 6;
+	advance(state, 6);
 }
 
 #[inline(always)]
 pub fn stx_zero_page<M: Mapper>(state: &mut State<M>, offset: u8) {
 	state.set_mem(offset as u16, state.cpu.x);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 3;
+	advance(state, 3);
 }
 
 #[inline(always)]
 pub fn stx_zero_page_y<M: Mapper>(state: &mut State<M>, offset: u8) {
 	state.set_mem(state.cpu.y.wrapping_add(offset) as u16, state.cpu.x);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]
 pub fn stx_absolute<M: Mapper>(state: &mut State<M>, adr: u16) {
 	state.set_mem(adr, state.cpu.x);
 	state.cpu.pc += 3;
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]
 pub fn sty_zero_page<M: Mapper>(state: &mut State<M>, offset: u8) {
 	state.set_mem(offset as u16, state.cpu.y);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 3;
+	advance(state, 3);
 }
 
 #[inline(always)]
 pub fn sty_zero_page_x<M: Mapper>(state: &mut State<M>, offset: u8) {
 	state.set_mem(state.cpu.x.wrapping_add(offset) as u16, state.cpu.y);
 	state.cpu.pc += 2;
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]
 pub fn sty_absolute<M: Mapper>(state: &mut State<M>, adr: u16) {
 	state.set_mem(adr, state.cpu.y);
 	state.cpu.pc += 3;
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]
@@ -941,7 +947,7 @@ pub fn tax<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_z(0 == state.cpu.x);
 	state.cpu.p.set_n(state.cpu.x & 0x80 != 0);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
@@ -950,7 +956,7 @@ pub fn tay<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_z(0 == state.cpu.y);
 	state.cpu.p.set_n(state.cpu.y & 0x80 != 0);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
@@ -959,7 +965,7 @@ pub fn tsx<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_z(0 == state.cpu.x);
 	state.cpu.p.set_n(state.cpu.x & 0x80 != 0);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
@@ -968,14 +974,14 @@ pub fn txa<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_z(0 == state.cpu.a);
 	state.cpu.p.set_n(state.cpu.a & 0x80 != 0);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
 pub fn txs<M: Mapper>(state: &mut State<M>) {
 	state.cpu.s = state.cpu.x;
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
@@ -984,7 +990,7 @@ pub fn tya<M: Mapper>(state: &mut State<M>) {
 	state.cpu.p.set_z(0 == state.cpu.a);
 	state.cpu.p.set_n(state.cpu.y & 0x80 != 0);
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
@@ -997,7 +1003,7 @@ pub fn rti<M: Mapper>(state: &mut State<M>) {
 		state.mem(state.cpu.s as u16 + 0x100 - 1),
 		state.mem(state.cpu.s as u16 + 0x100),
 	]);
-	state.ppu_runahead += 6;
+	advance(state, 6);
 }
 
 #[inline(always)]
@@ -1007,37 +1013,37 @@ pub fn rts<M: Mapper>(state: &mut State<M>) {
 		state.mem(state.cpu.s as u16 + 0x100 - 1),
 		state.mem(state.cpu.s as u16 + 0x100),
 	]) + 1;
-	state.ppu_runahead += 6;
+	advance(state, 6);
 }
 
 #[inline(always)]
 pub fn nop<M: Mapper>(state: &mut State<M>) {
 	state.cpu.pc += 1;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
 pub fn skb<M: Mapper>(state: &mut State<M>) {
 	state.cpu.pc += 2;
-	state.ppu_runahead += 2;
+	advance(state, 2);
 }
 
 #[inline(always)]
 pub fn ign<M: Mapper>(state: &mut State<M>, _: u16) {
 	state.cpu.pc += 3;
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]
 pub fn ign_direct<M: Mapper>(state: &mut State<M>, _: u8) {
 	state.cpu.pc += 2;
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]
 pub fn ign_direct_x<M: Mapper>(state: &mut State<M>, _: u8) {
 	state.cpu.pc += 2;
-	state.ppu_runahead += 4;
+	advance(state, 4);
 }
 
 #[inline(always)]

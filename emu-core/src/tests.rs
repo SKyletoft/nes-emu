@@ -934,6 +934,7 @@ macro_rules! make_log_test {
 					println!("Stack check passed");
 				}
 				state.next();
+				state.catch_up_ppu();
 			}
 		}
 	};
