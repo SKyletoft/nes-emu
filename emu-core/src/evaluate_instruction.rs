@@ -272,7 +272,7 @@ pub fn bcs<M: Mapper>(state: &mut State<M>, offset: i8) {
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
 	let cycles = 2 + taken as u64 + page_crossed as u64;
 	state.cpu.pc = new_pc;
-	state.ppu_runahead += cycles;
+	advance(state, cycles);
 }
 
 #[inline(always)]
@@ -283,7 +283,7 @@ pub fn bcc<M: Mapper>(state: &mut State<M>, offset: i8) {
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
 	let cycles = 2 + taken as u64 + page_crossed as u64;
 	state.cpu.pc = new_pc;
-	state.ppu_runahead += cycles;
+	advance(state, cycles);
 }
 
 #[inline(always)]
@@ -294,7 +294,7 @@ pub fn beq<M: Mapper>(state: &mut State<M>, offset: i8) {
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
 	let cycles = 2 + taken as u64 + page_crossed as u64;
 	state.cpu.pc = new_pc;
-	state.ppu_runahead += cycles;
+	advance(state, cycles);
 }
 
 #[inline(always)]
@@ -305,7 +305,7 @@ pub fn bne<M: Mapper>(state: &mut State<M>, offset: i8) {
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
 	let cycles = 2 + taken as u64 + page_crossed as u64;
 	state.cpu.pc = new_pc;
-	state.ppu_runahead += cycles;
+	advance(state, cycles);
 }
 
 #[inline(always)]
