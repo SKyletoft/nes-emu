@@ -46,61 +46,6 @@ pub struct State<M: Mapper> {
 	pub interrupt_requested: InterruptTiming,
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn state_get_mem(ptr: *mut State<NROM256>, adr: u16) -> u8 {
-	let state = unsafe { &mut *ptr };
-	state.mem(adr)
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn state_set_mem(ptr: *mut State<NROM256>, adr: u16, val: u8) {
-	let state = unsafe { &mut *ptr };
-	state.set_mem(adr, val);
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn state_step_ppu(ptr: *mut State<NROM256>) {
-	let state = unsafe { &mut *ptr };
-	state.cycles += 1;
-	state.step_ppu();
-	state.step_ppu();
-	state.step_ppu();
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn state_set_bus(ptr: *mut State<NROM256>, val: u8) {
-	unsafe { &mut *ptr }.cpu_bus = val;
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn state_step_ppu_many(ptr: *mut State<NROM256>, times: u32) {
-	let state = unsafe { &mut *ptr };
-	for _ in 0..times {
-		state.cycles += 1;
-		state.step_ppu();
-		state.step_ppu();
-		state.step_ppu();
-	}
-	state.check_interrupt();
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn state_check_interrupt(ptr: *mut State<NROM256>) {
-	let state = unsafe { &mut *ptr };
-	state.check_interrupt();
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn new_state_from_file_name(name: *const c_char) -> *mut State<NROM256> {
-	let c_name = unsafe { std::ffi::CStr::from_ptr(name) };
-	let name = c_name.to_str().unwrap();
-	let buffer = std::fs::read(name).unwrap();
-	let game = NROM256::parse_ines(&buffer).unwrap();
-	let shared_texture = graphics::new_bitmap();
-	let system_state = State::new(game, shared_texture);
-	Box::leak(Box::new(system_state))
-}
-
 impl State<NROM256> {
 	pub fn next_step(mut self) -> Self {
 		let inst = self.next_inst();
