@@ -10,3 +10,4 @@ callgrind
 perf.data*
 
 reference-logs/SMB1-Mesen-long.log
+reference-logs/nestest.log

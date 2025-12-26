@@ -947,3 +947,10 @@ make_log_test!(
 	"/../reference-logs/SMB1-Mesen-long.log",
 	NROM256
 );
+
+make_log_test!(
+	mesen_log_3,
+	"/../non-free/nestest.nes",
+	"/../reference-logs/nestest.log",
+	NROM128
+);
