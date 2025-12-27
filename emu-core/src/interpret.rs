@@ -348,6 +348,11 @@ impl<M: Mapper> State<M> {
 			self.calculate_sprite_overflow();
 			self.update_sprite_cache();
 		}
+		if self.ppu.dot == 65 {
+			self.ppu
+				.status
+				.set_sprite_overflow(self.ppu.sprite_overflow_latch);
+		}
 
 		if self.ppu.scanline == 241 && self.ppu.dot == 6 {
 			self.interrupt_requested = InterruptTiming::Ready;
