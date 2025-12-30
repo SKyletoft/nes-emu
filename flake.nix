@@ -16,16 +16,15 @@
 					inherit system;
 					overlays = [( import rust-overlay )];
 				};
+				rustToolchain = pkgs.rust-bin.selectLatestNightlyWith (toolchain: toolchain.default.override {
+					extensions = [ "rust-src" "rust-analyzer" ];
+					targets = [ "x86_64-unknown-linux-gnu" ];
+				});
 				devkitARM = devkitnix.packages.${system}.devkitARM;
 				shellInputs = with pkgs; [
-					rustc
-					cargo
-					clippy
-					rustfmt
-					rust-analyzer
+					rustToolchain
 					cargo-3ds
 					cargo-expand
-					cargo-show-asm
 
 					devkitARM
 
