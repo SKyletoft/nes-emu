@@ -25,6 +25,7 @@
 					rustToolchain
 					cargo-3ds
 					cargo-expand
+					cargo-show-asm
 
 					devkitARM
 
