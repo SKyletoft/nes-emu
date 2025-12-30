@@ -18,6 +18,11 @@
 				};
 				devkitARM = devkitnix.packages.${system}.devkitARM;
 				shellInputs = with pkgs; [
+					rustc
+					cargo
+					clippy
+					rustfmt
+					rust-analyzer
 					cargo-3ds
 					cargo-expand
 					cargo-show-asm
