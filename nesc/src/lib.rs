@@ -45,27 +45,28 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 				let next = syn::Ident::new(&format!("b{adr:04X}"), proc_macro2::Span::call_site());
 				quote! { #next(state) }
 			}
-			End::Break => quote! {},
-			End::Continue => quote! {},
+			End::Break => quote! { state },
+			End::Continue => quote! { state },
 		};
 
 		let insts = func
 			.iter()
 			.map(|(_, _, i, _)| {
-				i.instruction_representation()
+				let call = i
+					.instruction_representation()
 					.parse::<proc_macro2::TokenStream>()
-					.unwrap()
+					.unwrap();
+				quote! { state = #call }
 			})
 			.collect::<Vec<_>>();
 
 		let ident = syn::Ident::new(&format!("b{pc:04X}"), proc_macro2::Span::call_site());
 
 		branches.push(quote! { #pc => {
-			#ident(state);
-			0
+			#ident(local)
 		}});
 		fns.push(quote! {
-			fn #ident(state: &mut State<#mapper>) {
+			fn #ident(mut state: State<#mapper>) -> State<#mapper> {
 				#(#insts)*
 				#end
 			}
@@ -75,14 +76,19 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 	quote! {
 		#(#fns)*
 
-		fn bFFFE(state: &mut State<#mapper>) {}
+		fn bFFFE(state: State<#mapper>) -> State<#mapper> { state }
 
-		fn bFFFF(state: &mut State<#mapper>) {}
+		fn bFFFF(state: State<#mapper>) -> State<#mapper> { state }
 
-		pub fn nes_game(state: &mut State<#mapper>) -> i32 {
-			match state.cpu.pc {
-				#(#branches)*
-				pc => pc as i32,
+		pub fn nes_game(state: &mut State<#mapper>) {
+			unsafe {
+				let mut local: State<#mapper> = (&raw mut *state).read();
+				(&raw mut *state).write(
+					match local.cpu.pc {
+						#(#branches)*
+						_ => local,
+					}
+				)
 			}
 		}
 

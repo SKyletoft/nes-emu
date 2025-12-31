@@ -29,11 +29,15 @@ pub enum InterruptTiming {
 
 pub struct State<M: Mapper> {
 	pub cpu: Cpu,
+	pub rest: Box<StateTail<M>>,
+}
+
+pub struct StateTail<M: Mapper> {
 	pub ppu: Ppu,
 	pub apu: Apu,
 	pub controller1: Controller,
 	pub controller2: Controller,
-	pub rom: Box<M>,
+	pub rom: M,
 	pub ram: [u8; 2048],
 	pub cpu_bus: u8,
 	pub ppu_bus: u8,
@@ -74,32 +78,34 @@ impl<M: Mapper> State<M> {
 
 		Self {
 			cpu,
-			ppu,
-			rom,
-			ram,
-			cpu_bus,
-			ppu_bus,
-			output_texture,
-			current_texture,
-			cycles,
-			apu,
-			controller1,
-			controller2,
-			interrupt_requested,
-			ppu_runahead,
+			rest: Box::new(StateTail {
+				ppu,
+				rom: *rom,
+				ram,
+				cpu_bus,
+				ppu_bus,
+				output_texture,
+				current_texture,
+				cycles,
+				apu,
+				controller1,
+				controller2,
+				interrupt_requested,
+				ppu_runahead,
+			}),
 		}
 	}
 
 	pub fn next_step(mut self) -> Self {
 		let inst = self.next_inst();
-		inst.evaluate(&mut self);
-
-		self
+		inst.evaluate(self)
 	}
 
 	pub fn next(&mut self) {
 		let inst = self.next_inst();
-		inst.evaluate(self);
+		unsafe {
+			(&raw mut *self).write(inst.evaluate((&raw mut *self).read()));
+		}
 	}
 
 	pub fn next_inst(&mut self) -> Inst {
@@ -125,36 +131,38 @@ impl<M: Mapper> State<M> {
 
 	fn read_ppu_pure(&self, adr: u16) -> u8 {
 		match adr % 8 {
-			0 => self.ppu_bus,
-			1 => self.ppu_bus,
+			0 => self.rest.ppu_bus,
+			1 => self.rest.ppu_bus,
 			2 => {
-				let status: u8 = self.ppu.status.into();
-				let bus = self.ppu_bus;
+				let status: u8 = self.rest.ppu.status.into();
+				let bus = self.rest.ppu_bus;
 				(status & 0b1110_0000) | (bus & 0b0001_1111)
 			}
-			3 => self.ppu_bus,
-			4 => self.ppu.oam_data,
-			5 => self.ppu_bus,
-			6 => self.ppu_bus,
-			7 => self.ppu.data_cache,
+			3 => self.rest.ppu_bus,
+			4 => self.rest.ppu.oam_data,
+			5 => self.rest.ppu_bus,
+			6 => self.rest.ppu_bus,
+			7 => self.rest.ppu.data_cache,
 			_ => unreachable!(),
 		}
 	}
 
 	fn read_ppu(&mut self, adr: u16) -> u8 {
 		let res = self.read_ppu_pure(adr);
-		self.ppu_bus = res;
+		self.rest.ppu_bus = res;
 		match adr % 8 {
 			2 => {
-				self.ppu.status.set_vblank(false);
-				self.ppu.double_writer = DoubleWriter::default();
+				self.rest.ppu.status.set_vblank(false);
+				self.rest.ppu.double_writer = DoubleWriter::default();
 			}
 			7 => {
-				self.ppu.data_cache = self
+				self.rest.ppu.data_cache = self
+					.rest
 					.rom
-					.get_ppu(self.ppu.adr, &self.ppu)
+					.get_ppu(self.rest.ppu.adr, &self.rest.ppu)
 					.expect("Ppu data adr should always be inbounds");
-				self.ppu.adr = (self.ppu.adr + self.ppu.ctrl.vram_increment_value()) & PPUADDR_MASK;
+				self.rest.ppu.adr =
+					(self.rest.ppu.adr + self.rest.ppu.ctrl.vram_increment_value()) & PPUADDR_MASK;
 			}
 			0 | 1 | 3 | 4 | 5 | 6 => {}
 			_ => unreachable!(),
@@ -163,34 +171,36 @@ impl<M: Mapper> State<M> {
 	}
 
 	fn write_ppu(&mut self, adr: u16, val: u8) {
-		self.ppu_bus = val;
+		self.rest.ppu_bus = val;
 		match adr % 8 {
-			0 => self.ppu.ctrl.set_bits(val),
-			1 => self.ppu.mask.set_bits(val),
+			0 => self.rest.ppu.ctrl.set_bits(val),
+			1 => self.rest.ppu.mask.set_bits(val),
 			2 => {}
 			3 => {}
-			4 => self.ppu.oam_data = val,
+			4 => self.rest.ppu.oam_data = val,
 			5 => {
-				if let Some((x, y)) = self.ppu.double_writer.write(val) {
-					self.ppu.scroll = Scroll { x, y };
+				if let Some((x, y)) = self.rest.ppu.double_writer.write(val) {
+					self.rest.ppu.scroll = Scroll { x, y };
 				}
 			}
 			6 => {
-				if let Some((hi, lo)) = self.ppu.double_writer.write(val) {
+				if let Some((hi, lo)) = self.rest.ppu.double_writer.write(val) {
 					let adr = u16::from_be_bytes([hi, lo]) & PPUADDR_MASK;
-					self.ppu.adr = adr;
-					let x = ((lo & 0b11111) << 3) | (self.ppu.scroll.x & 0b111);
+					self.rest.ppu.adr = adr;
+					let x = ((lo & 0b11111) << 3) | (self.rest.ppu.scroll.x & 0b111);
 					let y = ((adr & 0b11111_00000) >> 2 | ((adr >> 12) & 0b111)) as u8;
 					let nn = (adr >> 10) & 0b11;
-					self.ppu.ctrl.set_nametable(nn as _);
-					self.ppu.scroll = Scroll { x, y };
+					self.rest.ppu.ctrl.set_nametable(nn as _);
+					self.rest.ppu.scroll = Scroll { x, y };
 				}
 			}
 			7 => {
-				self.rom
-					.set_ppu(self.ppu.adr, &mut self.ppu, val)
+				self.rest
+					.rom
+					.set_ppu(self.rest.ppu.adr, &mut self.rest.ppu, val)
 					.expect("All PPU writes should be inbounds");
-				self.ppu.adr = (self.ppu.adr + self.ppu.ctrl.vram_increment_value()) & PPUADDR_MASK;
+				self.rest.ppu.adr =
+					(self.rest.ppu.adr + self.rest.ppu.ctrl.vram_increment_value()) & PPUADDR_MASK;
 			}
 			_ => unreachable!(),
 		}
@@ -199,96 +209,106 @@ impl<M: Mapper> State<M> {
 	pub fn write_apu(&mut self, adr: u16, val: u8) {
 		match adr {
 			0x4000..0x4014 => {
-				let raw_bytes: &mut [u8; 0x14] = self.apu.registers_as_raw_bytes_mut();
+				let raw_bytes: &mut [u8; 0x14] = self.rest.apu.registers_as_raw_bytes_mut();
 				raw_bytes[(adr & 0xFF) as usize] = val;
 			}
 			0x4014 => panic!("4014 is not an APU register"),
-			0x4015 => self.apu.write_status(val),
-			0x4017 => self.apu.frame_counter = val,
+			0x4015 => self.rest.apu.write_status(val),
+			0x4017 => self.rest.apu.frame_counter = val,
 			_ => {}
 		}
 	}
 
 	pub(crate) fn mem_pure(&self, adr: u16) -> u8 {
 		match adr {
-			0x0000..0x0800 => self.ram[adr as usize],
-			0x0800..0x2000 => self.ram[(adr % 2048) as usize],
+			0x0000..0x0800 => self.rest.ram[adr as usize],
+			0x0800..0x2000 => self.rest.ram[(adr % 2048) as usize],
 			0x2000..0x4000 => self.read_ppu_pure(adr),
-			0x4000..0x4015 => self.cpu_bus,
-			0x4015 => (self.apu.status.into_bits() & 0b1101_1111) | (self.cpu_bus & 0b0010_0000),
-			0x4016 => (self.controller1.read_pure() & 0b0000_0111) | (self.cpu_bus & 0b1111_1000),
-			0x4017 => (self.controller2.read_pure() & 0b0000_0111) | (self.cpu_bus & 0b1111_1000),
+			0x4000..0x4015 => self.rest.cpu_bus,
+			0x4015 => {
+				(self.rest.apu.status.into_bits() & 0b1101_1111) | (self.rest.cpu_bus & 0b0010_0000)
+			}
+			0x4016 => {
+				(self.rest.controller1.read_pure() & 0b0000_0111)
+					| (self.rest.cpu_bus & 0b1111_1000)
+			}
+			0x4017 => {
+				(self.rest.controller2.read_pure() & 0b0000_0111)
+					| (self.rest.cpu_bus & 0b1111_1000)
+			}
 			0x4018..0x4020 => panic!("Cpu test mode is disabled"),
-			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
+			0x4020..=0xFFFF => self.rest.rom.get_cpu(adr).expect("Invalid address for ROM"),
 		}
 	}
 
 	pub fn mem(&mut self, adr: u16) -> u8 {
 		let res = match adr {
-			0x0000..0x0800 => self.ram[adr as usize],
-			0x0800..0x2000 => self.ram[(adr % 2048) as usize],
+			0x0000..0x0800 => self.rest.ram[adr as usize],
+			0x0800..0x2000 => self.rest.ram[(adr % 2048) as usize],
 			0x2000..0x4000 => self.read_ppu(adr),
-			0x4000..0x4015 => self.cpu_bus,
-			0x4015 => (self.apu.status.into_bits() & 0b1101_1111) | (self.cpu_bus & 0b0010_0000),
-			0x4016 => (self.controller1.read() & 0b0000_0111) | (self.cpu_bus & 0b1111_1000),
-			0x4017 => (self.controller2.read() & 0b0000_0111) | (self.cpu_bus & 0b1111_1000),
+			0x4000..0x4015 => self.rest.cpu_bus,
+			0x4015 => {
+				(self.rest.apu.status.into_bits() & 0b1101_1111) | (self.rest.cpu_bus & 0b0010_0000)
+			}
+			0x4016 => {
+				(self.rest.controller1.read() & 0b0000_0111) | (self.rest.cpu_bus & 0b1111_1000)
+			}
+			0x4017 => {
+				(self.rest.controller2.read() & 0b0000_0111) | (self.rest.cpu_bus & 0b1111_1000)
+			}
 			0x4018..0x4020 => panic!("Cpu test mode is disabled"),
-			0x4020..=0xFFFF => self.rom.get_cpu(adr).expect("Invalid address for ROM"),
+			0x4020..=0xFFFF => self.rest.rom.get_cpu(adr).expect("Invalid address for ROM"),
 		};
-		self.cpu_bus = res;
+		self.rest.cpu_bus = res;
 		res
 	}
 
 	pub fn set_mem(&mut self, adr: u16, val: u8) {
 		match adr {
-			0x0000..0x0800 => self.ram[adr as usize] = val,
-			0x0800..0x2000 => self.ram[(adr % 2048) as usize] = val,
+			0x0000..0x0800 => self.rest.ram[adr as usize] = val,
+			0x0800..0x2000 => self.rest.ram[(adr % 2048) as usize] = val,
 			0x2000..0x4000 => self.write_ppu(adr, val),
 			0x4000..0x4014 | 0x4015 | 0x4017 => self.write_apu(adr, val),
 			0x4014 => self.dma_transfer(val),
 			0x4016 => {
-				self.controller1.write(val);
-				self.controller2.write(val);
+				self.rest.controller1.write(val);
+				self.rest.controller2.write(val);
 			}
 			0x4018..0x4020 => panic!("Cpu test mode is disabled"),
-			0x4020..=0xFFFF => self.rom.set_cpu(adr, val).expect("Invalid address for ROM"),
+			0x4020..=0xFFFF => self
+				.rest
+				.rom
+				.set_cpu(adr, val)
+				.expect("Invalid address for ROM"),
 		}
 		// Writing to CPU-internal registers doesn't set the bus.
 		if adr != 0x4015 {
-			self.cpu_bus = val;
+			self.rest.cpu_bus = val;
 		}
 	}
 
 	fn dma_transfer(&mut self, page: u8) {
-		if self.cycles % 2 == 1 {
-			self.cycles += 2;
-			for _ in 0..6 {
-				self.step_ppu();
-			}
+		if self.rest.cycles % 2 == 1 {
+			self.rest.cycles += 2;
+			self.rest.ppu_runahead += 6;
 		} else {
-			self.cycles += 1;
-			for _ in 0..3 {
-				self.step_ppu();
-			}
+			self.rest.cycles += 1;
+			self.rest.ppu_runahead += 3;
 		}
 		for (from, to) in (0..256).map(|i| (((page as u16) << 8) | i, i as usize)) {
 			let val = self.mem(from);
-			self.cycles += 1;
-			for _ in 0..3 {
-				self.step_ppu();
-			}
+			self.rest.cycles += 1;
+			self.rest.ppu_runahead += 3;
 
-			let buf: &mut [u8] = bytemuck::cast_slice_mut(&mut self.ppu.oam);
+			let buf: &mut [u8] = bytemuck::cast_slice_mut(&mut self.rest.ppu.oam);
 			buf[to] = val;
-			self.cycles += 1;
-			for _ in 0..3 {
-				self.step_ppu();
-			}
+			self.rest.cycles += 1;
+			self.rest.ppu_runahead += 3;
 		}
 	}
 
 	pub fn set_vblank(&mut self) {
-		if self.cpu.p.i() && self.ppu.ctrl.nmi_enable() {
+		if self.cpu.p.i() && self.rest.ppu.ctrl.nmi_enable() {
 			let hi = self.mem(0xFFFB);
 			let lo = self.mem(0xFFFA);
 			self.set_mem(0x0100 + self.cpu.s as u16, (self.cpu.pc >> 8) as u8);
@@ -296,88 +316,90 @@ impl<M: Mapper> State<M> {
 			self.set_mem(0x00FE + self.cpu.s as u16, self.cpu.p.into_bits());
 			self.cpu.pc = u16::from_be_bytes([hi, lo]);
 			self.cpu.s = self.cpu.s.wrapping_sub(3);
-			self.cycles += 7;
-			for _ in 0..21 {
-				self.step_ppu();
-			}
+			self.rest.cycles += 7;
+			self.rest.ppu_runahead += 21;
 		}
-		self.interrupt_requested = InterruptTiming::Clear;
+		self.rest.interrupt_requested = InterruptTiming::Clear;
 	}
 
 	pub fn check_interrupt(&mut self) {
-		match self.interrupt_requested {
+		match self.rest.interrupt_requested {
 			InterruptTiming::Clear => {}
-			InterruptTiming::Waiting => self.interrupt_requested = InterruptTiming::Ready,
+			InterruptTiming::Waiting => self.rest.interrupt_requested = InterruptTiming::Ready,
 			InterruptTiming::Ready => self.set_vblank(),
 		}
 	}
 
 	pub fn catch_up_ppu(&mut self) {
-		for _ in 0..self.ppu_runahead {
+		for _ in 0..self.rest.ppu_runahead {
 			self.step_ppu();
 		}
-		self.ppu_runahead = 0;
+		self.rest.ppu_runahead = 0;
 		self.check_interrupt();
 	}
 
 	pub fn step_ppu(&mut self) {
-		self.ppu.cycles += 1;
+		self.rest.ppu.cycles += 1;
 
-		if (0..240).contains(&self.ppu.scanline) && (0..255).contains(&self.ppu.dot) {
+		if (0..240).contains(&self.rest.ppu.scanline) && (0..255).contains(&self.rest.ppu.dot) {
 			self.update_sprite0_hit();
 			self.render_pixel();
 		}
-		self.ppu.dot += 1;
-		self.ppu.scanline += self.ppu.dot / 341;
-		self.ppu.dot %= 341;
-		if self.ppu.scanline == 261 {
-			self.ppu.scanline = -1;
-			self.ppu.status.set_sprite_0_hit(false);
+
+		self.rest.ppu.dot += 1;
+		self.rest.ppu.scanline += self.rest.ppu.dot / 341;
+		self.rest.ppu.dot %= 341;
+
+		if self.rest.ppu.scanline == 261 {
+			self.rest.ppu.scanline = -1;
+			self.rest.ppu.status.set_sprite_0_hit(false);
 		}
 
 		// Dot crawl
-		if self.ppu.scanline == -1
-			&& self.ppu.dot == 339
-			&& (self.ppu.mask.show_bg() || self.ppu.mask.show_spr())
-			&& self.ppu.frame & 1 != 0
+		if self.rest.ppu.scanline == -1
+			&& self.rest.ppu.dot == 339
+			&& (self.rest.ppu.mask.show_bg() || self.rest.ppu.mask.show_spr())
+			&& self.rest.ppu.frame & 1 != 0
 		{
-			self.ppu.dot = 340;
+			self.rest.ppu.dot = 340;
 		}
 
-		if self.ppu.dot == 0 {
+		if self.rest.ppu.dot == 0 {
 			self.calculate_sprite_overflow();
 			self.update_sprite_cache();
 		}
-		if self.ppu.dot == 65 {
-			self.ppu
+		if self.rest.ppu.dot == 65 {
+			self.rest
+				.ppu
 				.status
-				.set_sprite_overflow(self.ppu.sprite_overflow_latch);
+				.set_sprite_overflow(self.rest.ppu.sprite_overflow_latch);
 		}
 
-		if self.ppu.scanline == 241 && self.ppu.dot == 6 {
-			self.interrupt_requested = InterruptTiming::Ready;
-			self.ppu.status.set_vblank(true);
+		if self.rest.ppu.scanline == 241 && self.rest.ppu.dot == 6 {
+			self.rest.interrupt_requested = InterruptTiming::Ready;
+			self.rest.ppu.status.set_vblank(true);
 		}
-		if self.ppu.scanline == 0 && self.ppu.dot == 0 && self.ppu.status.vblank() {
-			self.ppu.status.set_vblank(false);
+		if self.rest.ppu.scanline == 0 && self.rest.ppu.dot == 0 && self.rest.ppu.status.vblank() {
+			self.rest.ppu.status.set_vblank(false);
 		}
 
 		// Why frames count from the start of vblank and not the start of frames, I don't
 		// know. Again, matching Mesen's behaviour.
-		if self.ppu.dot == 0 && self.ppu.scanline == 240 {
-			self.ppu.frame += 1;
-			let mut texture = self.output_texture.lock().unwrap();
-			std::mem::swap(&mut self.current_texture, &mut texture);
+		if self.rest.ppu.dot == 0 && self.rest.ppu.scanline == 240 {
+			self.rest.ppu.frame += 1;
+			let mut texture = self.rest.output_texture.lock().unwrap();
+			std::mem::swap(&mut self.rest.current_texture, &mut texture);
 		}
 	}
 
 	fn render_pixel(&mut self) {
 		let visible_sprites_iter = self
+			.rest
 			.ppu
 			.sprite_cache
 			.iter()
 			.filter_map(|&s| s)
-			.filter(|sprite| self.ppu.sprite_is_visible_x(sprite));
+			.filter(|sprite| self.rest.ppu.sprite_is_visible_x(sprite));
 		let colour = visible_sprites_iter
 			.clone()
 			.filter(|s| !s.attr.priority())
@@ -389,27 +411,29 @@ impl<M: Mapper> State<M> {
 					.filter_map(|s| self.sprite_get_colour(&s)),
 			)
 			.next()
-			.unwrap_or(self.ppu.palettes[0][0]);
-		self.current_texture[self.ppu.scanline as usize][self.ppu.dot as usize] = colour.into();
+			.unwrap_or(self.rest.ppu.palettes[0][0]);
+		self.rest.current_texture[self.rest.ppu.scanline as usize][self.rest.ppu.dot as usize] =
+			colour.into();
 	}
 
 	fn update_sprite0_hit(&mut self) {
 		let sprite_0_hit = {
-			let sprite_0 = &self.ppu.oam[0];
-			self.ppu.mask.show_spr()
-				&& self.ppu.mask.show_bg()
-				&& self.ppu.sprite_is_visible_x(sprite_0)
-				&& self.ppu.sprite_is_visible_y(sprite_0)
+			let sprite_0 = &self.rest.ppu.oam[0];
+			self.rest.ppu.mask.show_spr()
+				&& self.rest.ppu.mask.show_bg()
+				&& self.rest.ppu.sprite_is_visible_x(sprite_0)
+				&& self.rest.ppu.sprite_is_visible_y(sprite_0)
 				&& self.sprite_get_colour(sprite_0).is_some()
 				&& self.background_get_colour().is_some()
 		};
-		self.ppu
+		self.rest
+			.ppu
 			.status
-			.set_sprite_0_hit(self.ppu.status.sprite_0_hit() | sprite_0_hit);
+			.set_sprite_0_hit(self.rest.ppu.status.sprite_0_hit() | sprite_0_hit);
 	}
 
 	fn update_sprite_cache(&mut self) {
-		let mut sprites: [Sprite; 64] = self.ppu.oam;
+		let mut sprites: [Sprite; 64] = self.rest.ppu.oam;
 
 		// Stable sort: Primarily by x, then by prio, lastly by index.
 		sprites.sort_by(|l, r| {
@@ -421,20 +445,24 @@ impl<M: Mapper> State<M> {
 		for (cache, sprite) in sprite_cache.iter_mut().zip(
 			sprites
 				.iter()
-				.filter(|sprite| self.ppu.sprite_is_visible_y(sprite))
+				.filter(|sprite| self.rest.ppu.sprite_is_visible_y(sprite))
 				.take(8),
 		) {
 			*cache = Some(*sprite);
 		}
 
-		self.ppu.sprite_cache = sprite_cache;
+		self.rest.ppu.sprite_cache = sprite_cache;
 	}
 
 	fn calculate_sprite_overflow(&mut self) {
-		let scanline = self.ppu.scanline + 1;
-		let height = if self.ppu.ctrl.sprite_size() { 16 } else { 8 };
+		let scanline = self.rest.ppu.scanline + 1;
+		let height = if self.rest.ppu.ctrl.sprite_size() {
+			16
+		} else {
+			8
+		};
 
-		let oam = &self.ppu.oam;
+		let oam = &self.rest.ppu.oam;
 
 		let mut n: usize = 0;
 		// primary OAM byte index
@@ -463,15 +491,15 @@ impl<M: Mapper> State<M> {
 			n += 4;
 		}
 
-		self.ppu.sprite_overflow_latch = overflow;
+		self.rest.ppu.sprite_overflow_latch = overflow;
 	}
 
 	pub fn sprite_get_colour(&self, sprite: &Sprite) -> Option<NesColour> {
-		if !self.ppu.mask.show_spr() {
+		if !self.rest.ppu.mask.show_spr() {
 			return None;
 		}
 
-		let (x, y) = self.ppu.actual_pos();
+		let (x, y) = self.rest.ppu.actual_pos();
 
 		let pixel_x = self.ppu.dot - sprite.x as i16;
 		let pixel_y = self.ppu.scanline - sprite.y as i16 - 1;
@@ -497,7 +525,7 @@ impl<M: Mapper> State<M> {
 			pixel_x as _,
 			pixel_y as _,
 			sprite.tile,
-			self.ppu.ctrl.sprite_pattern_table(),
+			self.rest.ppu.ctrl.sprite_pattern_table(),
 		);
 
 		if palette_index == 0 {
@@ -510,8 +538,9 @@ impl<M: Mapper> State<M> {
 		assert!((0..16).contains(&col_idx));
 
 		let raw_col = self
+			.rest
 			.rom
-			.get_ppu(0x3F10 + col_idx, &self.ppu)
+			.get_ppu(0x3F10 + col_idx, &self.rest.ppu)
 			.expect("Palette RAM must be in-bounds");
 		let col = NesColour::try_from(raw_col).expect("Game used invalid colour");
 		Some(col)
@@ -519,6 +548,7 @@ impl<M: Mapper> State<M> {
 
 	pub fn read_pattern_table(&self, fine_x: u8, fine_y: u8, tile_id: u8, half: bool) -> u8 {
 		let plane0 = self
+			.rest
 			.rom
 			.get_ppu(
 				PatternAddressBuilder::new()
@@ -528,10 +558,11 @@ impl<M: Mapper> State<M> {
 					.with_half(half)
 					.build()
 					.into_bits(),
-				&self.ppu,
+				&self.rest.ppu,
 			)
 			.expect("Pattern table read failed");
 		let plane1 = self
+			.rest
 			.rom
 			.get_ppu(
 				PatternAddressBuilder::new()
@@ -541,7 +572,7 @@ impl<M: Mapper> State<M> {
 					.with_half(half)
 					.build()
 					.into_bits(),
-				&self.ppu,
+				&self.rest.ppu,
 			)
 			.expect("Pattern table read failed");
 
@@ -550,11 +581,11 @@ impl<M: Mapper> State<M> {
 	}
 
 	pub fn background_get_colour(&self) -> Option<NesColour> {
-		if !self.ppu.mask.show_bg() {
+		if !self.rest.ppu.mask.show_bg() {
 			return None;
 		}
 
-		let (x, y) = self.ppu.actual_pos();
+		let (x, y) = self.rest.ppu.actual_pos();
 		let nametable_adr = match (x, y) {
 			(0..256, 0..240) => 0x2000,
 			(256..512, 0..240) => 0x2400,
@@ -572,15 +603,16 @@ impl<M: Mapper> State<M> {
 
 		// Fetch tile index from nametable
 		let tile_id = self
+			.rest
 			.rom
-			.get_ppu(nametable_adr + tile_idx, &self.ppu)
+			.get_ppu(nametable_adr + tile_idx, &self.rest.ppu)
 			.expect("Nametable read failed");
 
 		let tile_palette_index = self.read_pattern_table(
 			pixel_x as _,
 			pixel_y as _,
 			tile_id,
-			self.ppu.ctrl.background_pattern_table(),
+			self.rest.ppu.ctrl.background_pattern_table(),
 		);
 
 		if tile_palette_index == 0 {
@@ -590,8 +622,9 @@ impl<M: Mapper> State<M> {
 		let attribute_table_base = nametable_adr + 0x3C0;
 		let attribute_addr = attribute_table_base + (tile_y / 4) * 8 + tile_x / 4;
 		let attribute_byte = self
+			.rest
 			.rom
-			.get_ppu(attribute_addr, &self.ppu)
+			.get_ppu(attribute_addr, &self.rest.ppu)
 			.expect("Attribute table read failed");
 		let shift = ((tile_y % 4) / 2) * 4 + ((tile_x % 4) / 2) * 2;
 		let attribute_bits = (attribute_byte >> shift) & 0b11;
@@ -601,7 +634,7 @@ impl<M: Mapper> State<M> {
 		let col_idx = attribute_bits as u16 * 4 + tile_palette_index as u16;
 		assert!((0..16).contains(&col_idx));
 
-		let col = self.ppu.palettes[attribute_bits as usize][tile_palette_index as usize];
+		let col = self.rest.ppu.palettes[attribute_bits as usize][tile_palette_index as usize];
 		Some(col)
 	}
 
@@ -620,8 +653,8 @@ impl<M: Mapper> State<M> {
 		let c = if p.c() { 'C' } else { 'c' };
 		let b = if p.b() { '+' } else { '-' };
 		let u = if p.u() { '+' } else { '-' };
-		let cbus = self.cpu_bus;
-		let pbus = self.ppu_bus;
+		let cbus = self.rest.cpu_bus;
+		let pbus = self.rest.ppu_bus;
 
 		let inst = self.next_inst_pure();
 
@@ -632,8 +665,8 @@ impl<M: Mapper> State<M> {
 			scanline,
 			dot,
 			..
-		} = self.ppu;
-		let frame = self.ppu.frame % 10000;
+		} = self.rest.ppu;
+		let frame = self.rest.ppu.frame % 10000;
 
 		let mut out = String::new();
 
@@ -648,15 +681,15 @@ impl<M: Mapper> State<M> {
 		let s8 = self.mem_pure(0x01F7);
 		let s9 = self.mem_pure(0x01F6);
 
-		let cycles = self.cycles;
+		let cycles = self.rest.cycles;
 
-		let cache = self.ppu.data_cache;
-		let ppu_adr = self.ppu.adr;
-		let ppu_cycles = self.ppu.cycles;
+		let cache = self.rest.ppu.data_cache;
+		let ppu_adr = self.rest.ppu.adr;
+		let ppu_cycles = self.rest.ppu.cycles;
 		let Scroll {
 			x: scroll_x,
 			y: scroll_y,
-		} = self.ppu.scroll;
+		} = self.rest.ppu.scroll;
 
 		writeln!(&mut out, "┌─CPU───────────────────────────┐").unwrap();
 		writeln!(

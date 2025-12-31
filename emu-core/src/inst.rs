@@ -621,7 +621,7 @@ impl Inst {
 		}
 	}
 
-	pub fn evaluate<M: Mapper>(&self, state: &mut State<M>) {
+	pub fn evaluate<M: Mapper>(&self, mut state: State<M>) -> State<M> {
 		match self {
 			Inst::AdcAbsolute(a) => adc_absolute(state, a.into()),
 			Inst::AdcAbsoluteX(a) => adc_absolute_x(state, a.into()),

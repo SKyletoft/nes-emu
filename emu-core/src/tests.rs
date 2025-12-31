@@ -867,10 +867,10 @@ fn mesen_log<M: Mapper>(state: &State<M>, out: &mut String) {
 	let i = if p.i() { 'I' } else { 'i' };
 	let z = if p.z() { 'Z' } else { 'z' };
 	let c = if p.c() { 'C' } else { 'c' };
-	let scanline = state.ppu.scanline;
-	let dot = state.ppu.dot;
-	let frame = state.ppu.frame;
-	let cycle = state.cycles;
+	let scanline = state.rest.ppu.scanline;
+	let dot = state.rest.ppu.dot;
+	let frame = state.rest.ppu.frame;
+	let cycle = state.rest.cycles;
 
 	write!(
 		out,

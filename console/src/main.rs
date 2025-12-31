@@ -59,9 +59,7 @@ fn main() {
 	let mut frame_timing = Instant::now();
 
 	while apt.main_loop() {
-		let res = game::nes_game(&mut system_state);
-		if res != 0 {
-			system_state.next();
+		game::nes_game(&mut system_state);
 		}
 
 		let frame = system_state.ppu_runahead;
@@ -89,7 +87,7 @@ fn main() {
 		c.set_down(hid.keys_held().contains(KeyPad::DPAD_DOWN));
 		c.set_left(hid.keys_held().contains(KeyPad::DPAD_LEFT));
 		c.set_right(hid.keys_held().contains(KeyPad::DPAD_RIGHT));
-		*system_state.controller1.state_mut() = c.into_bits();
+		*system_state.rest.controller1.state_mut() = c.into_bits();
 
 		if hid.keys_down().contains(KeyPad::SELECT) {
 			break;
