@@ -501,11 +501,11 @@ impl<M: Mapper> State<M> {
 
 		let (x, y) = self.rest.ppu.actual_pos();
 
-		let pixel_x = self.ppu.dot - sprite.x as i16;
-		let pixel_y = self.ppu.scanline - sprite.y as i16 - 1;
+		let pixel_x = self.rest.ppu.dot - sprite.x as i16;
+		let pixel_y = self.rest.ppu.scanline - sprite.y as i16 - 1;
 
-		assert!((0..8).contains(&pixel_x), "{pixel_x}");
-		assert!((0..8).contains(&pixel_y), "{pixel_y}");
+		debug_assert!((0..8).contains(&pixel_x), "{pixel_x}");
+		debug_assert!((0..8).contains(&pixel_y), "{pixel_y}");
 
 		let pixel_x = if sprite.attr.flip_h() {
 			7 - pixel_x
@@ -518,8 +518,8 @@ impl<M: Mapper> State<M> {
 			pixel_y
 		};
 
-		assert!((0..8).contains(&pixel_x), "{pixel_x}");
-		assert!((0..8).contains(&pixel_y), "{pixel_y}");
+		debug_assert!((0..8).contains(&pixel_x), "{pixel_x}");
+		debug_assert!((0..8).contains(&pixel_y), "{pixel_y}");
 
 		let palette_index = self.read_pattern_table(
 			pixel_x as _,
@@ -532,10 +532,10 @@ impl<M: Mapper> State<M> {
 			return None;
 		}
 
-		assert!((0..4).contains(&sprite.attr.palette()));
-		assert!((0..4).contains(&palette_index));
+		debug_assert!((0..4).contains(&sprite.attr.palette()));
+		debug_assert!((0..4).contains(&palette_index));
 		let col_idx = sprite.attr.palette() as u16 * 4 + palette_index as u16;
-		assert!((0..16).contains(&col_idx));
+		debug_assert!((0..16).contains(&col_idx));
 
 		let raw_col = self
 			.rest
@@ -629,10 +629,10 @@ impl<M: Mapper> State<M> {
 		let shift = ((tile_y % 4) / 2) * 4 + ((tile_x % 4) / 2) * 2;
 		let attribute_bits = (attribute_byte >> shift) & 0b11;
 
-		assert!((0..4).contains(&attribute_bits));
-		assert!((0..4).contains(&tile_palette_index));
+		debug_assert!((0..4).contains(&attribute_bits));
+		debug_assert!((0..4).contains(&tile_palette_index));
 		let col_idx = attribute_bits as u16 * 4 + tile_palette_index as u16;
-		assert!((0..16).contains(&col_idx));
+		debug_assert!((0..16).contains(&col_idx));
 
 		let col = self.rest.ppu.palettes[attribute_bits as usize][tile_palette_index as usize];
 		Some(col)
