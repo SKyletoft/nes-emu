@@ -18,10 +18,11 @@ fn emulation_loop(
 ) {
 	let game = Box::new(game::MAPPER.clone());
 	let mut system_state = State::new(game, shared_texture);
-	let mut visited = BTreeSet::new();
+	// let mut visited = BTreeSet::new();
 
 	let mut frame_last = 0;
 	let mut ppu_last = 0;
+	let mut last_time = Instant::now();
 
 	while kill.load(Ordering::Relaxed) {
 		*system_state.rest.controller1.state_mut() = controller_state.load(Ordering::SeqCst);
@@ -38,11 +39,11 @@ fn emulation_loop(
 		//	system_state.next();
 		// }
 
-		let ppu_now = system_state.ppu_runahead;
-		if ppu_last + 1000 >= ppu_now {
-			continue;
-		}
-		ppu_last = ppu_now;
+		// let ppu_now = system_state.ppu_runahead;
+		// if ppu_last + 1000 >= ppu_now {
+		// continue;
+		// }
+		// ppu_last = ppu_now;
 		system_state.catch_up_ppu();
 
 		let frame_now = system_state.rest.ppu.frame;
@@ -51,17 +52,9 @@ fn emulation_loop(
 		}
 		frame_last = frame_now;
 
-		static LAST_TIME: Mutex<Option<Instant>> = Mutex::new(None);
-		let mut last_time = LAST_TIME.lock().unwrap();
-		let to_sleep = match &mut *last_time {
-			None => Duration::from_millis(16),
-			Some(last_time) => {
-				let now = Instant::now();
-				(Duration::from_millis(1000) / 60).saturating_sub(now - *last_time)
-			}
-		};
-		std::thread::sleep(to_sleep);
-		*last_time = Some(Instant::now());
+		let now = Instant::now();
+		std::thread::sleep((Duration::from_millis(1000) / 60).saturating_sub(now - last_time));
+		last_time = Instant::now();
 	}
 }
 

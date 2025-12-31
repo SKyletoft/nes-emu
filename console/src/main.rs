@@ -1,4 +1,7 @@
-use std::{hint::assert_unchecked, time::Instant};
+use std::{
+	hint::assert_unchecked,
+	time::{Duration, Instant},
+};
 
 use ctru::{
 	prelude::*,
@@ -58,22 +61,43 @@ fn main() {
 
 	let mut frame_timing = Instant::now();
 
-	while apt.main_loop() {
-		game::nes_game(&mut system_state);
-		}
+	let mut ppu_catchup_cycle = 0;
 
-		let frame = system_state.ppu_runahead;
-		if last_frame + 29781 >= frame {
+	let mut cpu_dur = Duration::new(0, 0);
+	let mut ppu_dur = Duration::new(0, 0);
+	while apt.main_loop() {
+		let before = Instant::now();
+		game::nes_game(&mut system_state);
+		let after = Instant::now();
+		cpu_dur += after - before;
+
+		ppu_catchup_cycle += 1;
+		if ppu_catchup_cycle == 10 {
+			let before_ppu = Instant::now();
+			system_state.catch_up_ppu();
+			let after_ppu = Instant::now();
+			ppu_dur += after_ppu - before_ppu;
+			ppu_catchup_cycle = 0;
+		}
+		let after_graphics = Instant::now();
+
+		let frame = system_state.rest.ppu.frame;
+		if last_frame == frame {
 			continue;
 		}
-		system_state.catch_up_ppu();
-
 		last_frame = frame;
-		update_screen(&gfx, system_state.current_texture.as_ref());
-		let now = Instant::now();
-		let frame_count = system_state.ppu.frame;
-		println!("{frame_count:5}: {:?}", now - frame_timing);
-		frame_timing = now;
+
+		let before_copy = Instant::now();
+		update_screen(&gfx, system_state.rest.current_texture.as_ref());
+		let after_copy = Instant::now();
+		let frame_count = system_state.rest.ppu.frame;
+
+		let cpu_time = cpu_dur.as_millis();
+		let ppu_time = ppu_dur.as_millis();
+		let copy_time = (after_copy - before_copy).as_millis();
+		println!("{frame_count:5}: {cpu_time:3}ms {ppu_time:3}ms {copy_time:3}ms");
+		cpu_dur = Duration::new(0, 0);
+		ppu_dur = Duration::new(0, 0);
 		// gfx.wait_for_vblank();
 
 		hid.scan_input();
