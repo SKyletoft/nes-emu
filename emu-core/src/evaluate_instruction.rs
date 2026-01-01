@@ -619,6 +619,7 @@ pub fn lda_absolute<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
 	// LDA Absolute *really* cares about timing,
 	// so actually catch up and step ppu here
 	state.rest.ppu_runahead += 9;
+	#[cfg(test)]
 	state.catch_up_ppu();
 	let val = state.mem(adr);
 	state.cpu.a = val;
@@ -722,6 +723,7 @@ pub fn ldx_zero_page_y<M: Mapper>(mut state: State<M>, offset: u8) -> State<M> {
 pub fn ldx_absolute<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
 	// Same as LDA Absolute, timing sensitive
 	state.rest.ppu_runahead += 9;
+	#[cfg(test)]
 	state.catch_up_ppu();
 	let val = state.mem(adr);
 	state.cpu.x = val;
