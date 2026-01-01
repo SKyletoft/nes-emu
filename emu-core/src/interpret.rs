@@ -499,6 +499,7 @@ impl<M: Mapper> State<M> {
 			colour.into();
 	}
 
+	#[inline(always)] // All the mask flags should be constant per batch
 	fn update_sprite0_hit(&mut self) {
 		let sprite_0_hit = {
 			let sprite_0 = &self.rest.ppu.oam[0];

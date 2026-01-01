@@ -66,6 +66,7 @@ impl NROM256 {
 }
 
 impl Mapper for NROM256 {
+	#[inline]
 	fn get_cpu(&self, adr: u16) -> Option<u8> {
 		let NROM256 {
 			prg_ram: ram,
@@ -84,6 +85,7 @@ impl Mapper for NROM256 {
 		}
 	}
 
+	#[inline]
 	fn set_cpu(&mut self, adr: u16, val: u8) -> Option<()> {
 		let NROM256 {
 			prg_ram: ram,
@@ -98,6 +100,7 @@ impl Mapper for NROM256 {
 		Some(())
 	}
 
+	#[inline]
 	fn get_ppu(&self, adr: u16, ppu: &Ppu) -> Option<u8> {
 		let NROM256 { chr_rom, .. } = self;
 		let adr = adr & VRAM_MASK;
@@ -112,6 +115,7 @@ impl Mapper for NROM256 {
 		}
 	}
 
+	#[inline]
 	fn set_ppu(&mut self, adr: u16, ppu: &mut Ppu, val: u8) -> Option<()> {
 		let NROM256 {
 			prg_ram: _,
