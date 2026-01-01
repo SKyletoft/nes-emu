@@ -21,7 +21,6 @@ fn emulation_loop(
 	// let mut visited = BTreeSet::new();
 
 	let mut frame_last = 0;
-	let mut ppu_last = 0;
 	let mut last_time = Instant::now();
 
 	while kill.load(Ordering::Relaxed) {
@@ -39,11 +38,9 @@ fn emulation_loop(
 		//	system_state.next();
 		// }
 
-		// let ppu_now = system_state.ppu_runahead;
-		// if ppu_last + 1000 >= ppu_now {
-		// continue;
-		// }
-		// ppu_last = ppu_now;
+		if system_state.rest.ppu_runahead > 600 {
+			continue;
+		}
 		system_state.catch_up_ppu();
 
 		let frame_now = system_state.rest.ppu.frame;
