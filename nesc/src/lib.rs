@@ -1,4 +1,8 @@
-use std::{collections::VecDeque, fs, path::PathBuf};
+use std::{
+	collections::{BTreeSet, VecDeque},
+	fs,
+	path::PathBuf,
+};
 
 use emu_core::{inst::Inst, mapper::Mapper, nrom128::NROM128, nrom256::NROM256};
 use proc_macro::TokenStream;
@@ -20,6 +24,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 
 	let mut fns = Vec::new();
 	let mut branches = Vec::new();
+	let mut starting_points = BTreeSet::new();
 
 	let sorted_instructions = collect_starting_points(&*rom);
 
@@ -42,8 +47,8 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 		};
 		let end = match end {
 			End::Goto(adr) => {
-				let next = syn::Ident::new(&format!("b{adr:04X}"), proc_macro2::Span::call_site());
-				quote! { #next(state) }
+				let next = syn::Ident::new(&format!("b_{adr:04x}"), proc_macro2::Span::call_site());
+				quote! { return #next(state); }
 			}
 			End::Break => quote! { state },
 			End::Continue => quote! { state },
@@ -60,11 +65,9 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 			})
 			.collect::<Vec<_>>();
 
-		let ident = syn::Ident::new(&format!("b{pc:04X}"), proc_macro2::Span::call_site());
+		let ident = syn::Ident::new(&format!("b_{pc:04x}"), proc_macro2::Span::call_site());
 
-		branches.push(quote! { #pc => {
-			#ident(local)
-		}});
+		starting_points.insert(pc);
 		fns.push(quote! {
 			fn #ident(mut state: State<#mapper>) -> State<#mapper> {
 				#(#insts)*
@@ -73,21 +76,30 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 		});
 	}
 
+	for i in 0x8000..=0xFFFF {
+		let id = syn::Ident::new("id", proc_macro2::Span::call_site());
+		if starting_points.contains(&i) {
+			let ident = syn::Ident::new(&format!("b_{i:04x}"), proc_macro2::Span::call_site());
+			branches.push(quote! { #ident, });
+		} else {
+			branches.push(quote! { #id, });
+		}
+	}
 	quote! {
 		#(#fns)*
 
-		fn bFFFE(state: State<#mapper>) -> State<#mapper> { state }
+		fn id<T>(x: T) -> T { x }
 
-		fn bFFFF(state: State<#mapper>) -> State<#mapper> { state }
+		fn b_ffff(state: State<#mapper>) -> State<#mapper> { state }
+
+		const FNS: [fn(State<#mapper>)->State<#mapper>; 0x8000] = [ #(#branches)* ];
 
 		pub fn nes_game(state: &mut State<#mapper>) {
 			unsafe {
 				let mut local: State<#mapper> = (&raw mut *state).read();
 				(&raw mut *state).write(
-					match local.cpu.pc {
-						#(#branches)*
-						_ => local,
-					}
+					// This doesn't work as the list is GC'd and the offsets are wrong. The list needs to be padded with identity functions
+					FNS[local.cpu.pc as usize - 0x8000](local)
 				)
 			}
 		}
