@@ -1,7 +1,6 @@
 mod drawing;
 
 use std::{
-	collections::BTreeSet,
 	sync::{
 		Arc, Mutex,
 		atomic::{AtomicBool, AtomicU8, Ordering},
@@ -18,7 +17,6 @@ fn emulation_loop(
 ) {
 	let game = Box::new(game::MAPPER.clone());
 	let mut system_state = State::new(game, shared_texture);
-	// let mut visited = BTreeSet::new();
 
 	let mut frame_last = 0;
 	let mut last_time = Instant::now();
