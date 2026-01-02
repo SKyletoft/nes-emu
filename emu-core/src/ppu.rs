@@ -36,6 +36,8 @@ pub struct Ppu {
 
 impl Default for Ppu {
 	fn default() -> Self {
+		// I dunno, ask the Mesen devs why.
+		let dot = if cfg!(test) { 27 } else { 0 };
 		Self {
 			ctrl: Default::default(),
 			mask: Default::default(),
@@ -46,7 +48,7 @@ impl Default for Ppu {
 			adr: Default::default(),
 			double_writer: Default::default(),
 			scanline: 0,
-			dot: 27, // I dunno, ask the Mesen devs why.
+			dot,
 			frame: 1,
 			cycles: 0,
 			vram: [0; _],
