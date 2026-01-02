@@ -59,10 +59,6 @@ fn main() {
 
 	let mut last_frame = 0;
 
-	let mut frame_timing = Instant::now();
-
-	let mut ppu_catchup_cycle = 0;
-
 	let mut cpu_dur = Duration::new(0, 0);
 	let mut ppu_dur = Duration::new(0, 0);
 	while apt.main_loop() {
@@ -71,15 +67,10 @@ fn main() {
 		let after = Instant::now();
 		cpu_dur += after - before;
 
-		ppu_catchup_cycle += 1;
-		if ppu_catchup_cycle == 10 {
-			let before_ppu = Instant::now();
-			system_state.catch_up_ppu();
-			let after_ppu = Instant::now();
-			ppu_dur += after_ppu - before_ppu;
-			ppu_catchup_cycle = 0;
-		}
-		let after_graphics = Instant::now();
+		let before_ppu = Instant::now();
+		system_state.catch_up_ppu();
+		let after_ppu = Instant::now();
+		ppu_dur += after_ppu - before_ppu;
 
 		let frame = system_state.rest.ppu.frame;
 		if last_frame == frame {

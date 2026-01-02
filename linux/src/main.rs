@@ -26,21 +26,8 @@ fn emulation_loop(
 	while kill.load(Ordering::Relaxed) {
 		*system_state.rest.controller1.state_mut() = controller_state.load(Ordering::SeqCst);
 
-		// let broke =
 		game::nes_game(&mut system_state);
-		// if broke != 0 {
-		//	if visited.insert(broke) {
-		//		println!("0x{broke:04X}");
-		//	}
-		//	while !system_state.next_inst_pure().ends_bb() {
-		//		system_state.next();
-		//	}
-		//	system_state.next();
-		// }
 
-		if system_state.rest.ppu_runahead > 600 {
-			continue;
-		}
 		system_state.catch_up_ppu();
 
 		let frame_now = system_state.rest.ppu.frame;
