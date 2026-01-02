@@ -336,8 +336,12 @@ impl<M: Mapper> State<M> {
 		#[cfg(test)] // During tests catchup should be run on every instruction
 		assert!(remaining.is_multiple_of(3) && remaining <= 7 * 3);
 
-		debug_assert!(self.rest.ppu.dot == 0 || self.rest.ppu.dot == 128 || self.rest.ppu.dot >= 256);
-		while self.rest.ppu_runahead > 128 || (self.rest.ppu.dot > 255 && self.rest.ppu_runahead > 0) {
+		debug_assert!(
+			self.rest.ppu.dot == 0 || self.rest.ppu.dot == 128 || self.rest.ppu.dot >= 256
+		);
+		while self.rest.ppu_runahead > 128
+			|| (self.rest.ppu.dot > 255 && self.rest.ppu_runahead > 0)
+		{
 			let cycles = if self.rest.ppu.dot > 255 || self.rest.ppu.dot == 128 {
 				(341 - self.rest.ppu.dot as u64).min(self.rest.ppu_runahead)
 			} else {
@@ -346,7 +350,11 @@ impl<M: Mapper> State<M> {
 			};
 			self.step_ppu_batch(cycles);
 			self.rest.ppu_runahead -= cycles;
-			debug_assert!(self.rest.ppu.dot == 0 || self.rest.ppu.dot == 128 || self.rest.ppu.dot >= 256, "{}", self.rest.ppu.dot);
+			debug_assert!(
+				self.rest.ppu.dot == 0 || self.rest.ppu.dot == 128 || self.rest.ppu.dot >= 256,
+				"{}",
+				self.rest.ppu.dot
+			);
 		}
 
 		self.check_interrupt();
@@ -422,7 +430,10 @@ impl<M: Mapper> State<M> {
 			self.rest.ppu.status.set_vblank(true);
 		}
 
-		if self.rest.ppu.scanline == 0 && working_range.contains(&0) && self.rest.ppu.status.vblank() {
+		if self.rest.ppu.scanline == 0
+			&& working_range.contains(&0)
+			&& self.rest.ppu.status.vblank()
+		{
 			self.rest.ppu.status.set_vblank(false);
 		}
 
@@ -456,9 +467,10 @@ impl<M: Mapper> State<M> {
 					.filter_map(|s| self.sprite_get_colour(&s)),
 			)
 			.next()
-			.unwrap_or(self.rest.ppu.palettes[0][0]);
+			.unwrap_or(self.rest.ppu.palettes[0][0])
+			.into();
 		self.rest.current_texture[self.rest.ppu.scanline as usize][self.rest.ppu.dot as usize] =
-			colour.into();
+			colour;
 	}
 
 	fn update_sprite_cache(&mut self) {
