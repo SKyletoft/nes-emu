@@ -331,10 +331,24 @@ impl<M: Mapper> State<M> {
 	}
 
 	pub fn catch_up_ppu(&mut self) {
-		for _ in 0..self.rest.ppu_runahead {
-			self.step_ppu();
+		let mut remaining = self.rest.ppu_runahead;
+
+		#[cfg(test)] // During tests catchup should be run on every instruction
+		assert!(remaining.is_multiple_of(3) && remaining <= 7 * 3);
+
+		debug_assert!(self.rest.ppu.dot == 0 || self.rest.ppu.dot == 128 || self.rest.ppu.dot >= 256);
+		while self.rest.ppu_runahead > 128 || (self.rest.ppu.dot > 255 && self.rest.ppu_runahead > 0) {
+			let cycles = if self.rest.ppu.dot > 255 || self.rest.ppu.dot == 128 {
+				(341 - self.rest.ppu.dot as u64).min(self.rest.ppu_runahead)
+			} else {
+				debug_assert_eq!(self.rest.ppu.dot, 0);
+				128
+			};
+			self.step_ppu_batch(cycles);
+			self.rest.ppu_runahead -= cycles;
+			debug_assert!(self.rest.ppu.dot == 0 || self.rest.ppu.dot == 128 || self.rest.ppu.dot >= 256, "{}", self.rest.ppu.dot);
 		}
-		self.rest.ppu_runahead = 0;
+
 		self.check_interrupt();
 	}
 
@@ -392,87 +406,77 @@ impl<M: Mapper> State<M> {
 		}
 	}
 
-	fn step_ppu_batch(&mut self, cycles: usize) {
-		debug_assert!(cycles > 0);
+	pub fn step_ppu_batch(&mut self, cycles: u64) {
+		debug_assert!(
+			self.rest.ppu.dot + (cycles as i16) <= 341,
+			"{} + {} = {}",
+			self.rest.ppu.dot,
+			cycles,
+			self.rest.ppu.dot + (cycles as i16)
+		);
+		let working_range = self.rest.ppu.dot..self.rest.ppu.dot + (cycles as i16);
+		if self.rest.ppu.dot == 0 {
+			self.calculate_sprite_overflow();
+			self.update_sprite_cache();
+		}
 
-		let mut start_dot = self.rest.ppu.dot;
-		let start_scanline = self.rest.ppu.scanline;
-		let mut end_dot = start_dot + cycles as i16;
-
-		debug_assert!(start_dot < 341);
-		debug_assert!(end_dot <= 341);
-
-		self.rest.ppu.cycles += cycles as u64;
-
-		// Process per-dot visible area (0..240 scanlines, 0..255 dots)
-		if (0..240).contains(&start_scanline) {
-			let visible_end = end_dot.min(255);
-			for dot in start_dot..visible_end {
+		if (0..240).contains(&self.rest.ppu.scanline) {
+			for dot in self.rest.ppu.dot..(self.rest.ppu.dot + (cycles as i16)).min(255) {
 				self.rest.ppu.dot = dot;
 				self.update_sprite0_hit();
 				self.render_pixel();
 			}
 		}
 
-		// Dot 0 transition (only triggers if we cross dot 0)
-		if start_dot < 0 && end_dot >= 0 || start_dot == 0 {
-			self.calculate_sprite_overflow();
-			self.update_sprite_cache();
+		// Dot crawl
+		#[cfg(test)]
+		if self.rest.ppu.scanline == -1
+			&& working_range.contains(&339)
+			&& (self.rest.ppu.mask.show_bg() || self.rest.ppu.mask.show_spr())
+			&& self.rest.ppu.frame & 1 != 0
+		{
+			self.rest.ppu.cycles -= 1;
 		}
 
-		// Dot 65 transition
-		if start_dot < 65 && end_dot >= 65 {
+		self.rest.ppu.cycles += cycles;
+		let scanline_overflow = working_range.end >= 341;
+		self.rest.ppu.scanline += scanline_overflow as i16;
+		self.rest.ppu.dot = if scanline_overflow {
+			working_range.end - 341
+		} else {
+			working_range.end
+		};
+
+		if self.rest.ppu.scanline == 261 {
+			self.rest.ppu.scanline = -1;
+			self.rest.ppu.status.set_sprite_0_hit(false);
+		}
+
+		if working_range.contains(&65) {
 			self.rest
 				.ppu
 				.status
 				.set_sprite_overflow(self.rest.ppu.sprite_overflow_latch);
 		}
 
-		// VBlank start (dot 6 on scanline 241)
-		if start_scanline == 241 && start_dot < 6 && end_dot >= 6 {
+		if self.rest.ppu.scanline == 241 && working_range.contains(&6) {
 			self.rest.interrupt_requested = InterruptTiming::Ready;
 			self.rest.ppu.status.set_vblank(true);
 		}
 
-		// VBlank clear (dot 0 on scanline 0)
-		if start_scanline == 0 && start_dot < 0 && end_dot >= 0 && self.rest.ppu.status.vblank() {
+		if self.rest.ppu.scanline == 0 && working_range.contains(&0) && self.rest.ppu.status.vblank() {
 			self.rest.ppu.status.set_vblank(false);
 		}
 
-		// Dot crawl (pre-render scanline -1, dot 339)
-		if start_scanline == -1
-			&& start_dot <= 339
-			&& end_dot > 339
-			&& (self.rest.ppu.mask.show_bg() || self.rest.ppu.mask.show_spr())
-			&& self.rest.ppu.frame & 1 != 0
-		{
-			self.rest.ppu.dot = 340;
-			debug_assert_eq!(self.rest.ppu.scanline, start_scanline);
-			return; // skip the remainder to match Mesen's dot crawl behaviour
+		// Why frames count from the start of vblank and not the start of frames, I don't
+		// know. Again, matching Mesen's behaviour.
+		if scanline_overflow && self.rest.ppu.scanline == 240 {
+			self.rest.ppu.frame += 1;
+			let mut texture = self.rest.output_texture.lock().unwrap();
+			std::mem::swap(&mut self.rest.current_texture, &mut texture);
 		}
 
-		// Advance dot
-		self.rest.ppu.dot = end_dot;
-
-		// Scanline wrap
-		if self.rest.ppu.dot == 341 {
-			self.rest.ppu.dot = 0;
-			self.rest.ppu.scanline += 1;
-
-			if self.rest.ppu.scanline == 261 {
-				self.rest.ppu.scanline = -1;
-				self.rest.ppu.status.set_sprite_0_hit(false);
-			}
-
-			if self.rest.ppu.scanline == 240 {
-				self.rest.ppu.frame += 1;
-			}
-		}
-
-		// Invariant check: scanline only changes if dot wrapped
-		debug_assert!(
-			self.rest.ppu.scanline == start_scanline || (start_dot + cycles as i16 == 341)
-		);
+		debug_assert!(self.rest.ppu.dot < 341, "{}", self.rest.ppu.dot);
 	}
 
 	fn render_pixel(&mut self) {
