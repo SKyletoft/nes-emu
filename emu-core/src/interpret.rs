@@ -367,9 +367,21 @@ impl<M: Mapper> State<M> {
 		}
 
 		if (0..240).contains(&self.rest.ppu.scanline) {
+			let sprite_0_constants = self.rest.ppu.mask.show_spr() && self.rest.ppu.mask.show_bg();
 			for dot in self.rest.ppu.dot..(self.rest.ppu.dot + (cycles as i16)).min(255) {
 				self.rest.ppu.dot = dot;
-				self.update_sprite0_hit();
+				let sprite_0_hit = {
+					let sprite_0 = &self.rest.ppu.oam[0];
+					sprite_0_constants
+						&& self.rest.ppu.sprite_is_visible_x(sprite_0)
+						&& self.rest.ppu.sprite_is_visible_y(sprite_0)
+						&& self.sprite_get_colour(sprite_0).is_some()
+						&& self.background_get_colour().is_some()
+				};
+				self.rest
+					.ppu
+					.status
+					.set_sprite_0_hit(self.rest.ppu.status.sprite_0_hit() | sprite_0_hit);
 				self.render_pixel();
 			}
 		}
@@ -447,23 +459,6 @@ impl<M: Mapper> State<M> {
 			.unwrap_or(self.rest.ppu.palettes[0][0]);
 		self.rest.current_texture[self.rest.ppu.scanline as usize][self.rest.ppu.dot as usize] =
 			colour.into();
-	}
-
-	#[inline(always)] // All the mask flags should be constant per batch
-	fn update_sprite0_hit(&mut self) {
-		let sprite_0_hit = {
-			let sprite_0 = &self.rest.ppu.oam[0];
-			self.rest.ppu.mask.show_spr()
-				&& self.rest.ppu.mask.show_bg()
-				&& self.rest.ppu.sprite_is_visible_x(sprite_0)
-				&& self.rest.ppu.sprite_is_visible_y(sprite_0)
-				&& self.sprite_get_colour(sprite_0).is_some()
-				&& self.background_get_colour().is_some()
-		};
-		self.rest
-			.ppu
-			.status
-			.set_sprite_0_hit(self.rest.ppu.status.sprite_0_hit() | sprite_0_hit);
 	}
 
 	fn update_sprite_cache(&mut self) {
