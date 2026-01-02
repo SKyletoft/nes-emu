@@ -352,60 +352,6 @@ impl<M: Mapper> State<M> {
 		self.check_interrupt();
 	}
 
-	pub fn step_ppu(&mut self) {
-		self.rest.ppu.cycles += 1;
-
-		if (0..240).contains(&self.rest.ppu.scanline) && (0..255).contains(&self.rest.ppu.dot) {
-			self.update_sprite0_hit();
-			self.render_pixel();
-		}
-
-		self.rest.ppu.dot += 1;
-		self.rest.ppu.scanline += self.rest.ppu.dot / 341;
-		self.rest.ppu.dot %= 341;
-
-		if self.rest.ppu.scanline == 261 {
-			self.rest.ppu.scanline = -1;
-			self.rest.ppu.status.set_sprite_0_hit(false);
-		}
-
-		// Dot crawl
-		if self.rest.ppu.scanline == -1
-			&& self.rest.ppu.dot == 339
-			&& (self.rest.ppu.mask.show_bg() || self.rest.ppu.mask.show_spr())
-			&& self.rest.ppu.frame & 1 != 0
-		{
-			self.rest.ppu.dot = 340;
-		}
-
-		if self.rest.ppu.dot == 0 {
-			self.calculate_sprite_overflow();
-			self.update_sprite_cache();
-		}
-		if self.rest.ppu.dot == 65 {
-			self.rest
-				.ppu
-				.status
-				.set_sprite_overflow(self.rest.ppu.sprite_overflow_latch);
-		}
-
-		if self.rest.ppu.scanline == 241 && self.rest.ppu.dot == 6 {
-			self.rest.interrupt_requested = InterruptTiming::Ready;
-			self.rest.ppu.status.set_vblank(true);
-		}
-		if self.rest.ppu.scanline == 0 && self.rest.ppu.dot == 0 && self.rest.ppu.status.vblank() {
-			self.rest.ppu.status.set_vblank(false);
-		}
-
-		// Why frames count from the start of vblank and not the start of frames, I don't
-		// know. Again, matching Mesen's behaviour.
-		if self.rest.ppu.dot == 0 && self.rest.ppu.scanline == 240 {
-			self.rest.ppu.frame += 1;
-			let mut texture = self.rest.output_texture.lock().unwrap();
-			std::mem::swap(&mut self.rest.current_texture, &mut texture);
-		}
-	}
-
 	pub fn step_ppu_batch(&mut self, cycles: u64) {
 		debug_assert!(
 			self.rest.ppu.dot + (cycles as i16) <= 341,
