@@ -1,7 +1,5 @@
-An NES emulator in Rust with the goal of statically recompiling as
-much code as possible.
+An NES emulator that recompiles the entire game to native code at
+compile time. Only supports NROM games at the moment.
 
-Only targetting a few games (Mario 1, Mario 3, Zelda 1, Fire Emblem 1)
-because there are too many mappers out there.
-
-Hopefully eventually also targetting 3DS Homebrew.
+Also has a 3DS build that is currently too slow to use, but
+works. ~10FPS.
