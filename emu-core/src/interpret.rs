@@ -342,84 +342,80 @@ impl<M: Mapper> State<M> {
 			cycles,
 			self.rest.ppu.dot + (cycles as i16)
 		);
-		let working_range = self.rest.ppu.dot..self.rest.ppu.dot + (cycles as i16);
-		if self.rest.ppu.dot == 0 {
-			self.calculate_sprite_overflow();
-			self.update_sprite_cache();
-		}
+		let working_range = 0..341;
+		let render_range = 0..255;
 
 		if (0..240).contains(&self.rest.ppu.scanline) {
-			let sprite_0_constants = self.rest.ppu.mask.show_spr() && self.rest.ppu.mask.show_bg();
-			for dot in self.rest.ppu.dot..(self.rest.ppu.dot + (cycles as i16)).min(255) {
+			self.calculate_sprite_overflow();
+			self.update_sprite_cache();
+
+			for dot in render_range.clone() {
 				self.rest.ppu.dot = dot;
-				let sprite_0_hit = {
+				self.render_pixel();
+			}
+
+			let sprite_0 = &self.rest.ppu.oam[0];
+			let sprite_0_constants = self.rest.ppu.mask.show_spr()
+				&& self.rest.ppu.mask.show_bg()
+				&& self.rest.ppu.sprite_is_visible_y(sprite_0);
+			if sprite_0_constants {
+				let start = (sprite_0.x as i16).max(working_range.start);
+				let end = (sprite_0.x as i16 + self.rest.ppu.sprite_width()).min(render_range.end);
+				let mut sprite_range = start..end;
+				debug_assert!(sprite_range.len() <= 8);
+				let hit = sprite_range.any(|dot| {
+					self.rest.ppu.dot = dot;
 					let sprite_0 = &self.rest.ppu.oam[0];
-					sprite_0_constants
-						&& self.rest.ppu.sprite_is_visible_x(sprite_0)
-						&& self.rest.ppu.sprite_is_visible_y(sprite_0)
+					self.rest.ppu.sprite_is_visible_x(sprite_0)
 						&& self.sprite_get_colour(sprite_0).is_some()
 						&& self.background_get_colour().is_some()
-				};
+				});
 				self.rest
 					.ppu
 					.status
-					.set_sprite_0_hit(self.rest.ppu.status.sprite_0_hit() | sprite_0_hit);
-				self.render_pixel();
+					.set_sprite_0_hit(self.rest.ppu.status.sprite_0_hit() | hit);
 			}
 		}
 
-		// Dot crawl
-		#[cfg(test)]
-		if self.rest.ppu.scanline == -1
-			&& working_range.contains(&339)
-			&& (self.rest.ppu.mask.show_bg() || self.rest.ppu.mask.show_spr())
-			&& self.rest.ppu.frame & 1 != 0
-		{
-			self.rest.ppu.cycles -= 1;
-		}
-
 		self.rest.ppu.cycles += cycles;
-		let scanline_overflow = working_range.end >= 341;
-		self.rest.ppu.scanline += scanline_overflow as i16;
-		self.rest.ppu.dot = if scanline_overflow {
-			working_range.end - 341
-		} else {
-			working_range.end
-		};
+		self.rest.ppu.scanline += 1;
+		self.rest.ppu.dot = 0;
 
-		if self.rest.ppu.scanline == 261 {
-			self.rest.ppu.scanline = -1;
-			self.rest.ppu.status.set_sprite_0_hit(false);
+		self.rest
+			.ppu
+			.status
+			.set_sprite_overflow(self.rest.ppu.sprite_overflow_latch);
+
+		match self.rest.ppu.scanline {
+			-1 if (self.rest.ppu.mask.show_bg() || self.rest.ppu.mask.show_spr())
+				&& self.rest.ppu.frame & 1 != 0 =>
+			{
+				#[cfg(test)]
+				{
+					// Dot crawl
+					self.rest.ppu.cycles -= 1;
+				}
+			}
+			0 if self.rest.ppu.status.vblank() => {
+				self.rest.ppu.status.set_vblank(false);
+			}
+			// Why frames count from the start of vblank and not the start of frames, I don't
+			// know. Again, matching Mesen's behaviour.
+			240 => {
+				self.rest.ppu.frame += 1;
+				let mut texture = self.rest.output_texture.lock().unwrap();
+				std::mem::swap(&mut self.rest.current_texture, &mut texture);
+			}
+			241 => {
+				self.rest.interrupt_requested = InterruptTiming::Ready;
+				self.rest.ppu.status.set_vblank(true);
+			}
+			261 => {
+				self.rest.ppu.scanline = -1;
+				self.rest.ppu.status.set_sprite_0_hit(false);
+			}
+			_ => {}
 		}
-
-		if working_range.contains(&65) {
-			self.rest
-				.ppu
-				.status
-				.set_sprite_overflow(self.rest.ppu.sprite_overflow_latch);
-		}
-
-		if self.rest.ppu.scanline == 241 && working_range.contains(&6) {
-			self.rest.interrupt_requested = InterruptTiming::Ready;
-			self.rest.ppu.status.set_vblank(true);
-		}
-
-		if self.rest.ppu.scanline == 0
-			&& working_range.contains(&0)
-			&& self.rest.ppu.status.vblank()
-		{
-			self.rest.ppu.status.set_vblank(false);
-		}
-
-		// Why frames count from the start of vblank and not the start of frames, I don't
-		// know. Again, matching Mesen's behaviour.
-		if scanline_overflow && self.rest.ppu.scanline == 240 {
-			self.rest.ppu.frame += 1;
-			let mut texture = self.rest.output_texture.lock().unwrap();
-			std::mem::swap(&mut self.rest.current_texture, &mut texture);
-		}
-
-		debug_assert!(self.rest.ppu.dot < 341, "{}", self.rest.ppu.dot);
 	}
 
 	fn render_pixel(&mut self) {
