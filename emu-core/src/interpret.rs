@@ -1,9 +1,5 @@
-#![allow(unused, dead_code)]
-
 use std::{
-	ffi::{CStr, c_char},
 	sync::{Arc, Mutex},
-	time::{Duration, Instant},
 };
 
 use bitfields::bitfield;
@@ -15,7 +11,6 @@ use crate::{
 	graphics::{self, Bitmap},
 	inst::Inst,
 	mapper::Mapper,
-	nrom256::NROM256,
 	ppu::{DoubleWriter, NesColour, Ppu, Scroll, Sprite},
 };
 
@@ -517,7 +512,6 @@ impl<M: Mapper> State<M> {
 			} else {
 				// Bug: misaligned read once secondary OAM is full
 				let idx = (n + (m & 0x1F)) & 0xFF;
-				let spr = &oam[idx / 4];
 				bytemuck::cast_slice(oam)[idx % 4]
 			};
 
@@ -539,8 +533,6 @@ impl<M: Mapper> State<M> {
 		if !self.rest.ppu.mask.show_spr() {
 			return None;
 		}
-
-		let (x, y) = self.rest.ppu.actual_pos();
 
 		let pixel_x = self.rest.ppu.dot - sprite.x as i16;
 		let pixel_y = self.rest.ppu.scanline - sprite.y as i16 - 1;
