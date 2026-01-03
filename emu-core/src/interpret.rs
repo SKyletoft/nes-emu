@@ -326,7 +326,7 @@ impl<M: Mapper> State<M> {
 	pub fn catch_up_ppu(&mut self) {
 		debug_assert_eq!(self.rest.ppu.dot, 0);
 		while self.rest.ppu_runahead > 341 {
-			self.step_ppu_batch(341);
+			self.step_ppu_scanline();
 			self.rest.ppu_runahead -= 341;
 			debug_assert!(self.rest.ppu.dot == 0, "{}", self.rest.ppu.dot);
 		}
@@ -334,18 +334,11 @@ impl<M: Mapper> State<M> {
 		self.check_interrupt();
 	}
 
-	pub fn step_ppu_batch(&mut self, cycles: u64) {
-		debug_assert!(
-			self.rest.ppu.dot + (cycles as i16) <= 341,
-			"{} + {} = {}",
-			self.rest.ppu.dot,
-			cycles,
-			self.rest.ppu.dot + (cycles as i16)
-		);
-		let working_range = 0..341;
-		let render_range = 0..255;
-
+	pub fn step_ppu_scanline(&mut self) {
 		if (0..240).contains(&self.rest.ppu.scanline) {
+			let working_range = 0..341;
+			let render_range = 0..255;
+
 			self.calculate_sprite_overflow();
 			self.update_sprite_cache();
 
@@ -377,7 +370,7 @@ impl<M: Mapper> State<M> {
 			}
 		}
 
-		self.rest.ppu.cycles += cycles;
+		self.rest.ppu.cycles += 341;
 		self.rest.ppu.scanline += 1;
 		self.rest.ppu.dot = 0;
 
