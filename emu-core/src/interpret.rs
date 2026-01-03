@@ -326,27 +326,14 @@ impl<M: Mapper> State<M> {
 	}
 
 	pub fn catch_up_ppu(&mut self) {
-		let mut remaining = self.rest.ppu_runahead;
-
-		#[cfg(test)] // During tests catchup should be run on every instruction
-		assert!(remaining.is_multiple_of(3) && remaining <= 7 * 3);
-
-		debug_assert!(
-			self.rest.ppu.dot == 0 || self.rest.ppu.dot == 128 || self.rest.ppu.dot >= 256
+		debug_assert_eq!(
+			self.rest.ppu.dot, 0
 		);
-		while self.rest.ppu_runahead > 128
-			|| (self.rest.ppu.dot > 255 && self.rest.ppu_runahead > 0)
-		{
-			let cycles = if self.rest.ppu.dot > 255 || self.rest.ppu.dot == 128 {
-				(341 - self.rest.ppu.dot as u64).min(self.rest.ppu_runahead)
-			} else {
-				debug_assert_eq!(self.rest.ppu.dot, 0);
-				128
-			};
-			self.step_ppu_batch(cycles);
-			self.rest.ppu_runahead -= cycles;
+		while self.rest.ppu_runahead > 341 {
+			self.step_ppu_batch(341);
+			self.rest.ppu_runahead -= 341;
 			debug_assert!(
-				self.rest.ppu.dot == 0 || self.rest.ppu.dot == 128 || self.rest.ppu.dot >= 256,
+				self.rest.ppu.dot == 0,
 				"{}",
 				self.rest.ppu.dot
 			);
