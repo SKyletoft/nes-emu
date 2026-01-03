@@ -1,6 +1,4 @@
-use std::{
-	sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use bitfields::bitfield;
 
@@ -326,17 +324,11 @@ impl<M: Mapper> State<M> {
 	}
 
 	pub fn catch_up_ppu(&mut self) {
-		debug_assert_eq!(
-			self.rest.ppu.dot, 0
-		);
+		debug_assert_eq!(self.rest.ppu.dot, 0);
 		while self.rest.ppu_runahead > 341 {
 			self.step_ppu_batch(341);
 			self.rest.ppu_runahead -= 341;
-			debug_assert!(
-				self.rest.ppu.dot == 0,
-				"{}",
-				self.rest.ppu.dot
-			);
+			debug_assert!(self.rest.ppu.dot == 0, "{}", self.rest.ppu.dot);
 		}
 
 		self.check_interrupt();
