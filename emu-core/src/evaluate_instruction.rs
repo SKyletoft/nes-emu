@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[inline(always)]
-fn advance<M: Mapper>(tail: &mut StateTail<M>, by: u64) {
+fn advance<M: Mapper>(tail: &mut StateTail<M>, by: usize) {
 	tail.cycles += by;
 	tail.ppu_runahead += by * 3;
 }
@@ -148,7 +148,7 @@ macro_rules! absolute_x {
 				let val = state.mem(actual_adr);
 				[<$fn _impl>](&mut state, val);
 				state.cpu.pc += 3;
-				advance(&mut state.rest, 4 + page_crossed as u64);
+				advance(&mut state.rest, 4 + page_crossed as usize);
 				state
 			}
 		}
@@ -182,7 +182,7 @@ macro_rules! absolute_y {
 				let val = state.mem(actual_adr);
 				[<$fn _impl>](&mut state, val);
 				state.cpu.pc += 3;
-				advance(&mut state.rest, 4 + page_crossed as u64);
+				advance(&mut state.rest, 4 + page_crossed as usize);
 				state
 			}
 		}
@@ -222,7 +222,7 @@ macro_rules! indirect_y {
 				let val = state.mem(adr2);
 				[<$fn _impl>](&mut state, val);
 				state.cpu.pc += 2;
-				advance(&mut state.rest, 5 + taken as u64);
+				advance(&mut state.rest, 5 + taken as usize);
 				state
 			}
 		}
@@ -287,7 +287,7 @@ pub fn bcs<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 	let taken = state.cpu.p.c();
 	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
-	let cycles = 2 + taken as u64 + page_crossed as u64;
+	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
 	state
@@ -299,7 +299,7 @@ pub fn bcc<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 	let taken = !state.cpu.p.c();
 	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
-	let cycles = 2 + taken as u64 + page_crossed as u64;
+	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
 	state
@@ -311,7 +311,7 @@ pub fn beq<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 	let taken = state.cpu.p.z();
 	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
-	let cycles = 2 + taken as u64 + page_crossed as u64;
+	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
 	state
@@ -323,7 +323,7 @@ pub fn bne<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 	let taken = !state.cpu.p.z();
 	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
-	let cycles = 2 + taken as u64 + page_crossed as u64;
+	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
 	state
@@ -335,7 +335,7 @@ pub fn bmi<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 	let taken = state.cpu.p.n();
 	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
-	let cycles = 2 + taken as u64 + page_crossed as u64;
+	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
 	state
@@ -347,7 +347,7 @@ pub fn bpl<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 	let taken = !state.cpu.p.n();
 	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
 	let page_crossed = (old_pc + 2) & 0xFF00 != new_pc & 0xFF00;
-	let cycles = 2 + taken as u64 + page_crossed as u64;
+	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
 	state
@@ -359,7 +359,7 @@ pub fn bvs<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 	let taken = state.cpu.p.v();
 	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
-	let cycles = 2 + taken as u64 + page_crossed as u64;
+	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
 	state
@@ -371,7 +371,7 @@ pub fn bvc<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 	let taken = !state.cpu.p.v();
 	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
 	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
-	let cycles = 2 + taken as u64 + page_crossed as u64;
+	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
 	state
@@ -1145,7 +1145,7 @@ pub fn ign_absolute_x<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
 	let page_crossed = state.cpu.x.checked_add(adr as u8).is_none();
 	let _ = state.mem(actual_adr);
 	state.cpu.pc += 3;
-	state.rest.ppu_runahead += (4 + page_crossed as u64);
+	state.rest.ppu_runahead += (4 + page_crossed as usize);
 	state
 }
 

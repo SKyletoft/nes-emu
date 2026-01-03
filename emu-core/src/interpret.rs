@@ -36,8 +36,8 @@ pub struct StateTail<M: Mapper> {
 	pub ppu_bus: u8,
 	pub output_texture: Arc<Mutex<Box<Bitmap>>>,
 	pub current_texture: Box<Bitmap>,
-	pub cycles: u64,
-	pub ppu_runahead: u64,
+	pub cycles: usize,
+	pub ppu_runahead: usize,
 	pub interrupt_requested: InterruptTiming,
 }
 
