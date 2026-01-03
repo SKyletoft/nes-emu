@@ -70,7 +70,7 @@ impl Ppu {
 		(sprite.y as i16) < self.scanline && self.scanline <= sprite.y as i16 + 8
 	}
 
-	fn sprite_width(&self) -> i16 {
+	pub fn sprite_width(&self) -> i16 {
 		if self.ctrl.sprite_size() { 16 } else { 8 }
 	}
 
