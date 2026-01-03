@@ -23,8 +23,8 @@ pub struct Ppu {
 
 	pub scanline: i16,
 	pub dot: i16,
-	pub frame: u64,
-	pub cycles: u64,
+	pub frame: usize,
+	pub cycles: usize,
 	pub vram: Vram,
 	pub oam: Oam,
 	pub data_cache: u8,

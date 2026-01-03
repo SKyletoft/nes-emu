@@ -12,7 +12,7 @@ use crate::{
 	ppu::{DoubleWriter, NesColour, Ppu, Scroll, Sprite},
 };
 
-pub const PPU_STARTUP_TIME: u64 = 2500;
+pub const PPU_STARTUP_TIME: usize = 2500;
 const PPUADDR_MASK: u16 = (1 << 14) - 1;
 pub enum InterruptTiming {
 	Clear,
