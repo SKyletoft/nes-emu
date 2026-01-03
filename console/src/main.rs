@@ -63,7 +63,9 @@ fn main() {
 	let mut ppu_dur = Duration::new(0, 0);
 	while apt.main_loop() {
 		let before = Instant::now();
-		game::nes_game(&mut system_state);
+		while system_state.rest.ppu_runahead <= 341 {
+			game::nes_game(&mut system_state);
+		}
 		let after = Instant::now();
 		cpu_dur += after - before;
 
