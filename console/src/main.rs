@@ -1,13 +1,15 @@
 use std::{
+	cell::RefMut,
 	time::{Duration, Instant},
 };
 
 use ctru::{
 	prelude::*,
-	services::gfx::{Screen, Swap},
+	services::gfx::{Screen, Swap, TopScreen},
 };
 use emu_core::{
 	controller::ControllerState,
+	frame::NesFramebuffer,
 	graphics::{Bitmap, Colour},
 	interpret::State,
 	unsafe_assert,
@@ -18,6 +20,46 @@ struct Bgr8 {
 	blue: u8,
 	green: u8,
 	red: u8,
+}
+
+struct ConsoleFramebuffer<'a> {
+	screen: RefMut<'a, TopScreen>,
+	/// Must be updated when screen is swapped
+	unsafe_raw_frame_buf: &'a mut [[Bgr8; 240]; 400],
+}
+
+impl<'a> ConsoleFramebuffer<'a> {
+	fn new(mut screen: RefMut<'a, TopScreen>) -> Self {
+		let frame_buf = screen.raw_framebuffer();
+		let unsafe_raw_frame_buf =
+			unsafe { std::mem::transmute::<_, &mut [[Bgr8; 240]; 400]>(&mut *frame_buf.ptr) };
+		ConsoleFramebuffer {
+			screen,
+			unsafe_raw_frame_buf,
+		}
+	}
+}
+
+impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
+	fn set(&mut self, x: usize, y: usize, col: emu_core::ppu::NesColour) {
+		let Colour {
+			blue, green, red, ..
+		} = col.into();
+		unsafe {
+			unsafe_assert!(y < 400 && x < 240);
+		}
+		let x = 239 - x;
+		let y = (400 - 256) / 2 + y;
+		self.unsafe_raw_frame_buf[y][x] = Bgr8 { blue, green, red };
+	}
+
+	fn swap(&mut self) {
+		self.screen.swap_buffers();
+		let frame_buf = self.screen.raw_framebuffer();
+		let unsafe_raw_frame_buf =
+			unsafe { std::mem::transmute::<_, &mut [[Bgr8; 240]; 400]>(&mut *frame_buf.ptr) };
+		self.unsafe_raw_frame_buf = unsafe_raw_frame_buf;
+	}
 }
 
 fn update_screen(gfx: &Gfx, nes_screen: &Bitmap) {
