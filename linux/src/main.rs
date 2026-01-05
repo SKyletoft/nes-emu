@@ -8,7 +8,10 @@ use std::{
 	time::{Duration, Instant},
 };
 
-use emu_core::{graphics::Bitmap, interpret::State};
+use emu_core::{
+	graphics::{self, Bitmap},
+	interpret::State,
+};
 
 fn emulation_loop(
 	shared_texture: Arc<Mutex<Box<Bitmap>>>,
@@ -16,7 +19,13 @@ fn emulation_loop(
 	kill: &AtomicBool,
 ) {
 	let game = Box::new(game::MAPPER.clone());
-	let mut system_state = State::new(game, shared_texture);
+	let mut system_state = State::new(
+		game,
+		drawing::SdlFramebuffer {
+			output_texture: shared_texture,
+			current_texture: Box::new(graphics::empty_bitmap()),
+		},
+	);
 
 	let mut frame_last = 0;
 	let mut last_time = Instant::now();
