@@ -80,9 +80,9 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 		let id = syn::Ident::new("id", proc_macro2::Span::call_site());
 		if starting_points.contains(&i) {
 			let ident = syn::Ident::new(&format!("b_{i:04x}"), proc_macro2::Span::call_site());
-			branches.push(quote! { #ident, });
+			branches.push(quote! { #i => #ident, });
 		} else {
-			branches.push(quote! { #id, });
+			branches.push(quote! { #i => #id, });
 		}
 	}
 	quote! {
@@ -92,14 +92,14 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 
 		fn b_ffff(state: State<#mapper>) -> State<#mapper> { state }
 
-		const FNS: [fn(State<#mapper>)->State<#mapper>; 0x8000] = [ #(#branches)* ];
-
 		pub fn nes_game(state: &mut State<#mapper>) {
 			unsafe {
 				let mut local: State<#mapper> = (&raw mut *state).read();
 				(&raw mut *state).write(
-					// This doesn't work as the list is GC'd and the offsets are wrong. The list needs to be padded with identity functions
-					FNS[local.cpu.pc as usize - 0x8000](local)
+					match local.cpu.pc {
+						0..0x8000 => id,
+						#(#branches)*
+					}(local)
 				)
 			}
 		}
