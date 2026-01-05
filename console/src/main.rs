@@ -64,6 +64,7 @@ fn main() {
 	let mut hid = Hid::new().unwrap();
 	let gfx = Gfx::new().unwrap();
 	let _console = Console::new(gfx.bottom_screen.borrow_mut());
+	println!(" frame   cpu   ppu");
 
 	let game = Box::new(game::MAPPER.clone());
 	let mut system_state = State::new(game, ConsoleFramebuffer::new(gfx.top_screen.borrow_mut()));
