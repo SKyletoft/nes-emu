@@ -664,7 +664,7 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 				let start = (sprite_0.x as i16).max(working_range.start);
 				let end = (sprite_0.x as i16 + self.rest.ppu.sprite_width()).min(render_range.end);
 				let mut sprite_range = start..end;
-				debug_assert!(sprite_range.len() <= 8);
+				unsafe { unsafe_assert!(sprite_range.len() <= 8) };
 				let hit = sprite_range.any(|dot| {
 					self.rest.ppu.dot = dot;
 					let sprite_0 = &self.rest.ppu.oam[0];
