@@ -10,7 +10,7 @@ use ctru::{
 use emu_core::{
 	controller::ControllerState,
 	frame::NesFramebuffer,
-	graphics::{Bitmap, Colour},
+	graphics::Colour,
 	interpret::State,
 	ppu::NesColour,
 	unsafe_assert,

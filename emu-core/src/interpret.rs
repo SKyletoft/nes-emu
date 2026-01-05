@@ -756,8 +756,7 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 					.filter_map(|s| self.sprite_get_colour(&s)),
 			)
 			.next()
-			.unwrap_or(self.rest.ppu.palettes[0][0])
-			.into();
+			.unwrap_or(self.rest.ppu.palettes[0][0]);
 		self.rest.frame.set(
 			self.rest.ppu.scanline as usize,
 			self.rest.ppu.dot as usize,
