@@ -8,12 +8,8 @@ use ctru::{
 	services::gfx::{Screen, Swap, TopScreen},
 };
 use emu_core::{
-	controller::ControllerState,
-	frame::NesFramebuffer,
-	graphics::Colour,
-	interpret::State,
-	ppu::NesColour,
-	unsafe_assert,
+	controller::ControllerState, frame::NesFramebuffer, graphics::Colour, interpret::State,
+	ppu::NesColour, unsafe_assert,
 };
 
 #[repr(C)]

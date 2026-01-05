@@ -113,18 +113,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 }
 
 fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::TokenStream) {
-	let [
-		b'N',
-		b'E',
-		b'S',
-		0x1A,
-		prg_size,
-		_chr_size,
-		flags_6,
-		flags_7,
-		..,
-	] = &buffer[0..16]
-	else {
+	let [b'N', b'E', b'S', 0x1A, prg_size, _, flags_6, flags_7, ..] = &buffer[0..16] else {
 		panic!("Invalid file");
 	};
 
