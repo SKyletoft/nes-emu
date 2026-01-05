@@ -86,6 +86,9 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 		}
 	}
 	quote! {
+		#[allow(unused_imports)]
+		use emu_core::{evaluate_instruction::*, interpret::State, nrom128::NROM128, nrom256::NROM256};
+
 		#(#fns)*
 
 		fn id<T>(x: T) -> T { x }
