@@ -106,7 +106,7 @@ fn main() {
 
 		let mut c = ControllerState::new();
 		c.set_a(hid.keys_held().contains(KeyPad::A));
-		c.set_b(hid.keys_held().contains(KeyPad::B));
+		c.set_b(hid.keys_held().contains(KeyPad::B | KeyPad::X));
 		c.set_start(hid.keys_held().contains(KeyPad::START));
 		c.set_select(hid.keys_held().contains(KeyPad::SELECT));
 		c.set_up(hid.keys_held().contains(KeyPad::DPAD_UP));
