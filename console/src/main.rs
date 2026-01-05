@@ -47,9 +47,7 @@ impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
 		let Colour {
 			blue, green, red, ..
 		} = col.into();
-		unsafe {
-			unsafe_assert!(y < 400 && x < 240);
-		}
+		unsafe { unsafe_assert!(y < 400 && x < 240) };
 		let x = 239 - x;
 		let y = (400 - 256) / 2 + y;
 		self.unsafe_raw_frame_buf[y][x] = Bgr8 { blue, green, red };

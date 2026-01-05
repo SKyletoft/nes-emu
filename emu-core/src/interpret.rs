@@ -388,10 +388,8 @@ impl<M: Mapper, F> State<M, F> {
 		let pixel_x = self.rest.ppu.dot - sprite.x as i16;
 		let pixel_y = self.rest.ppu.scanline - sprite.y as i16 - 1;
 
-		unsafe {
-			unsafe_assert!((0..8).contains(&pixel_x), "{pixel_x}");
-			unsafe_assert!((0..8).contains(&pixel_y), "{pixel_y}");
-		}
+		unsafe { unsafe_assert!((0..8).contains(&pixel_x), "{pixel_x}") };
+		unsafe { unsafe_assert!((0..8).contains(&pixel_y), "{pixel_y}") };
 
 		let pixel_x = if sprite.attr.flip_h() {
 			7 - pixel_x
@@ -404,10 +402,8 @@ impl<M: Mapper, F> State<M, F> {
 			pixel_y
 		};
 
-		unsafe {
-			unsafe_assert!((0..8).contains(&pixel_x), "{pixel_x}");
-			unsafe_assert!((0..8).contains(&pixel_y), "{pixel_y}");
-		}
+		unsafe { unsafe_assert!((0..8).contains(&pixel_x), "{pixel_x}") };
+		unsafe { unsafe_assert!((0..8).contains(&pixel_y), "{pixel_y}") };
 
 		let palette_index = self.read_pattern_table(
 			pixel_x as _,
@@ -420,14 +416,10 @@ impl<M: Mapper, F> State<M, F> {
 			return None;
 		}
 
-		unsafe {
-			unsafe_assert!((0..4).contains(&sprite.attr.palette()));
-			unsafe_assert!((0..4).contains(&palette_index));
-		}
+		unsafe { unsafe_assert!((0..4).contains(&sprite.attr.palette())) };
+		unsafe { unsafe_assert!((0..4).contains(&palette_index)) };
 		let col_idx = sprite.attr.palette() as u16 * 4 + palette_index as u16;
-		unsafe {
-			unsafe_assert!((0..16).contains(&col_idx));
-		}
+		unsafe { unsafe_assert!((0..16).contains(&col_idx)) };
 
 		let raw_col = self
 			.rest
@@ -439,6 +431,7 @@ impl<M: Mapper, F> State<M, F> {
 	}
 
 	pub fn read_pattern_table(&self, fine_x: u8, fine_y: u8, tile_id: u8, half: bool) -> u8 {
+		unsafe { unsafe_assert!(fine_x < 8 && fine_y < 8) };
 		let plane0 = self
 			.rest
 			.rom
@@ -470,9 +463,7 @@ impl<M: Mapper, F> State<M, F> {
 
 		let bit = 7 - fine_x;
 		let ret = ((plane1 >> bit) & 1) << 1 | ((plane0 >> bit) & 1);
-		unsafe {
-			unsafe_assert!((0..4).contains(&ret));
-		}
+		unsafe { unsafe_assert!((0..4).contains(&ret)) };
 		ret
 	}
 
@@ -482,10 +473,8 @@ impl<M: Mapper, F> State<M, F> {
 		}
 
 		let (x, y) = self.rest.ppu.actual_pos();
-		unsafe {
-			unsafe_assert!((0..512).contains(&x));
-			unsafe_assert!((0..480).contains(&y));
-		}
+		unsafe { unsafe_assert!((0..512).contains(&x)) };
+		unsafe { unsafe_assert!((0..480).contains(&y)) };
 		let nametable_adr = match (x, y) {
 			(0..256, 0..240) => 0x2000,
 			(256..512, 0..240) => 0x2400,
@@ -529,14 +518,11 @@ impl<M: Mapper, F> State<M, F> {
 		let shift = ((tile_y % 4) / 2) * 4 + ((tile_x % 4) / 2) * 2;
 		let attribute_bits = (attribute_byte >> shift) & 0b11;
 
-		unsafe {
-			unsafe_assert!((0..4).contains(&attribute_bits));
-			unsafe_assert!((0..4).contains(&tile_palette_index));
-		}
+		unsafe { unsafe_assert!((0..4).contains(&attribute_bits)) };
+		unsafe { unsafe_assert!((0..4).contains(&tile_palette_index)) };
+
 		let col_idx = attribute_bits as u16 * 4 + tile_palette_index as u16;
-		unsafe {
-			unsafe_assert!((0..16).contains(&col_idx));
-		}
+		unsafe { unsafe_assert!((0..16).contains(&col_idx)) };
 
 		let col = self.rest.ppu.palettes[attribute_bits as usize][tile_palette_index as usize];
 		Some(col)
@@ -647,15 +633,11 @@ impl<M: Mapper, F> State<M, F> {
 
 impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 	pub fn catch_up_ppu(&mut self) {
-		unsafe {
-			unsafe_assert_eq!(self.rest.ppu.dot, 0);
-		}
+		unsafe { unsafe_assert_eq!(self.rest.ppu.dot, 0) };
 		while self.rest.ppu_runahead > 341 {
 			self.step_ppu_scanline();
 			self.rest.ppu_runahead -= 341;
-			unsafe {
-				unsafe_assert!(self.rest.ppu.dot == 0, "{}", self.rest.ppu.dot);
-			}
+			unsafe { unsafe_assert!(self.rest.ppu.dot == 0, "{}", self.rest.ppu.dot) };
 		}
 
 		self.check_interrupt();
