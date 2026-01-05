@@ -23,7 +23,7 @@ macro_rules! unsafe_assert {
 		#[cfg(debug_assertions)]
 		assert!($t $(, $ts)*);
 		#[cfg(not(debug_assertions))]
-		std::hint::assert_unchecked($t);
+		::core::hint::assert_unchecked($t);
 	};
 }
 
@@ -34,6 +34,6 @@ macro_rules! unsafe_assert_eq {
 		#[cfg(debug_assertions)]
 		assert_eq!($t, $t2 $(, $ts)*);
 		#[cfg(not(debug_assertions))]
-		std::hint::assert_unchecked($t == $t2);
+		::core::hint::assert_unchecked($t == $t2);
 	};
 }

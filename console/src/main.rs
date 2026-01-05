@@ -1,5 +1,4 @@
 use std::{
-	hint::assert_unchecked,
 	time::{Duration, Instant},
 };
 
@@ -11,6 +10,7 @@ use emu_core::{
 	controller::ControllerState,
 	graphics::{Bitmap, Colour},
 	interpret::State,
+	unsafe_assert,
 };
 
 #[repr(C)]
@@ -38,8 +38,9 @@ fn update_screen(gfx: &Gfx, nes_screen: &Bitmap) {
 	{
 		let x = 239 - x;
 		let y = (400 - 256) / 2 + y;
-		debug_assert!(y < 400 && x < 240);
-		unsafe { assert_unchecked(y < 400 && x < 240) };
+		unsafe {
+			unsafe_assert!(y < 400 && x < 240);
+		}
 		screen[y][x] = Bgr8 { blue, green, red };
 	}
 
