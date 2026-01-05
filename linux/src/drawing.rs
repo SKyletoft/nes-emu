@@ -5,6 +5,7 @@ use std::sync::{
 
 use emu_core::{
 	controller::ControllerState,
+	frame::NesFramebuffer,
 	graphics::{Bitmap, HEIGHT, WIDTH},
 };
 use sdl2::{
@@ -16,6 +17,22 @@ use sdl2::{
 	render::Canvas,
 	video::Window,
 };
+
+pub struct SdlFramebuffer {
+	pub output_texture: Arc<Mutex<Box<Bitmap>>>,
+	pub current_texture: Box<Bitmap>,
+}
+
+impl NesFramebuffer for SdlFramebuffer {
+	fn set(&mut self, x: usize, y: usize, col: emu_core::ppu::NesColour) {
+		self.current_texture[x][y] = col.into();
+	}
+
+	fn swap(&mut self) {
+		let mut texture = self.output_texture.lock().unwrap();
+		std::mem::swap(&mut self.current_texture, &mut texture);
+	}
+}
 
 fn draw_horizontal_gradient(
 	canvas: &mut Canvas<Window>,
