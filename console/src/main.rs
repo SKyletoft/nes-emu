@@ -12,6 +12,7 @@ use emu_core::{
 	frame::NesFramebuffer,
 	graphics::{Bitmap, Colour},
 	interpret::State,
+	ppu::NesColour,
 	unsafe_assert,
 };
 
@@ -41,7 +42,7 @@ impl<'a> ConsoleFramebuffer<'a> {
 }
 
 impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
-	fn set(&mut self, x: usize, y: usize, col: emu_core::ppu::NesColour) {
+	fn set(&mut self, x: usize, y: usize, col: NesColour) {
 		let Colour {
 			blue, green, red, ..
 		} = col.into();
@@ -62,43 +63,14 @@ impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
 	}
 }
 
-fn update_screen(gfx: &Gfx, nes_screen: &Bitmap) {
-	let mut top_screen = gfx.top_screen.borrow_mut();
-	let frame_buf = top_screen.raw_framebuffer();
-	let screen = unsafe { std::mem::transmute::<_, &mut [[Bgr8; 240]; 400]>(&mut *frame_buf.ptr) };
-
-	for (
-		x,
-		y,
-		Colour {
-			blue, green, red, ..
-		},
-	) in nes_screen
-		.iter()
-		.enumerate()
-		.flat_map(|(x, line)| line.iter().enumerate().map(move |(y, px)| (x, y, *px)))
-	{
-		let x = 239 - x;
-		let y = (400 - 256) / 2 + y;
-		unsafe {
-			unsafe_assert!(y < 400 && x < 240);
-		}
-		screen[y][x] = Bgr8 { blue, green, red };
-	}
-
-	top_screen.swap_buffers();
-}
-
 fn main() {
 	let apt = Apt::new().unwrap();
 	let mut hid = Hid::new().unwrap();
 	let gfx = Gfx::new().unwrap();
 	let _console = Console::new(gfx.bottom_screen.borrow_mut());
 
-	let shared_texture = emu_core::graphics::new_bitmap();
-
 	let game = Box::new(game::MAPPER.clone());
-	let mut system_state = State::new(game, shared_texture);
+	let mut system_state = State::new(game, ConsoleFramebuffer::new(gfx.top_screen.borrow_mut()));
 
 	let mut last_frame = 0;
 
@@ -123,15 +95,11 @@ fn main() {
 		}
 		last_frame = frame;
 
-		let before_copy = Instant::now();
-		update_screen(&gfx, system_state.rest.current_texture.as_ref());
-		let after_copy = Instant::now();
 		let frame_count = system_state.rest.ppu.frame;
 
 		let cpu_time = cpu_dur.as_millis();
 		let ppu_time = ppu_dur.as_millis();
-		let copy_time = (after_copy - before_copy).as_millis();
-		println!("{frame_count:5}: {cpu_time:3}ms {ppu_time:3}ms {copy_time:3}ms");
+		println!("{frame_count:5}: {cpu_time:3}ms {ppu_time:3}ms");
 		cpu_dur = Duration::new(0, 0);
 		ppu_dur = Duration::new(0, 0);
 		// gfx.wait_for_vblank();
