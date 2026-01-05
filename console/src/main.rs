@@ -29,7 +29,7 @@ impl<'a> ConsoleFramebuffer<'a> {
 	fn new(mut screen: RefMut<'a, TopScreen>) -> Self {
 		let frame_buf = screen.raw_framebuffer();
 		let unsafe_raw_frame_buf =
-			unsafe { std::mem::transmute::<_, &mut [[Bgr8; 240]; 400]>(&mut *frame_buf.ptr) };
+			unsafe { std::mem::transmute::<_, &mut [[Bgr8; 240]; 400]>(frame_buf.ptr) };
 		ConsoleFramebuffer {
 			screen,
 			unsafe_raw_frame_buf,
@@ -54,7 +54,7 @@ impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
 		self.screen.swap_buffers();
 		let frame_buf = self.screen.raw_framebuffer();
 		let unsafe_raw_frame_buf =
-			unsafe { std::mem::transmute::<_, &mut [[Bgr8; 240]; 400]>(&mut *frame_buf.ptr) };
+			unsafe { std::mem::transmute::<_, &mut [[Bgr8; 240]; 400]>(frame_buf.ptr) };
 		self.unsafe_raw_frame_buf = unsafe_raw_frame_buf;
 	}
 }
