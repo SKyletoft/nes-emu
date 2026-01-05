@@ -4,7 +4,9 @@ use std::fmt::{self, Display};
 
 use anyhow::{Result, bail};
 
-use crate::{cpu::Cpu, evaluate_instruction::*, interpret::State, mapper::Mapper};
+use crate::{
+	cpu::Cpu, evaluate_instruction::*, frame::NesFramebuffer, interpret::State, mapper::Mapper,
+};
 
 #[repr(C)]
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -621,7 +623,7 @@ impl Inst {
 		}
 	}
 
-	pub fn evaluate<M: Mapper>(&self, mut state: State<M>) -> State<M> {
+	pub fn evaluate<M: Mapper, F>(&self, mut state: State<M, F>) -> State<M, F> {
 		match self {
 			Inst::AdcAbsolute(a) => adc_absolute(state, a.into()),
 			Inst::AdcAbsoluteX(a) => adc_absolute_x(state, a.into()),

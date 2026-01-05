@@ -69,7 +69,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 
 		starting_points.insert(pc);
 		fns.push(quote! {
-			fn #ident(mut state: State<#mapper>) -> State<#mapper> {
+			fn #ident<F>(mut state: State<#mapper, F>) -> State<#mapper, F> {
 				#(#insts)*
 				#end
 			}
@@ -93,11 +93,11 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 
 		fn id<T>(x: T) -> T { x }
 
-		fn b_ffff(state: State<#mapper>) -> State<#mapper> { state }
+		fn b_ffff<F>(state: State<#mapper, F>) -> State<#mapper, F> { state }
 
-		pub fn nes_game(state: &mut State<#mapper>) {
+		pub fn nes_game<F>(state: &mut State<#mapper, F>) {
 			unsafe {
-				let mut local: State<#mapper> = (&raw mut *state).read();
+				let mut local: State<#mapper, F> = (&raw mut *state).read();
 				(&raw mut *state).write(
 					match local.cpu.pc {
 						0..0x8000 => id,

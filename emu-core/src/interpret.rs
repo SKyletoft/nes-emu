@@ -1,12 +1,10 @@
-use std::sync::{Arc, Mutex};
-
 use bitfields::bitfield;
 
 use crate::{
 	apu::Apu,
 	controller::Controller,
 	cpu::{Cpu, P},
-	graphics::{self, Bitmap},
+	frame::NesFramebuffer,
 	inst::Inst,
 	mapper::Mapper,
 	ppu::{DoubleWriter, NesColour, Ppu, Scroll, Sprite},
@@ -21,12 +19,12 @@ pub enum InterruptTiming {
 	Ready,
 }
 
-pub struct State<M: Mapper> {
+pub struct State<M, F> {
 	pub cpu: Cpu,
-	pub rest: Box<StateTail<M>>,
+	pub rest: Box<StateTail<M, F>>,
 }
 
-pub struct StateTail<M: Mapper> {
+pub struct StateTail<M, F> {
 	pub ppu: Ppu,
 	pub apu: Apu,
 	pub controller1: Controller,
@@ -35,15 +33,14 @@ pub struct StateTail<M: Mapper> {
 	pub ram: [u8; 2048],
 	pub cpu_bus: u8,
 	pub ppu_bus: u8,
-	pub output_texture: Arc<Mutex<Box<Bitmap>>>,
-	pub current_texture: Box<Bitmap>,
 	pub cycles: usize,
 	pub ppu_runahead: usize,
 	pub interrupt_requested: InterruptTiming,
+	pub frame: F,
 }
 
-impl<M: Mapper> State<M> {
-	pub fn new(rom: Box<M>, output_texture: Arc<Mutex<Box<Bitmap>>>) -> Self {
+impl<M: Mapper, F> State<M, F> {
+	pub fn new(rom: Box<M>, output: F) -> Self {
 		let pc = u16::from_le_bytes([
 			rom.get_cpu(0xFFFC).expect("Cannot read reset vector"),
 			rom.get_cpu(0xFFFD).expect("Cannot read reset vector (2)"),
@@ -65,7 +62,6 @@ impl<M: Mapper> State<M> {
 		let controller2 = Controller::default();
 		let cpu_bus = 0;
 		let ppu_bus = 0;
-		let current_texture = Box::new(graphics::empty_bitmap());
 		let cycles = 8;
 		let ppu_runahead = 0;
 		let interrupt_requested = InterruptTiming::Clear;
@@ -78,14 +74,13 @@ impl<M: Mapper> State<M> {
 				ram,
 				cpu_bus,
 				ppu_bus,
-				output_texture,
-				current_texture,
 				cycles,
 				apu,
 				controller1,
 				controller2,
 				interrupt_requested,
 				ppu_runahead,
+				frame: output,
 			}),
 		}
 	}
@@ -322,119 +317,6 @@ impl<M: Mapper> State<M> {
 			InterruptTiming::Waiting => self.rest.interrupt_requested = InterruptTiming::Ready,
 			InterruptTiming::Ready => self.set_vblank(),
 		}
-	}
-
-	pub fn catch_up_ppu(&mut self) {
-		debug_assert_eq!(self.rest.ppu.dot, 0);
-		while self.rest.ppu_runahead > 341 {
-			self.step_ppu_scanline();
-			self.rest.ppu_runahead -= 341;
-			debug_assert!(self.rest.ppu.dot == 0, "{}", self.rest.ppu.dot);
-		}
-
-		self.check_interrupt();
-	}
-
-	pub fn step_ppu_scanline(&mut self) {
-		if (0..240).contains(&self.rest.ppu.scanline) {
-			let working_range = 0..341;
-			let render_range = 0..255;
-
-			self.calculate_sprite_overflow();
-			self.update_sprite_cache();
-
-			for dot in render_range.clone() {
-				self.rest.ppu.dot = dot;
-				self.render_pixel();
-			}
-
-			let sprite_0 = &self.rest.ppu.oam[0];
-			let sprite_0_constants = self.rest.ppu.mask.show_spr()
-				&& self.rest.ppu.mask.show_bg()
-				&& self.rest.ppu.sprite_is_visible_y(sprite_0);
-			if sprite_0_constants {
-				let start = (sprite_0.x as i16).max(working_range.start);
-				let end = (sprite_0.x as i16 + self.rest.ppu.sprite_width()).min(render_range.end);
-				let mut sprite_range = start..end;
-				debug_assert!(sprite_range.len() <= 8);
-				let hit = sprite_range.any(|dot| {
-					self.rest.ppu.dot = dot;
-					let sprite_0 = &self.rest.ppu.oam[0];
-					self.rest.ppu.sprite_is_visible_x(sprite_0)
-						&& self.sprite_get_colour(sprite_0).is_some()
-						&& self.background_get_colour().is_some()
-				});
-				self.rest
-					.ppu
-					.status
-					.set_sprite_0_hit(self.rest.ppu.status.sprite_0_hit() | hit);
-			}
-		}
-
-		self.rest.ppu.cycles += 341;
-		self.rest.ppu.scanline += 1;
-		self.rest.ppu.dot = 0;
-
-		self.rest
-			.ppu
-			.status
-			.set_sprite_overflow(self.rest.ppu.sprite_overflow_latch);
-
-		match self.rest.ppu.scanline {
-			-1 if (self.rest.ppu.mask.show_bg() || self.rest.ppu.mask.show_spr())
-				&& self.rest.ppu.frame & 1 != 0 =>
-			{
-				#[cfg(test)]
-				{
-					// Dot crawl
-					self.rest.ppu.cycles -= 1;
-				}
-			}
-			0 if self.rest.ppu.status.vblank() => {
-				self.rest.ppu.status.set_vblank(false);
-			}
-			// Why frames count from the start of vblank and not the start of frames, I don't
-			// know. Again, matching Mesen's behaviour.
-			240 => {
-				self.rest.ppu.frame += 1;
-				let mut texture = self.rest.output_texture.lock().unwrap();
-				std::mem::swap(&mut self.rest.current_texture, &mut texture);
-			}
-			241 => {
-				self.rest.interrupt_requested = InterruptTiming::Ready;
-				self.rest.ppu.status.set_vblank(true);
-			}
-			261 => {
-				self.rest.ppu.scanline = -1;
-				self.rest.ppu.status.set_sprite_0_hit(false);
-			}
-			_ => {}
-		}
-	}
-
-	fn render_pixel(&mut self) {
-		let visible_sprites_iter = self
-			.rest
-			.ppu
-			.sprite_cache
-			.iter()
-			.filter_map(|&s| s)
-			.filter(|sprite| self.rest.ppu.sprite_is_visible_x(sprite));
-		let colour = visible_sprites_iter
-			.clone()
-			.filter(|s| !s.attr.priority())
-			.filter_map(|s| self.sprite_get_colour(&s))
-			.chain(self.background_get_colour())
-			.chain(
-				visible_sprites_iter
-					.filter(|s| s.attr.priority())
-					.filter_map(|s| self.sprite_get_colour(&s)),
-			)
-			.next()
-			.unwrap_or(self.rest.ppu.palettes[0][0])
-			.into();
-		self.rest.current_texture[self.rest.ppu.scanline as usize][self.rest.ppu.dot as usize] =
-			colour;
 	}
 
 	fn update_sprite_cache(&mut self) {
@@ -760,6 +642,127 @@ impl<M: Mapper> State<M> {
 		writeln!(&mut out).unwrap();
 
 		out
+	}
+}
+
+impl<M: Mapper, F: NesFramebuffer> State<M, F> {
+	pub fn catch_up_ppu(&mut self) {
+		unsafe {
+			unsafe_assert_eq!(self.rest.ppu.dot, 0);
+		}
+		while self.rest.ppu_runahead > 341 {
+			self.step_ppu_scanline();
+			self.rest.ppu_runahead -= 341;
+			unsafe {
+				unsafe_assert!(self.rest.ppu.dot == 0, "{}", self.rest.ppu.dot);
+			}
+		}
+
+		self.check_interrupt();
+	}
+
+	pub fn step_ppu_scanline(&mut self) {
+		if (0..240).contains(&self.rest.ppu.scanline) {
+			let working_range = 0..341;
+			let render_range = 0..255;
+
+			self.calculate_sprite_overflow();
+			self.update_sprite_cache();
+
+			for dot in render_range.clone() {
+				self.rest.ppu.dot = dot;
+				self.render_pixel();
+			}
+
+			let sprite_0 = &self.rest.ppu.oam[0];
+			let sprite_0_constants = self.rest.ppu.mask.show_spr()
+				&& self.rest.ppu.mask.show_bg()
+				&& self.rest.ppu.sprite_is_visible_y(sprite_0);
+			if sprite_0_constants {
+				let start = (sprite_0.x as i16).max(working_range.start);
+				let end = (sprite_0.x as i16 + self.rest.ppu.sprite_width()).min(render_range.end);
+				let mut sprite_range = start..end;
+				debug_assert!(sprite_range.len() <= 8);
+				let hit = sprite_range.any(|dot| {
+					self.rest.ppu.dot = dot;
+					let sprite_0 = &self.rest.ppu.oam[0];
+					self.rest.ppu.sprite_is_visible_x(sprite_0)
+						&& self.sprite_get_colour(sprite_0).is_some()
+						&& self.background_get_colour().is_some()
+				});
+				self.rest
+					.ppu
+					.status
+					.set_sprite_0_hit(self.rest.ppu.status.sprite_0_hit() | hit);
+			}
+		}
+
+		self.rest.ppu.cycles += 341;
+		self.rest.ppu.scanline += 1;
+		self.rest.ppu.dot = 0;
+
+		self.rest
+			.ppu
+			.status
+			.set_sprite_overflow(self.rest.ppu.sprite_overflow_latch);
+
+		match self.rest.ppu.scanline {
+			-1 if (self.rest.ppu.mask.show_bg() || self.rest.ppu.mask.show_spr())
+				&& self.rest.ppu.frame & 1 != 0 =>
+			{
+				#[cfg(test)]
+				{
+					// Dot crawl
+					self.rest.ppu.cycles -= 1;
+				}
+			}
+			0 if self.rest.ppu.status.vblank() => {
+				self.rest.ppu.status.set_vblank(false);
+			}
+			// Why frames count from the start of vblank and not the start of frames, I don't
+			// know. Again, matching Mesen's behaviour.
+			240 => {
+				self.rest.ppu.frame += 1;
+				self.rest.frame.swap();
+			}
+			241 => {
+				self.rest.interrupt_requested = InterruptTiming::Ready;
+				self.rest.ppu.status.set_vblank(true);
+			}
+			261 => {
+				self.rest.ppu.scanline = -1;
+				self.rest.ppu.status.set_sprite_0_hit(false);
+			}
+			_ => {}
+		}
+	}
+
+	fn render_pixel(&mut self) {
+		let visible_sprites_iter = self
+			.rest
+			.ppu
+			.sprite_cache
+			.iter()
+			.filter_map(|&s| s)
+			.filter(|sprite| self.rest.ppu.sprite_is_visible_x(sprite));
+		let colour = visible_sprites_iter
+			.clone()
+			.filter(|s| !s.attr.priority())
+			.filter_map(|s| self.sprite_get_colour(&s))
+			.chain(self.background_get_colour())
+			.chain(
+				visible_sprites_iter
+					.filter(|s| s.attr.priority())
+					.filter_map(|s| self.sprite_get_colour(&s)),
+			)
+			.next()
+			.unwrap_or(self.rest.ppu.palettes[0][0])
+			.into();
+		self.rest.frame.set(
+			self.rest.ppu.scanline as usize,
+			self.rest.ppu.dot as usize,
+			colour,
+		);
 	}
 }
 
