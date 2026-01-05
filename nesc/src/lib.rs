@@ -127,11 +127,19 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::Token
 			let lit1 = proc_macro2::Literal::byte_string(&parsed_file.prg_ram);
 			let lit2 = proc_macro2::Literal::byte_string(&parsed_file.prg_rom);
 			let lit3 = proc_macro2::Literal::byte_string(&parsed_file.chr_rom);
+			let lit4 = proc_macro2::Literal::byte_string(unsafe {
+				std::mem::transmute::<&[[[[u8; 8]; 8]; 256]; 2], &[u8; 32768]>(
+					&parsed_file.parsed_graphics,
+				)
+			});
 			let mapper_literal = quote! {
 				pub const MAPPER: NROM128 = NROM128 {
 					prg_ram: *#lit1,
 					prg_rom: *#lit2,
 					chr_rom: *#lit3,
+					parsed_graphics: unsafe {
+						std::mem::transmute::<[u8; 32768], [[[[u8; 8]; 8]; 256]; 2]>(*#lit4)
+					},
 				};
 			};
 			(mapper, parsed_file, mapper_literal)
@@ -142,11 +150,19 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::Token
 			let lit1 = proc_macro2::Literal::byte_string(&parsed_file.prg_ram);
 			let lit2 = proc_macro2::Literal::byte_string(&parsed_file.prg_rom);
 			let lit3 = proc_macro2::Literal::byte_string(&parsed_file.chr_rom);
+			let lit4 = proc_macro2::Literal::byte_string(unsafe {
+				std::mem::transmute::<&[[[[u8; 8]; 8]; 256]; 2], &[u8; 32768]>(
+					&parsed_file.parsed_graphics,
+				)
+			});
 			let mapper_literal = quote! {
 				pub const MAPPER: NROM256 = NROM256 {
 					prg_ram: *#lit1,
 					prg_rom: *#lit2,
 					chr_rom: *#lit3,
+					parsed_graphics: unsafe {
+						std::mem::transmute::<[u8; 32768], [[[[u8; 8]; 8]; 256]; 2]>(*#lit4)
+					},
 				};
 			};
 			(mapper, parsed_file, mapper_literal)

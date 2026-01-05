@@ -748,7 +748,7 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 }
 
 #[bitfield(u16)]
-struct PatternAddress {
+pub struct PatternAddress {
 	#[bits(3)]
 	fine_y: u8,
 	#[bits(1)]

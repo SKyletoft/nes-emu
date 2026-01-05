@@ -1,8 +1,9 @@
 use anyhow::{Result, bail};
 
 use crate::{
+	interpret::PatternAddressBuilder,
 	mapper::Mapper,
-	ppu::{NesColour, Ppu, VRAM_MASK},
+	ppu::{NesColour, Ppu, VRAM_MASK}, unsafe_assert,
 };
 
 #[derive(Debug, Clone)]
@@ -10,6 +11,9 @@ pub struct NROM256 {
 	pub prg_ram: [u8; 8 * 1024],
 	pub prg_rom: [u8; 32 * 1024],
 	pub chr_rom: [u8; 8 * 1024],
+
+	/// `this[pattern table][tile][y][x]`
+	pub parsed_graphics: [[[[u8; 8]; 8]; 256]; 2],
 }
 
 impl NROM256 {
@@ -49,14 +53,43 @@ impl NROM256 {
 					prg_ram: [0; _],
 					prg_rom: [0; _],
 					chr_rom: [0; _],
+					parsed_graphics: [[[[0; _]; _]; _]; _],
 				});
 				let NROM256 {
-					prg_rom: file_prg_rom,
-					chr_rom: file_chr_rom,
+					prg_rom,
+					chr_rom,
+					parsed_graphics,
 					..
 				} = &mut *mapper;
-				file_prg_rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
-				file_chr_rom.copy_from_slice(&buffer[chr_offset..chr_offset + 8 * 1024]);
+				prg_rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
+				chr_rom.copy_from_slice(&buffer[chr_offset..chr_offset + 8 * 1024]);
+
+				for half in 0..2 {
+					for tile in 0..=255 {
+						for y in 0..8 {
+							for x in 0..8 {
+								let plane0 = chr_rom[PatternAddressBuilder::new()
+									.with_fine_y(y)
+									.with_plane(false)
+									.with_tile_idx(tile)
+									.with_half(half != 0)
+									.build()
+									.into_bits() as usize];
+								let plane1 = chr_rom[PatternAddressBuilder::new()
+									.with_fine_y(y)
+									.with_plane(true)
+									.with_tile_idx(tile)
+									.with_half(half != 0)
+									.build()
+									.into_bits() as usize];
+								let bit = 7 - x;
+								let ret = ((plane1 >> bit) & 1) << 1 | ((plane0 >> bit) & 1);
+								parsed_graphics[half][tile as usize][y as usize][x as usize] = ret;
+							}
+						}
+					}
+				}
+
 				Ok(mapper)
 			}
 			0 => bail!("Wrong amount of prg_roms for an NROM"),
@@ -121,6 +154,7 @@ impl Mapper for NROM256 {
 			prg_ram: _,
 			prg_rom: _,
 			chr_rom: _,
+			parsed_graphics: _,
 		} = self;
 		let adr = adr & VRAM_MASK;
 		match adr {
@@ -143,6 +177,12 @@ impl Mapper for NROM256 {
 			}
 			_ => None,
 		}
+	}
+
+	#[inline]
+	fn get_palette_index(&self, half: bool, tile: u8, y: u8, x: u8) -> u8 {
+		unsafe { unsafe_assert!(y < 8 && x < 8) };
+		self.parsed_graphics[half as usize][tile as usize][y as usize][x as usize]
 	}
 }
 
