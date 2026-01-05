@@ -20,7 +20,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 	let buffer = fs::read(&path)
 		.unwrap_or_else(|e| panic!("failed to read ROM '{}': {}", path.display(), e));
 
-	let (mapper, rom, mapper_literal) = parse_ines(&buffer);
+	let (mapper, rom, constants) = parse_ines(&buffer);
 
 	let mut fns = Vec::new();
 	let mut branches = Vec::new();
@@ -107,7 +107,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 			}
 		}
 
-		pub const MAPPER: #mapper = #mapper_literal;
+		#constants
 	}
 	.into()
 }
@@ -139,11 +139,11 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::Token
 			let lit2 = proc_macro2::Literal::byte_string(&parsed_file.prg_rom);
 			let lit3 = proc_macro2::Literal::byte_string(&parsed_file.chr_rom);
 			let mapper_literal = quote! {
-				NROM128 {
+				pub const MAPPER: NROM128 = NROM128 {
 					prg_ram: *#lit1,
 					prg_rom: *#lit2,
 					chr_rom: *#lit3,
-				}
+				};
 			};
 			(mapper, parsed_file, mapper_literal)
 		}
@@ -154,11 +154,11 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::Token
 			let lit2 = proc_macro2::Literal::byte_string(&parsed_file.prg_rom);
 			let lit3 = proc_macro2::Literal::byte_string(&parsed_file.chr_rom);
 			let mapper_literal = quote! {
-				NROM256 {
+				pub const MAPPER: NROM256 = NROM256 {
 					prg_ram: *#lit1,
 					prg_rom: *#lit2,
 					chr_rom: *#lit3,
-				}
+				};
 			};
 			(mapper, parsed_file, mapper_literal)
 		}
