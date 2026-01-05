@@ -42,6 +42,7 @@ impl<'a> ConsoleFramebuffer<'a> {
 }
 
 impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
+	#[inline]
 	fn set(&mut self, x: usize, y: usize, col: NesColour) {
 		let Colour {
 			blue, green, red, ..
@@ -54,6 +55,7 @@ impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
 		self.unsafe_raw_frame_buf[y][x] = Bgr8 { blue, green, red };
 	}
 
+	#[inline]
 	fn swap(&mut self) {
 		self.screen.swap_buffers();
 		let frame_buf = self.screen.raw_framebuffer();

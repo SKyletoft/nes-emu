@@ -24,10 +24,12 @@ pub struct SdlFramebuffer {
 }
 
 impl NesFramebuffer for SdlFramebuffer {
+	#[inline]
 	fn set(&mut self, x: usize, y: usize, col: emu_core::ppu::NesColour) {
 		self.current_texture[x][y] = col.into();
 	}
 
+	#[inline]
 	fn swap(&mut self) {
 		let mut texture = self.output_texture.lock().unwrap();
 		std::mem::swap(&mut self.current_texture, &mut texture);
