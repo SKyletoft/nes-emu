@@ -64,7 +64,7 @@ fn main() {
 	let mut hid = Hid::new().unwrap();
 	let gfx = Gfx::new().unwrap();
 	let _console = Console::new(gfx.bottom_screen.borrow_mut());
-	println!(" FRAME   CPU   PPU");
+	println!(" FRAME   CPU   PPU  FPS");
 
 	let game = Box::new(game::MAPPER.clone());
 	let mut system_state = State::new(game, ConsoleFramebuffer::new(gfx.top_screen.borrow_mut()));
@@ -96,7 +96,8 @@ fn main() {
 
 		let cpu_time = cpu_dur.as_millis();
 		let ppu_time = ppu_dur.as_millis();
-		println!("{frame_count:5}: {cpu_time:3}ms {ppu_time:3}ms");
+		let fps = 1.0 / (cpu_dur + ppu_dur).as_secs_f32();
+		println!("{frame_count:5}: {cpu_time:3}ms {ppu_time:3}ms {fps:.02}");
 		cpu_dur = Duration::new(0, 0);
 		ppu_dur = Duration::new(0, 0);
 		// gfx.wait_for_vblank();
