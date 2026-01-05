@@ -2,6 +2,7 @@ pub mod apu;
 pub mod controller;
 pub mod cpu;
 pub mod evaluate_instruction;
+pub mod frame;
 pub mod graphics;
 pub mod inst;
 pub mod interpret;
