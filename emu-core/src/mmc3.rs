@@ -5,12 +5,12 @@ use crate::{mapper::Mapper, ppu::Ppu};
 #[derive(Debug, Clone)]
 pub struct MMC3 {
 	prg_banks: [u8; 2],
-	chr_2k_banks: [u8; 2],
-	chr_1k_banks: [u8; 4],
+	_chr_2k_banks: [u8; 2],
+	_chr_1k_banks: [u8; 4],
 	prg_roms: [[u8; 8 * 1024]; 32],
 	// chr_roms: [],
 	prg_mode: Mmc3PrgMode,
-	chr_mode: Mmc3ChrMode,
+	_chr_mode: Mmc3ChrMode,
 	registers: Mmc3Registers,
 }
 
@@ -51,7 +51,7 @@ impl MMC3 {
 			b'S',
 			0x1A,
 			prg_size,
-			_chr_size,
+			_,
 			flags_6,
 			flags_7,
 			_,
@@ -82,11 +82,11 @@ impl MMC3 {
 
 				let mut mapper = Box::new(MMC3 {
 					prg_banks: [0; _],
-					chr_2k_banks: [0; _],
-					chr_1k_banks: [0; _],
+					_chr_2k_banks: [0; _],
+					_chr_1k_banks: [0; _],
 					prg_roms: [[0; _]; _],
 					prg_mode: Mmc3PrgMode::Mode0,
-					chr_mode: Mmc3ChrMode::Mode0,
+					_chr_mode: Mmc3ChrMode::Mode0,
 					registers: Mmc3Registers::default(),
 				});
 

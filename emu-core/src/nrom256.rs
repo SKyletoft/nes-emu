@@ -20,7 +20,7 @@ impl NROM256 {
 			b'S',
 			0x1A,
 			prg_size,
-			_chr_size,
+			_,
 			flags_6,
 			flags_7,
 			_,
