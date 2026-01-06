@@ -67,21 +67,21 @@ impl NROM256 {
 				for half in 0..2 {
 					for tile in 0..=255 {
 						for y in 0..8 {
+							let plane0 = chr_rom[PatternAddressBuilder::new()
+								.with_fine_y(y)
+								.with_plane(false)
+								.with_tile_idx(tile)
+								.with_half(half != 0)
+								.build()
+								.into_bits() as usize];
+							let plane1 = chr_rom[PatternAddressBuilder::new()
+								.with_fine_y(y)
+								.with_plane(true)
+								.with_tile_idx(tile)
+								.with_half(half != 0)
+								.build()
+								.into_bits() as usize];
 							for x in 0..8 {
-								let plane0 = chr_rom[PatternAddressBuilder::new()
-									.with_fine_y(y)
-									.with_plane(false)
-									.with_tile_idx(tile)
-									.with_half(half != 0)
-									.build()
-									.into_bits() as usize];
-								let plane1 = chr_rom[PatternAddressBuilder::new()
-									.with_fine_y(y)
-									.with_plane(true)
-									.with_tile_idx(tile)
-									.with_half(half != 0)
-									.build()
-									.into_bits() as usize];
 								let bit = 7 - x;
 								let ret = ((plane1 >> bit) & 1) << 1 | ((plane0 >> bit) & 1);
 								parsed_graphics[half][tile as usize][y as usize][x as usize] = ret;
