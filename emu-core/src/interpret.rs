@@ -759,6 +759,84 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 	}
 }
 
+fn calculate_attribute_bits<M: Mapper>(
+	x: i16,
+	y: i16,
+	rom: &M,
+	self_rest_ppu: &Ppu,
+) -> impl Iterator<Item = u8> {
+	unsafe { unsafe_assert!((0..512).contains(&x)) };
+	unsafe { unsafe_assert!((0..480).contains(&y)) };
+	let nametable_adr = match (x, y) {
+		(0..256, 0..240) => 0x2000,
+		(256..512, 0..240) => 0x2400,
+		(0..256, 240..480) => 0x2800,
+		(256..512, 240..480) => 0x2C00,
+		(..0, _) | (_, ..0) | (512.., _) | (_, 480..) => panic!(),
+	};
+	let tile_x = (x % 256 / 8) as u16;
+	let tile_y = (y % 240 / 8) as u16;
+	let attribute_table_base = nametable_adr + 0x3C0;
+	let attribute_addr = attribute_table_base + (tile_y / 4) * 8 + tile_x / 4;
+	let attribute_byte = rom
+		.get_ppu(attribute_addr, self_rest_ppu)
+		.expect("Attribute table read failed");
+	let shift = ((tile_y % 4) / 2) * 4 + ((tile_x % 4) / 2) * 2;
+	let attribute_bits = (attribute_byte >> shift) & 0b11;
+	std::iter::repeat_n(attribute_bits, 16)
+}
+
+fn calculate_tile_palette_index<M: Mapper>(
+	x: i16,
+	y: i16,
+	rom: &M,
+	self_rest_ppu: &Ppu,
+) -> impl Iterator<Item = u8> {
+	unsafe { unsafe_assert!((0..512).contains(&x)) };
+	unsafe { unsafe_assert!((0..480).contains(&y)) };
+	let nametable_adr = match (x, y) {
+		(0..256, 0..240) => 0x2000,
+		(256..512, 0..240) => 0x2400,
+		(0..256, 240..480) => 0x2800,
+		(256..512, 240..480) => 0x2C00,
+		(..0, _) | (_, ..0) | (512.., _) | (_, 480..) => panic!(),
+	};
+
+	let tile_x = (x % 256 / 8) as u16;
+	let tile_y = (y % 240 / 8) as u16;
+	let pixel_x = (x % 8) as u16;
+	let pixel_y = (y % 8) as u16;
+
+	let tile_idx = (tile_y << 5) | tile_x;
+
+	// Fetch tile index from nametable
+	let tile_id = rom
+		.get_ppu(nametable_adr + tile_idx, self_rest_ppu)
+		.expect("Nametable read failed");
+
+	let tile_palette_index = rom.get_palette_index(
+		self_rest_ppu.ctrl.background_pattern_table(),
+		tile_id,
+		pixel_y as _,
+		pixel_x as _,
+	);
+	std::iter::repeat_n(tile_palette_index, 8)
+}
+
+fn calculate_background_colour(
+	tile_palette_index: u8,
+	attribute_bits: u8,
+	self_rest_ppu_palettes: &[[NesColour; 4]; 8],
+) -> NesColour {
+	unsafe { unsafe_assert!((0..4).contains(&attribute_bits)) };
+	unsafe { unsafe_assert!((0..4).contains(&tile_palette_index)) };
+
+	let col_idx = attribute_bits as u16 * 4 + tile_palette_index as u16;
+	unsafe { unsafe_assert!((0..16).contains(&col_idx)) };
+
+	self_rest_ppu_palettes[attribute_bits as usize][tile_palette_index as usize]
+}
+
 #[bitfield(u16)]
 pub struct PatternAddress {
 	#[bits(3)]
