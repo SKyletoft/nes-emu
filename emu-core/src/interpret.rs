@@ -8,7 +8,7 @@ use crate::{
 	inst::Inst,
 	mapper::Mapper,
 	ppu::{DoubleWriter, NesColour, Ppu, Scroll, Sprite},
-	unsafe_assert, unsafe_assert_eq,
+	unsafe_assert, unsafe_assert_eq, unsafe_unreachable,
 };
 
 pub const PPU_STARTUP_TIME: usize = 2500;
@@ -421,11 +421,13 @@ impl<M: Mapper, F> State<M, F> {
 		let col_idx = sprite.attr.palette() as u16 * 4 + palette_index as u16;
 		unsafe { unsafe_assert!((0..16).contains(&col_idx)) };
 
-		let raw_col = self
+		let Some(raw_col) = self
 			.rest
 			.rom
 			.get_ppu(0x3F10 + col_idx, &self.rest.ppu)
-			.expect("Palette RAM must be in-bounds");
+		else {
+			unsafe { unsafe_unreachable!("Palette RAM must be in-bounds") }
+		};
 		let col = NesColour::try_from(raw_col).expect("Game used invalid colour");
 		Some(col)
 	}
@@ -778,9 +780,9 @@ fn calculate_attribute_bits<M: Mapper>(
 	let tile_y = (y % 240 / 8) as u16;
 	let attribute_table_base = nametable_adr + 0x3C0;
 	let attribute_addr = attribute_table_base + (tile_y / 4) * 8 + tile_x / 4;
-	let attribute_byte = rom
-		.get_ppu(attribute_addr, self_rest_ppu)
-		.expect("Attribute table read failed");
+	let Some(attribute_byte) = rom.get_ppu(attribute_addr, self_rest_ppu) else {
+		unsafe { unsafe_unreachable!() }
+	};
 	let shift = ((tile_y % 4) / 2) * 4 + ((tile_x % 4) / 2) * 2;
 	let attribute_bits = (attribute_byte >> shift) & 0b11;
 	std::iter::repeat_n(attribute_bits, 16)
