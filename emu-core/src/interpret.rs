@@ -471,50 +471,24 @@ impl<M: Mapper, F> State<M, F> {
 		}
 
 		let (x, y) = self.rest.ppu.actual_pos();
-		unsafe { unsafe_assert!((0..512).contains(&x)) };
-		unsafe { unsafe_assert!((0..480).contains(&y)) };
-		let nametable_adr = match (x, y) {
-			(0..256, 0..240) => 0x2000,
-			(256..512, 0..240) => 0x2400,
-			(0..256, 240..480) => 0x2800,
-			(256..512, 240..480) => 0x2C00,
-			(..0, _) | (_, ..0) | (512.., _) | (_, 480..) => return None,
-		};
 
-		let tile_x = (x % 256 / 8) as u16;
-		let tile_y = (y % 240 / 8) as u16;
 		let pixel_x = (x % 8) as u16;
-		let pixel_y = (y % 8) as u16;
-
-		let tile_idx = (tile_y << 5) + tile_x;
-
-		// Fetch tile index from nametable
-		let tile_id = self
-			.rest
-			.rom
-			.get_ppu(nametable_adr + tile_idx, &self.rest.ppu)
-			.expect("Nametable read failed");
-
-		let tile_palette_index = self.read_pattern_table(
-			pixel_x as _,
-			pixel_y as _,
-			tile_id,
-			self.rest.ppu.ctrl.background_pattern_table(),
-		);
+		let Some(tile_palette_index) =
+			calculate_tile_palette_index(x, y, &self.rest.rom, &self.rest.ppu)
+				.nth(pixel_x as usize)
+		else {
+			unsafe { unsafe_unreachable!() }
+		};
 
 		if tile_palette_index == 0 {
 			return None;
 		}
 
-		let attribute_table_base = nametable_adr + 0x3C0;
-		let attribute_addr = attribute_table_base + (tile_y / 4) * 8 + tile_x / 4;
-		let attribute_byte = self
-			.rest
-			.rom
-			.get_ppu(attribute_addr, &self.rest.ppu)
-			.expect("Attribute table read failed");
-		let shift = ((tile_y % 4) / 2) * 4 + ((tile_x % 4) / 2) * 2;
-		let attribute_bits = (attribute_byte >> shift) & 0b11;
+		let Some(attribute_bits) =
+			calculate_attribute_bits(x, y, &self.rest.rom, &self.rest.ppu).nth(pixel_x as usize)
+		else {
+			unsafe { unsafe_unreachable!() }
+		};
 
 		unsafe { unsafe_assert!((0..4).contains(&attribute_bits)) };
 		unsafe { unsafe_assert!((0..4).contains(&tile_palette_index)) };
