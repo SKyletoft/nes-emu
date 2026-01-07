@@ -405,11 +405,11 @@ impl<M: Mapper, F> State<M, F> {
 		unsafe { unsafe_assert!((0..8).contains(&pixel_x), "{pixel_x}") };
 		unsafe { unsafe_assert!((0..8).contains(&pixel_y), "{pixel_y}") };
 
-		let palette_index = self.read_pattern_table(
-			pixel_x as _,
-			pixel_y as _,
-			sprite.tile,
+		let palette_index = self.rest.rom.get_palette_index(
 			self.rest.ppu.ctrl.sprite_pattern_table(),
+			sprite.tile,
+			pixel_y as _,
+			pixel_x as _,
 		);
 
 		if palette_index == 0 {
