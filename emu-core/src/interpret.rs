@@ -462,15 +462,18 @@ impl<M: Mapper, F> State<M, F> {
 	}
 
 	pub fn wait_for_interrupt(&mut self) {
-		const INTERRUPT_CYCLE: isize = 341 * 241;
 		const ENTIRE_FRAME: isize = 341 * 262;
-		let current_pos = self.rest.ppu.scanline as isize * 341 + self.rest.ppu.dot as isize;
-		self.rest.ppu_runahead = if current_pos > INTERRUPT_CYCLE {
-			(INTERRUPT_CYCLE - current_pos + ENTIRE_FRAME) as usize
+
+		let current_runahead = self.rest.ppu_runahead;
+
+		self.rest.ppu_runahead += if self.rest.ppu.scanline > 241 {
+			341 * (262 - self.rest.ppu.scanline) as usize
 		} else {
-			(INTERRUPT_CYCLE - current_pos) as usize
+			341 * (241 - self.rest.ppu.scanline) as usize
 		};
+
 		unsafe { unsafe_assert!((0..ENTIRE_FRAME).contains(&(self.rest.ppu_runahead as isize))) };
+		unsafe { unsafe_assert!(self.rest.ppu_runahead > current_runahead) };
 	}
 
 	pub fn display(&self) -> String {
