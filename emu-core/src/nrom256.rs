@@ -1,9 +1,9 @@
 use anyhow::{Result, bail};
 
 use crate::{
-	interpret::PatternAddressBuilder,
-	mapper::Mapper,
-	ppu::{NesColour, Ppu, VRAM_MASK}, unsafe_assert,
+	mapper::{Mapper, PatternAddressBuilder},
+	ppu::{NesColour, Ppu, VRAM_MASK},
+	unsafe_assert,
 };
 
 #[derive(Debug, Clone)]

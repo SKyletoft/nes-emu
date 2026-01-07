@@ -1,5 +1,3 @@
-use bitfields::bitfield;
-
 use crate::{
 	apu::Apu,
 	controller::Controller,
@@ -809,18 +807,4 @@ fn calculate_background_colour(
 		attribute_bits as usize
 	};
 	palettes[palette_idx][tile_palette_index as usize]
-}
-
-#[bitfield(u16)]
-pub struct PatternAddress {
-	#[bits(3)]
-	fine_y: u8,
-	#[bits(1)]
-	plane: bool,
-	#[bits(8)]
-	tile_idx: u8,
-	#[bits(1)]
-	half: bool,
-	#[bits(3, default = 0u8)]
-	__unused: u8,
 }

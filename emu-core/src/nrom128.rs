@@ -1,8 +1,7 @@
 use anyhow::{Result, bail};
 
 use crate::{
-	interpret::PatternAddressBuilder,
-	mapper::Mapper,
+	mapper::{Mapper, PatternAddressBuilder},
 	ppu::{NesColour, Ppu, VRAM_MASK},
 	unsafe_assert,
 };
