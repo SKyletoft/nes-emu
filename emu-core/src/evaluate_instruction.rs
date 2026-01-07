@@ -549,12 +549,12 @@ pub fn iny<M: Mapper, F>(mut state: State<M, F>) -> State<M, F> {
 
 #[inline(always)]
 pub fn jmp_absolute<M: Mapper, F>(mut state: State<M, F>, adr: u16) -> State<M, F> {
-	// if adr == state.cpu.pc {
-	//	state.wait_for_interrupt();
-	// } else {
+	if adr == state.cpu.pc {
+		state.wait_for_interrupt();
+	} else {
 		state.cpu.pc = adr;
 		advance(&mut state.rest, 3);
-	// }
+	}
 	state
 }
 
@@ -563,12 +563,12 @@ pub fn jmp_indirect<M: Mapper, F>(mut state: State<M, F>, adr: u16) -> State<M, 
 	let low = state.mem(adr);
 	let hi = state.mem(adr + 1);
 	let target_adr = u16::from_le_bytes([low, hi]);
-	// if target_adr == state.cpu.pc {
-	//	state.wait_for_interrupt();
-	// } else {
+	if target_adr == state.cpu.pc {
+		state.wait_for_interrupt();
+	} else {
 		state.cpu.pc = target_adr;
 		advance(&mut state.rest, 5);
-	// }
+	}
 	state
 }
 
