@@ -802,23 +802,23 @@ fn calculate_tile_palette_index<M: Mapper>(
 
 	let tile_x = (x % 256 / 8) as u16;
 	let tile_y = (y % 240 / 8) as u16;
-	let pixel_x = (x % 8) as u16;
 	let pixel_y = (y % 8) as u16;
 
 	let tile_idx = (tile_y << 5) | tile_x;
 
 	// Fetch tile index from nametable
-	let tile_id = rom
-		.get_ppu(nametable_adr + tile_idx, self_rest_ppu)
-		.expect("Nametable read failed");
+	let Some(tile_id) = rom.get_ppu(nametable_adr + tile_idx, self_rest_ppu) else {
+		unsafe { unsafe_unreachable!() }
+	};
 
-	let tile_palette_index = rom.get_palette_index(
-		self_rest_ppu.ctrl.background_pattern_table(),
-		tile_id,
-		pixel_y as _,
-		pixel_x as _,
-	);
-	std::iter::repeat_n(tile_palette_index, 8)
+	(0..8).map(move |pixel_x| {
+		rom.get_palette_index(
+			self_rest_ppu.ctrl.background_pattern_table(),
+			tile_id,
+			pixel_y as _,
+			pixel_x,
+		)
+	})
 }
 
 fn calculate_background_colour(
