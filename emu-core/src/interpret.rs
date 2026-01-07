@@ -528,6 +528,18 @@ impl<M: Mapper, F> State<M, F> {
 		Some(col)
 	}
 
+	pub fn wait_for_interrupt(&mut self) {
+		const INTERRUPT_CYCLE: isize = 341 * 241;
+		const ENTIRE_FRAME: isize = 341 * 262;
+		let current_pos = self.rest.ppu.scanline as isize * 341 + self.rest.ppu.dot as isize;
+		self.rest.ppu_runahead = if current_pos > INTERRUPT_CYCLE {
+			(INTERRUPT_CYCLE - current_pos + ENTIRE_FRAME) as usize
+		} else {
+			(INTERRUPT_CYCLE - current_pos) as usize
+		};
+		unsafe { unsafe_assert!((0..ENTIRE_FRAME).contains(&(self.rest.ppu_runahead as isize))) };
+	}
+
 	pub fn display(&self) -> String {
 		use std::fmt::Write;
 
