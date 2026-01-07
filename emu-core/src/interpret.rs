@@ -421,11 +421,7 @@ impl<M: Mapper, F> State<M, F> {
 		let col_idx = sprite.attr.palette() as u16 * 4 + palette_index as u16;
 		unsafe { unsafe_assert!((0..16).contains(&col_idx)) };
 
-		let Some(raw_col) = self
-			.rest
-			.rom
-			.get_ppu(0x3F10 + col_idx, &self.rest.ppu)
-		else {
+		let Some(raw_col) = self.rest.rom.get_ppu(0x3F10 + col_idx, &self.rest.ppu) else {
 			unsafe { unsafe_unreachable!("Palette RAM must be in-bounds") }
 		};
 		let col = NesColour::try_from(raw_col).expect("Game used invalid colour");
