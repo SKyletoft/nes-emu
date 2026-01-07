@@ -37,3 +37,14 @@ macro_rules! unsafe_assert_eq {
 		::core::hint::assert_unchecked($t == $t2);
 	}};
 }
+
+#[macro_export]
+macro_rules! unsafe_unreachable {
+	($(, $ts:expr)*) => {{
+		std::hint::assert_unchecked(true); // To silence unnecessary unsafe warning in debug builds
+		#[cfg(debug_assertions)]
+		unreachable!($(, $ts)*);
+		#[cfg(not(debug_assertions))]
+		::core::hint::unreachable_unchecked();
+	}};
+}
