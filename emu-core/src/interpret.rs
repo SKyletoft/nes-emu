@@ -426,43 +426,6 @@ impl<M: Mapper, F> State<M, F> {
 		Some(col)
 	}
 
-	pub fn read_pattern_table(&self, fine_x: u8, fine_y: u8, tile_id: u8, half: bool) -> u8 {
-		unsafe { unsafe_assert!(fine_x < 8 && fine_y < 8) };
-		let plane0 = self
-			.rest
-			.rom
-			.get_ppu(
-				PatternAddressBuilder::new()
-					.with_fine_y(fine_y)
-					.with_plane(false)
-					.with_tile_idx(tile_id)
-					.with_half(half)
-					.build()
-					.into_bits(),
-				&self.rest.ppu,
-			)
-			.expect("Pattern table read failed");
-		let plane1 = self
-			.rest
-			.rom
-			.get_ppu(
-				PatternAddressBuilder::new()
-					.with_fine_y(fine_y)
-					.with_plane(true)
-					.with_tile_idx(tile_id)
-					.with_half(half)
-					.build()
-					.into_bits(),
-				&self.rest.ppu,
-			)
-			.expect("Pattern table read failed");
-
-		let bit = 7 - fine_x;
-		let ret = ((plane1 >> bit) & 1) << 1 | ((plane0 >> bit) & 1);
-		unsafe { unsafe_assert!((0..4).contains(&ret)) };
-		ret
-	}
-
 	pub fn background_get_colour(&self) -> Option<NesColour> {
 		if !self.rest.ppu.mask.show_bg() {
 			return None;
