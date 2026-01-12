@@ -595,14 +595,36 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 	pub fn step_ppu_scanline(&mut self) {
 		if (0..240).contains(&self.rest.ppu.scanline) {
 			let working_range = 0..341;
-			let render_range = 0..255;
+			let render_range = 0..255i16;
 
 			self.calculate_sprite_overflow();
 			self.update_sprite_cache();
 
-			for dot in render_range.clone() {
-				self.rest.ppu.dot = dot;
-				self.render_pixel();
+			let show_bg = self.rest.ppu.mask.show_bg();
+			let bg = self.rest.ppu.palettes[0][0];
+			if show_bg {
+				for dot in render_range.clone() {
+					let col = self
+						.rest
+						.rom
+						.get_bg_pixel(
+							(dot + self.rest.ppu.scroll.x as i16 + self.rest.ppu.ctrl.x_offset())
+								% 512,
+							self.rest.ppu.scanline,
+							&self.rest.ppu,
+							&self.rest.ppu.palettes,
+						)
+						.unwrap_or(self.rest.ppu.palettes[0][0]);
+					self.rest
+						.frame
+						.set(self.rest.ppu.scanline as usize, dot as usize, col);
+				}
+			} else {
+				for dot in render_range.clone() {
+					self.rest
+						.frame
+						.set(self.rest.ppu.scanline as usize, dot as usize, bg);
+				}
 			}
 
 			let sprite_0 = &self.rest.ppu.oam[0];
