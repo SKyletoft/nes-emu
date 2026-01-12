@@ -214,7 +214,6 @@ impl Mapper for NROM256 {
 					self.rerender_tile(half as usize, tile_x, tile_y + 1, ppu);
 					self.rerender_tile(half as usize, tile_x + 1, tile_y + 1, ppu);
 				}
-				self.rerender_background(ppu);
 				Some(())
 			}
 			_ => None,
