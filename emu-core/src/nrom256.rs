@@ -199,7 +199,7 @@ impl Mapper for NROM256 {
 					let tile_y = (in_nametable / 32) as i16;
 					unsafe { unsafe_assert!((0..32).contains(&tile_x), "{tile_x}") };
 					unsafe { unsafe_assert!((0..30).contains(&tile_y), "{tile_y}") };
-					let half = (adr - in_nametable) == 0x2000 || (adr - in_nametable) == 0x2800;
+					let half = (adr - in_nametable) == 0x2400 || (adr - in_nametable) == 0x2C00;
 					self.rerender_tile(half as usize, tile_x, tile_y, ppu);
 				} else {
 					// Update 4x4 tiles
@@ -208,7 +208,7 @@ impl Mapper for NROM256 {
 					let tile_y = ((in_attr / 16) & !1) as i16;
 					unsafe { unsafe_assert!((0..16).contains(&tile_x)) };
 					unsafe { unsafe_assert!((0..16).contains(&tile_y)) };
-					let half = (adr - in_nametable) == 0x2000 || (adr - in_nametable) == 0x2800;
+					let half = (adr - in_nametable) == 0x2400 || (adr - in_nametable) == 0x2C00;
 					self.rerender_tile(half as usize, tile_x, tile_y, ppu);
 					self.rerender_tile(half as usize, tile_x + 1, tile_y, ppu);
 					self.rerender_tile(half as usize, tile_x, tile_y + 1, ppu);
