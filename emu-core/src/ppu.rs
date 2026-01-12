@@ -270,6 +270,11 @@ pub enum NesColour {
 	SpringPale = 0x3B,
 	CyanPale = 0x3C,
 }
+
+const _: () = {
+	assert!(std::mem::size_of::<Option<NesColour>>() == std::mem::size_of::<NesColour>());
+};
+
 impl TryFrom<u8> for NesColour {
 	type Error = anyhow::Error;
 

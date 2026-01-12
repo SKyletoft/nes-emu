@@ -764,14 +764,12 @@ pub fn calculate_background_colour(
 	tile_palette_index: u8,
 	attribute_bits: u8,
 	palettes: &[[NesColour; 4]; 8],
-) -> NesColour {
+) -> Option<NesColour> {
 	unsafe { unsafe_assert!((0..4).contains(&attribute_bits)) };
 	unsafe { unsafe_assert!((0..4).contains(&tile_palette_index)) };
 
-	let palette_idx = if tile_palette_index == 0 {
-		0
-	} else {
-		attribute_bits as usize
-	};
-	palettes[palette_idx][tile_palette_index as usize]
+	if tile_palette_index == 0 {
+		return None;
+	}
+	Some(palettes[attribute_bits as usize][tile_palette_index as usize])
 }
