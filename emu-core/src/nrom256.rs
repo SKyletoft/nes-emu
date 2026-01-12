@@ -3,7 +3,7 @@ use anyhow::{Result, bail};
 use crate::{
 	mapper::{Mapper, PatternAddressBuilder},
 	ppu::{NesColour, Ppu, VRAM_MASK},
-	unsafe_assert,
+	unsafe_assert, unsafe_unreachable,
 };
 
 #[derive(Debug, Clone)]
@@ -14,6 +14,7 @@ pub struct NROM256 {
 
 	/// `this[pattern table][tile][y][x]`
 	pub parsed_graphics: [[[[u8; 8]; 8]; 256]; 2],
+	pub rendered_background: [[[Option<NesColour>; 240]; 256]; 2],
 }
 
 impl NROM256 {
@@ -54,6 +55,7 @@ impl NROM256 {
 					prg_rom: [0; _],
 					chr_rom: [0; _],
 					parsed_graphics: [[[[0; _]; _]; _]; _],
+					rendered_background: [[[None; _]; _]; _],
 				});
 				let NROM256 {
 					prg_rom,
@@ -155,6 +157,7 @@ impl Mapper for NROM256 {
 			prg_rom: _,
 			chr_rom: _,
 			parsed_graphics: _,
+			rendered_background: _,
 		} = self;
 		let adr = adr & VRAM_MASK;
 		match adr {
@@ -183,6 +186,40 @@ impl Mapper for NROM256 {
 	fn get_palette_index(&self, half: bool, tile: u8, y: u8, x: u8) -> u8 {
 		unsafe { unsafe_assert!(y < 8 && x < 8) };
 		self.parsed_graphics[half as usize][tile as usize][y as usize][x as usize]
+	}
+
+impl NROM256 {
+	fn rerender_tile(&mut self, tilemap: usize, tile_x: i16, tile_y: i16, ppu: &Ppu) {
+		let px = tile_x * 8 + if tilemap == 0 { 0 } else { 256 };
+		let x = (tile_x * 8) as usize;
+		let py = tile_y * 8;
+
+		for line in 0..8 {
+			let y = py + line;
+
+			let attrs = crate::interpret::calculate_attribute_bits(px, y, self, ppu);
+			let tiles = crate::interpret::calculate_tile_palette_index(px, y, self, ppu);
+
+			let mut buf: [Option<NesColour>; 8] = [None; 8];
+
+			for (i, (attr, tile)) in attrs.zip(tiles).enumerate() {
+				buf[i] = crate::interpret::calculate_background_colour(tile, attr, &ppu.palettes);
+			}
+
+			for (i, c) in buf.into_iter().enumerate() {
+				self.rendered_background[tilemap][x + i][y as usize] = c;
+			}
+		}
+	}
+
+	fn rerender_background(&mut self, ppu: &Ppu) {
+		for tilemap in 0..2 {
+			for tile_x in 0..32 {
+				for tile_y in 0..30 {
+					self.rerender_tile(tilemap, tile_x, tile_y, ppu);
+				}
+			}
+		}
 	}
 }
 
