@@ -696,7 +696,7 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 	}
 }
 
-fn calculate_attribute_bits<M: Mapper>(
+pub fn calculate_attribute_bits<M: Mapper>(
 	x: i16,
 	y: i16,
 	rom: &M,
@@ -723,7 +723,7 @@ fn calculate_attribute_bits<M: Mapper>(
 	std::iter::repeat_n(attribute_bits, 16)
 }
 
-fn calculate_tile_palette_index<M: Mapper>(
+pub fn calculate_tile_palette_index<M: Mapper>(
 	x: i16,
 	y: i16,
 	rom: &M,
@@ -760,7 +760,7 @@ fn calculate_tile_palette_index<M: Mapper>(
 	})
 }
 
-fn calculate_background_colour(
+pub fn calculate_background_colour(
 	tile_palette_index: u8,
 	attribute_bits: u8,
 	palettes: &[[NesColour; 4]; 8],
