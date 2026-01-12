@@ -227,6 +227,26 @@ impl Mapper for NROM256 {
 		self.parsed_graphics[half as usize][tile as usize][y as usize][x as usize]
 	}
 
+	#[inline]
+	fn get_bg_pixel(
+		&self,
+		tilemap_x: i16,
+		tilemap_y: i16,
+		_: &Ppu,
+		_: &[[NesColour; 4]; 8],
+	) -> Option<NesColour>
+	where
+		Self: Sized,
+	{
+		unsafe { unsafe_assert!((0..512).contains(&tilemap_x)) };
+		unsafe { unsafe_assert!((0..240).contains(&tilemap_y)) };
+		let tilemap = (tilemap_x >= 256) as usize;
+		let tilemap_x = tilemap_x as usize % 256;
+		let tilemap_y = tilemap_y as usize;
+		self.rendered_background[tilemap][tilemap_x][tilemap_y]
+	}
+}
+
 impl NROM256 {
 	fn rerender_tile(&mut self, tilemap: usize, tile_x: i16, tile_y: i16, ppu: &Ppu) {
 		let px = tile_x * 8 + if tilemap == 0 { 0 } else { 256 };
