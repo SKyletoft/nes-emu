@@ -163,19 +163,58 @@ impl Mapper for NROM256 {
 		match adr {
 			0x0000..=0x1FFF => Some(()),
 			0x3F00..=0x3FFF if adr.is_multiple_of(16) => {
-				let col: NesColour = val.try_into().expect("Writing invalid colour to palette");
+				let Ok(col) = val.try_into() else {
+					unsafe { unsafe_unreachable!("Writing invalid colour to palette") }
+				};
+				let old = ppu.palettes[0][0];
 				ppu.palettes[0][0] = col;
 				ppu.palettes[4][0] = col;
+				if old != col {
+					self.rerender_background(ppu);
+				}
 				Some(())
 			}
 			0x3F00..=0x3FFF => {
-				let col: NesColour = val.try_into().expect("Writing invalid colour to palette");
+				let Ok(col) = val.try_into() else {
+					unsafe { unsafe_unreachable!("Writing invalid colour to palette") }
+				};
 				let adr = adr as usize % 0x20;
-				ppu.palettes[(adr / 4) % 8][adr % 4] = col;
+				let pal_idx = (adr / 4) % 8;
+				let col_idx = adr % 4;
+				let old = ppu.palettes[pal_idx][col_idx];
+				ppu.palettes[pal_idx][col_idx] = col;
+				let is_bg_pal = pal_idx >= 4;
+				if old != col && is_bg_pal {
+					self.rerender_background(ppu);
+				}
 				Some(())
 			}
 			0x2000..=0x3EFF => {
-				*ppu.vram.get_mut(adr as usize & 0x07FF).unwrap() = val;
+				*ppu.vram.get_mut(adr as usize % 0x800).unwrap() = val;
+
+				let in_nametable = adr % 0x400;
+				if in_nametable < 0x03C0 {
+					// Update tile
+					let tile_x = (in_nametable % 32) as i16;
+					let tile_y = (in_nametable / 32) as i16;
+					unsafe { unsafe_assert!((0..32).contains(&tile_x), "{tile_x}") };
+					unsafe { unsafe_assert!((0..30).contains(&tile_y), "{tile_y}") };
+					let half = (adr - in_nametable) == 0x2000 || (adr - in_nametable) == 0x2800;
+					self.rerender_tile(half as usize, tile_x, tile_y, ppu);
+				} else {
+					// Update 4x4 tiles
+					let in_attr = in_nametable - 0x3C0;
+					let tile_x = ((in_attr % 16) & !1) as i16;
+					let tile_y = ((in_attr / 16) & !1) as i16;
+					unsafe { unsafe_assert!((0..16).contains(&tile_x)) };
+					unsafe { unsafe_assert!((0..16).contains(&tile_y)) };
+					let half = (adr - in_nametable) == 0x2000 || (adr - in_nametable) == 0x2800;
+					self.rerender_tile(half as usize, tile_x, tile_y, ppu);
+					self.rerender_tile(half as usize, tile_x + 1, tile_y, ppu);
+					self.rerender_tile(half as usize, tile_x, tile_y + 1, ppu);
+					self.rerender_tile(half as usize, tile_x + 1, tile_y + 1, ppu);
+				}
+				self.rerender_background(ppu);
 				Some(())
 			}
 			_ => None,
