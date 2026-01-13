@@ -380,12 +380,21 @@ impl<M: Mapper, F> State<M, F> {
 	}
 
 	pub fn sprite_get_colour(&self, sprite: &Sprite) -> Option<NesColour> {
+		self.sprite_get_colour_at(sprite, self.rest.ppu.dot, self.rest.ppu.scanline)
+	}
+
+	pub fn sprite_get_colour_at(
+		&self,
+		sprite: &Sprite,
+		dot: i16,
+		scanline: i16,
+	) -> Option<NesColour> {
 		if !self.rest.ppu.mask.show_spr() {
 			return None;
 		}
 
-		let pixel_x = self.rest.ppu.dot - sprite.x as i16;
-		let pixel_y = self.rest.ppu.scanline - sprite.y as i16 - 1;
+		let pixel_x = dot - sprite.x as i16;
+		let pixel_y = scanline - sprite.y as i16 - 1;
 
 		unsafe { unsafe_assert!((0..8).contains(&pixel_x), "{pixel_x}") };
 		unsafe { unsafe_assert!((0..8).contains(&pixel_y), "{pixel_y}") };
