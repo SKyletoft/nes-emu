@@ -7,14 +7,18 @@ use std::{
 
 use ctru::{
 	prelude::*,
-	services::gfx::{Screen, Swap, TopScreen},
+	services::{
+		gfx::{Screen, Swap, TopScreen},
+		gspgpu::FramebufferFormat,
+	},
 };
 use emu_core::{
 	controller::ControllerState, frame::NesFramebuffer, interpret::State, ppu::NesColour,
 	unsafe_assert,
 };
 
-type ColourFormat = crate::colour::Bgr8;
+// type ColourFormat = crate::colour::Bgr8;
+type ColourFormat = crate::colour::Rgb565;
 
 struct ConsoleFramebuffer<'a> {
 	gfx: &'a Gfx,
@@ -60,7 +64,7 @@ impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
 fn main() {
 	let apt = Apt::new().unwrap();
 	let mut hid = Hid::new().unwrap();
-	let gfx = Gfx::new().unwrap();
+	let gfx = Gfx::with_formats_shared(FramebufferFormat::Rgb565, FramebufferFormat::Bgr8).unwrap();
 	let _console = Console::new(gfx.bottom_screen.borrow_mut());
 	println!(" FRAME   CPU   PPU  FPS  ACTUAL");
 
