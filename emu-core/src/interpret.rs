@@ -604,7 +604,7 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 	pub fn step_ppu_scanline(&mut self) {
 		if (0..240).contains(&self.rest.ppu.scanline) {
 			let working_range = 0..341;
-			let render_range = 0..255i16;
+			let render_range = 0..256i16;
 
 			self.calculate_sprite_overflow();
 			self.update_sprite_cache();
@@ -646,7 +646,7 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 					.filter(|s| self.rest.ppu.sprite_is_visible_y(s))
 				{
 					let sprite_x = sprite.x as i16;
-					for dot in sprite_x..(sprite_x + 8).min(255) {
+					for dot in sprite_x..(sprite_x + 8).min(256) {
 						if let Some(col) =
 							self.sprite_get_colour_at(sprite, dot, self.rest.ppu.scanline)
 						{
