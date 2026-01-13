@@ -7,6 +7,7 @@ use emu_core::{
 	controller::ControllerState,
 	frame::NesFramebuffer,
 	graphics::{Bitmap, HEIGHT, WIDTH},
+	unsafe_assert,
 };
 use sdl2::{
 	controller::Button,
@@ -25,8 +26,10 @@ pub struct SdlFramebuffer {
 
 impl NesFramebuffer for SdlFramebuffer {
 	#[inline]
-	fn set(&mut self, x: usize, y: usize, col: emu_core::ppu::NesColour) {
-		self.current_texture[x][y] = col.into();
+	fn set(&mut self, y: usize, x: usize, col: emu_core::ppu::NesColour) {
+		unsafe { unsafe_assert!((0..HEIGHT).contains(&y)) };
+		unsafe { unsafe_assert!((0..WIDTH).contains(&x)) };
+		self.current_texture[y][x] = col.into();
 	}
 
 	#[inline]
