@@ -163,6 +163,7 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::Token
 					parsed_graphics: unsafe {
 						std::mem::transmute::<[u8; 32768], [[[[u8; 8]; 8]; 256]; 2]>(*#lit4)
 					},
+					rendered_background: [[[None; 240]; 256]; 2]
 				};
 			};
 			(mapper, parsed_file, mapper_literal)
