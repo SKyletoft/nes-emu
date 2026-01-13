@@ -637,6 +637,30 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 				}
 			}
 
+			if self.rest.ppu.mask.show_spr() {
+				for sprite in self
+					.rest
+					.ppu
+					.oam
+					.iter()
+					.filter(|s| self.rest.ppu.sprite_is_visible_y(s))
+				{
+					for offset in 0..8 {
+						if let Some(col) = self.sprite_get_colour_at(
+							sprite,
+							sprite.x as i16 + offset,
+							self.rest.ppu.scanline,
+						) {
+							self.rest.frame.set(
+								self.rest.ppu.scanline as usize,
+								(sprite.x as i16 + offset) as usize,
+								col,
+							);
+						}
+					}
+				}
+			}
+
 			let sprite_0 = &self.rest.ppu.oam[0];
 			let sprite_0_constants = self.rest.ppu.mask.show_spr()
 				&& self.rest.ppu.mask.show_bg()
