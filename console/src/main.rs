@@ -17,6 +17,7 @@ use emu_core::{
 type ColourFormat = crate::colour::Bgr8;
 
 struct ConsoleFramebuffer<'a> {
+	gfx: &'a Gfx,
 	screen: RefMut<'a, TopScreen>,
 	/// Must be updated when screen is swapped
 	unsafe_raw_frame_buf: &'a mut [[ColourFormat; 240]; 400],
@@ -29,6 +30,7 @@ impl<'a> ConsoleFramebuffer<'a> {
 		let unsafe_raw_frame_buf =
 			unsafe { std::mem::transmute::<_, &mut [[ColourFormat; 240]; 400]>(frame_buf.ptr) };
 		ConsoleFramebuffer {
+			gfx,
 			screen,
 			unsafe_raw_frame_buf,
 		}
@@ -46,6 +48,7 @@ impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
 
 	#[inline]
 	fn swap(&mut self) {
+		self.gfx.wait_for_vblank();
 		self.screen.swap_buffers();
 		let frame_buf = self.screen.raw_framebuffer();
 		let unsafe_raw_frame_buf =
@@ -99,7 +102,6 @@ fn main() {
 		frame_time = done;
 		cpu_dur = Duration::new(0, 0);
 		ppu_dur = Duration::new(0, 0);
-		// gfx.wait_for_vblank();
 
 		hid.scan_input();
 
