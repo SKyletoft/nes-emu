@@ -645,17 +645,14 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 					.iter()
 					.filter(|s| self.rest.ppu.sprite_is_visible_y(s))
 				{
-					for offset in 0..8 {
-						if let Some(col) = self.sprite_get_colour_at(
-							sprite,
-							sprite.x as i16 + offset,
-							self.rest.ppu.scanline,
-						) {
-							self.rest.frame.set(
-								self.rest.ppu.scanline as usize,
-								(sprite.x as i16 + offset) as usize,
-								col,
-							);
+					let sprite_x = sprite.x as i16;
+					for dot in sprite_x..(sprite_x + 8).min(255) {
+						if let Some(col) =
+							self.sprite_get_colour_at(sprite, dot, self.rest.ppu.scanline)
+						{
+							self.rest
+								.frame
+								.set(self.rest.ppu.scanline as usize, dot as usize, col);
 						}
 					}
 				}
