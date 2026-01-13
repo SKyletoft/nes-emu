@@ -188,6 +188,12 @@ pub struct Sprite {
 	pub x: u8,
 }
 
+impl Sprite {
+	pub fn is_visible_at(&self, x: u8, y: u8) -> bool {
+		(self.y..self.y + 8).contains(&y) && (self.x..self.x + 8).contains(&x)
+	}
+}
+
 #[bitfield(u8)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Pod, Zeroable)]
 pub struct SpriteAttributes {
