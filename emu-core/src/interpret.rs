@@ -613,12 +613,13 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 			let bg = self.rest.ppu.palettes[0][0];
 			if show_bg {
 				for dot in render_range.clone() {
+					let tilemap_x =
+						(dot + self.rest.ppu.scroll.x as i16 + self.rest.ppu.ctrl.x_offset()) % 512;
 					let col = self
 						.rest
 						.rom
 						.get_bg_pixel(
-							(dot + self.rest.ppu.scroll.x as i16 + self.rest.ppu.ctrl.x_offset())
-								% 512,
+							tilemap_x,
 							self.rest.ppu.scanline,
 							&self.rest.ppu,
 							&self.rest.ppu.palettes,
