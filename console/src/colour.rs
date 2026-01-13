@@ -2,6 +2,7 @@ use bitfields::bitfield;
 use emu_core::ppu::NesColour;
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct Bgr8 {
 	blue: u8,
 	green: u8,
@@ -276,7 +277,8 @@ impl From<NesColour> for Bgr8 {
 	}
 }
 
-#[bitfield(u16)]
+#[derive(Copy, Clone)]
+#[bitfield(u16, order = msb)]
 pub struct Rgb565 {
 	#[bits(5)]
 	red: u8,
