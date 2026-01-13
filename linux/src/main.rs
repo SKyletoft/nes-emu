@@ -18,7 +18,9 @@ fn emulation_loop(
 	controller_state: &AtomicU8,
 	kill: &AtomicBool,
 ) {
-	let game = Box::new(game::MAPPER.clone());
+	// let game = Box::new(game::MAPPER.clone());
+	let game =
+		emu_core::nrom256::NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes")).unwrap();
 	let mut system_state = State::new(
 		game,
 		drawing::SdlFramebuffer {
@@ -33,7 +35,8 @@ fn emulation_loop(
 	while kill.load(Ordering::Relaxed) {
 		*system_state.rest.controller1.state_mut() = controller_state.load(Ordering::SeqCst);
 
-		game::nes_game(&mut system_state);
+		// game::nes_game(&mut system_state);
+		system_state.next();
 
 		system_state.catch_up_ppu();
 
