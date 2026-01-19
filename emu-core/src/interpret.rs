@@ -608,31 +608,8 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 		if (0..240).contains(&self.rest.ppu.scanline) {
 			self.calculate_sprite_overflow();
 			// self.update_sprite_cache();
-
 			self.render_line(self.rest.ppu.scanline);
-
-			let sprite_0 = &self.rest.ppu.oam[0];
-			let sprite_0_constants = self.rest.ppu.mask.show_spr()
-				&& self.rest.ppu.mask.show_bg()
-				&& self.rest.ppu.sprite_is_visible_y(sprite_0);
-			if sprite_0_constants {
-				let start = (sprite_0.x as i16).max(Self::WORKING_RANGE.start);
-				let end =
-					(sprite_0.x as i16 + self.rest.ppu.sprite_width()).min(Self::RENDER_RANGE.end);
-				let mut sprite_range = start..end;
-				unsafe { unsafe_assert!(sprite_range.len() <= 8) };
-				let hit = sprite_range.any(|dot| {
-					self.rest.ppu.dot = dot;
-					let sprite_0 = &self.rest.ppu.oam[0];
-					self.rest.ppu.sprite_is_visible_x(sprite_0)
-						&& self.sprite_get_colour(sprite_0).is_some()
-						&& self.background_get_colour().is_some()
-				});
-				self.rest
-					.ppu
-					.status
-					.set_sprite_0_hit(self.rest.ppu.status.sprite_0_hit() | hit);
-			}
+			self.update_sprite_0();
 		}
 
 		self.rest.ppu.cycles += 341;
@@ -673,6 +650,31 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 				self.rest.ppu.status.set_sprite_0_hit(false);
 			}
 			_ => {}
+		}
+	}
+
+	fn update_sprite_0(&mut self) {
+		let sprite_0 = &self.rest.ppu.oam[0];
+		let sprite_0_constants = self.rest.ppu.mask.show_spr()
+			&& self.rest.ppu.mask.show_bg()
+			&& self.rest.ppu.sprite_is_visible_y(sprite_0);
+		if sprite_0_constants {
+			let start = (sprite_0.x as i16).max(Self::WORKING_RANGE.start);
+			let end =
+				(sprite_0.x as i16 + self.rest.ppu.sprite_width()).min(Self::RENDER_RANGE.end);
+			let mut sprite_range = start..end;
+			unsafe { unsafe_assert!(sprite_range.len() <= 8) };
+			let hit = sprite_range.any(|dot| {
+				self.rest.ppu.dot = dot;
+				let sprite_0 = &self.rest.ppu.oam[0];
+				self.rest.ppu.sprite_is_visible_x(sprite_0)
+					&& self.sprite_get_colour(sprite_0).is_some()
+					&& self.background_get_colour().is_some()
+			});
+			self.rest
+				.ppu
+				.status
+				.set_sprite_0_hit(self.rest.ppu.status.sprite_0_hit() | hit);
 		}
 	}
 
