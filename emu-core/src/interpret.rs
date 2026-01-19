@@ -684,26 +684,18 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 
 		if show_bg {
 			for dot in Self::RENDER_RANGE {
-				let tilemap_x = (dot
-					+ self.rest.ppu.scroll.x as i16
-					+ self.rest.ppu.ctrl.x_offset())
-					% 512;
+				let tilemap_x =
+					(dot + self.rest.ppu.scroll.x as i16 + self.rest.ppu.ctrl.x_offset()) % 512;
 				let col = self
 					.rest
 					.rom
 					.get_bg_pixel(tilemap_x, line, &self.rest.ppu, &self.rest.ppu.palettes)
 					.unwrap_or(self.rest.ppu.palettes[0][0]);
-				self.rest
-					.frame
-					.set(self.rest.ppu.scanline as usize, dot as usize, col);
+				self.rest.frame.set(line as usize, dot as usize, col);
 			}
 		} else {
 			for dot in Self::RENDER_RANGE.clone() {
-				self.rest.frame.set(
-					self.rest.ppu.scanline as usize,
-					dot as usize,
-					bg,
-				);
+				self.rest.frame.set(line as usize, dot as usize, bg);
 			}
 		}
 	}
