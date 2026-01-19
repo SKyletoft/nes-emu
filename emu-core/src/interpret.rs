@@ -590,6 +590,9 @@ impl<M: Mapper, F> State<M, F> {
 }
 
 impl<M: Mapper, F: NesFramebuffer> State<M, F> {
+	const RENDER_RANGE: std::ops::Range<i16> = 0..256i16;
+	const WORKING_RANGE: std::ops::Range<i16> = 0..341;
+
 	pub fn catch_up_ppu(&mut self) {
 		unsafe { unsafe_assert_eq!(self.rest.ppu.dot, 0) };
 		while self.rest.ppu_runahead > 341 {
@@ -603,68 +606,19 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 
 	pub fn step_ppu_scanline(&mut self) {
 		if (0..240).contains(&self.rest.ppu.scanline) {
-			let working_range = 0..341;
-			let render_range = 0..256i16;
-
 			self.calculate_sprite_overflow();
-			self.update_sprite_cache();
+			// self.update_sprite_cache();
 
-			let show_bg = self.rest.ppu.mask.show_bg();
-			let bg = self.rest.ppu.palettes[0][0];
-			if show_bg {
-				for dot in render_range.clone() {
-					let tilemap_x =
-						(dot + self.rest.ppu.scroll.x as i16 + self.rest.ppu.ctrl.x_offset()) % 512;
-					let col = self
-						.rest
-						.rom
-						.get_bg_pixel(
-							tilemap_x,
-							self.rest.ppu.scanline,
-							&self.rest.ppu,
-							&self.rest.ppu.palettes,
-						)
-						.unwrap_or(self.rest.ppu.palettes[0][0]);
-					self.rest
-						.frame
-						.set(self.rest.ppu.scanline as usize, dot as usize, col);
-				}
-			} else {
-				for dot in render_range.clone() {
-					self.rest
-						.frame
-						.set(self.rest.ppu.scanline as usize, dot as usize, bg);
-				}
-			}
-
-			if self.rest.ppu.mask.show_spr() {
-				for sprite in self
-					.rest
-					.ppu
-					.oam
-					.iter()
-					.filter(|s| self.rest.ppu.sprite_is_visible_y(s))
-				{
-					let sprite_x = sprite.x as i16;
-					for dot in sprite_x..(sprite_x + 8).min(256) {
-						if let Some(col) =
-							self.sprite_get_colour_at(sprite, dot, self.rest.ppu.scanline)
-						{
-							self.rest
-								.frame
-								.set(self.rest.ppu.scanline as usize, dot as usize, col);
-						}
-					}
-				}
-			}
+			self.render_line(self.rest.ppu.scanline);
 
 			let sprite_0 = &self.rest.ppu.oam[0];
 			let sprite_0_constants = self.rest.ppu.mask.show_spr()
 				&& self.rest.ppu.mask.show_bg()
 				&& self.rest.ppu.sprite_is_visible_y(sprite_0);
 			if sprite_0_constants {
-				let start = (sprite_0.x as i16).max(working_range.start);
-				let end = (sprite_0.x as i16 + self.rest.ppu.sprite_width()).min(render_range.end);
+				let start = (sprite_0.x as i16).max(Self::WORKING_RANGE.start);
+				let end =
+					(sprite_0.x as i16 + self.rest.ppu.sprite_width()).min(Self::RENDER_RANGE.end);
 				let mut sprite_range = start..end;
 				unsafe { unsafe_assert!(sprite_range.len() <= 8) };
 				let hit = sprite_range.any(|dot| {
@@ -707,6 +661,7 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 			// know. Again, matching Mesen's behaviour.
 			240 => {
 				self.rest.ppu.frame += 1;
+				self.render_sprites();
 				self.rest.frame.swap();
 			}
 			241 => {
@@ -718,6 +673,52 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 				self.rest.ppu.status.set_sprite_0_hit(false);
 			}
 			_ => {}
+		}
+	}
+
+	fn render_line(&mut self, line: i16) {
+		let show_bg = self.rest.ppu.mask.show_bg();
+		let bg = self.rest.ppu.palettes[0][0];
+
+		if show_bg {
+			for dot in Self::RENDER_RANGE {
+				let tilemap_x = (dot
+					+ self.rest.ppu.scroll.x as i16
+					+ self.rest.ppu.ctrl.x_offset())
+					% 512;
+				let col = self
+					.rest
+					.rom
+					.get_bg_pixel(tilemap_x, line, &self.rest.ppu, &self.rest.ppu.palettes)
+					.unwrap_or(self.rest.ppu.palettes[0][0]);
+				self.rest
+					.frame
+					.set(self.rest.ppu.scanline as usize, dot as usize, col);
+			}
+		} else {
+			for dot in Self::RENDER_RANGE.clone() {
+				self.rest.frame.set(
+					self.rest.ppu.scanline as usize,
+					dot as usize,
+					bg,
+				);
+			}
+		}
+	}
+
+	fn render_sprites(&mut self) {
+		if self.rest.ppu.mask.show_spr() {
+			for sprite in self.rest.ppu.oam.iter() {
+				let sprite_y = sprite.y as i16 + 1; // Hardware bug
+				let sprite_x = sprite.x as i16;
+				for line in sprite_y..(sprite_y + 8).min(240) {
+					for dot in sprite_x..(sprite_x + 8).min(256) {
+						if let Some(col) = self.sprite_get_colour_at(sprite, dot, line) {
+							self.rest.frame.set(line as usize, dot as usize, col);
+						}
+					}
+				}
+			}
 		}
 	}
 
