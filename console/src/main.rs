@@ -43,11 +43,11 @@ impl<'a> ConsoleFramebuffer<'a> {
 
 impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
 	#[inline]
-	fn set(&mut self, x: usize, y: usize, col: NesColour) {
-		unsafe { unsafe_assert!(y < 400 && x < 240) };
-		let x = 239 - x;
-		let y = (400 - 256) / 2 + y;
-		self.unsafe_raw_frame_buf[y][x] = col.into();
+	fn set(&mut self, y: usize, x: usize, col: NesColour) {
+		unsafe { unsafe_assert!(x < 400 && y < 240) };
+		let y = 239 - y;
+		let x = (400 - 256) / 2 + x;
+		self.unsafe_raw_frame_buf[x][y] = col.into();
 	}
 
 	#[inline]
