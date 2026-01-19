@@ -277,6 +277,75 @@ pub enum NesColour {
 	CyanPale = 0x3C,
 }
 
+impl NesColour {
+	pub const PALETTE: [NesColour; 64] = [
+		NesColour::DarkGrey,
+		NesColour::AzureDark,
+		NesColour::BlueDark,
+		NesColour::VioletDark,
+		NesColour::MagentaDark,
+		NesColour::RoseDark,
+		NesColour::RedDark,
+		NesColour::OrangeDark,
+		NesColour::YellowDark,
+		NesColour::ChartreuseDark,
+		NesColour::GreenDark,
+		NesColour::SpringDark,
+		NesColour::CyanDark,
+		NesColour::DarkGrey,
+		NesColour::DarkGrey,
+		NesColour::Black,
+		NesColour::LightGrey,
+		NesColour::AzureMed,
+		NesColour::BlueMed,
+		NesColour::VioletMed,
+		NesColour::MagentaMed,
+		NesColour::RoseMed,
+		NesColour::RedMed,
+		NesColour::OrangeMed,
+		NesColour::YellowMed,
+		NesColour::ChartreuseMed,
+		NesColour::GreenMed,
+		NesColour::SpringMed,
+		NesColour::CyanMed,
+		NesColour::DarkGrey,
+		NesColour::DarkGrey,
+		NesColour::Black,
+		NesColour::White,
+		NesColour::AzureLight,
+		NesColour::BlueLight,
+		NesColour::VioletLight,
+		NesColour::MagentaLight,
+		NesColour::RoseLight,
+		NesColour::RedLight,
+		NesColour::OrangeLight,
+		NesColour::YellowLight,
+		NesColour::ChartreuseLight,
+		NesColour::GreenLight,
+		NesColour::SpringLight,
+		NesColour::CyanLight,
+		NesColour::DarkGrey,
+		NesColour::DarkGrey,
+		NesColour::Black,
+		NesColour::White,
+		NesColour::AzurePale,
+		NesColour::BluePale,
+		NesColour::VioletPale,
+		NesColour::MagentaPale,
+		NesColour::RosePale,
+		NesColour::RedPale,
+		NesColour::OrangePale,
+		NesColour::YellowPale,
+		NesColour::ChartreusePale,
+		NesColour::GreenPale,
+		NesColour::SpringPale,
+		NesColour::CyanPale,
+		NesColour::DarkGrey,
+		NesColour::DarkGrey,
+		NesColour::Black,
+	];
+}
+
 const _: () = {
 	assert!(std::mem::size_of::<Option<NesColour>>() == std::mem::size_of::<NesColour>());
 };
@@ -285,75 +354,7 @@ impl TryFrom<u8> for NesColour {
 	type Error = anyhow::Error;
 
 	fn try_from(value: u8) -> Result<Self, Self::Error> {
-		use NesColour::*;
-		const PALETTE: [NesColour; 64] = [
-			DarkGrey,
-			AzureDark,
-			BlueDark,
-			VioletDark,
-			MagentaDark,
-			RoseDark,
-			RedDark,
-			OrangeDark,
-			YellowDark,
-			ChartreuseDark,
-			GreenDark,
-			SpringDark,
-			CyanDark,
-			DarkGrey,
-			DarkGrey,
-			Black,
-			LightGrey,
-			AzureMed,
-			BlueMed,
-			VioletMed,
-			MagentaMed,
-			RoseMed,
-			RedMed,
-			OrangeMed,
-			YellowMed,
-			ChartreuseMed,
-			GreenMed,
-			SpringMed,
-			CyanMed,
-			DarkGrey,
-			DarkGrey,
-			Black,
-			White,
-			AzureLight,
-			BlueLight,
-			VioletLight,
-			MagentaLight,
-			RoseLight,
-			RedLight,
-			OrangeLight,
-			YellowLight,
-			ChartreuseLight,
-			GreenLight,
-			SpringLight,
-			CyanLight,
-			DarkGrey,
-			DarkGrey,
-			Black,
-			White,
-			AzurePale,
-			BluePale,
-			VioletPale,
-			MagentaPale,
-			RosePale,
-			RedPale,
-			OrangePale,
-			YellowPale,
-			ChartreusePale,
-			GreenPale,
-			SpringPale,
-			CyanPale,
-			DarkGrey,
-			DarkGrey,
-			Black,
-		];
-
-		PALETTE
+		NesColour::PALETTE
 			.get(value as usize)
 			.copied()
 			.ok_or_else(|| anyhow::anyhow!("Invalid colour id: 0x{:X}", value))
@@ -361,8 +362,8 @@ impl TryFrom<u8> for NesColour {
 }
 
 // These colours are entirely untrusted and probably just hallucinated.
-impl From<NesColour> for Colour {
-	fn from(c: NesColour) -> Self {
+impl Colour {
+	pub const fn from_const(c: NesColour) -> Self {
 		use NesColour::*;
 		match c {
 			Black => Colour {
@@ -678,5 +679,11 @@ impl From<NesColour> for Colour {
 				alpha: 255,
 			},
 		}
+	}
+}
+
+impl From<NesColour> for Colour {
+	fn from(value: NesColour) -> Self {
+		Self::from_const(value)
 	}
 }

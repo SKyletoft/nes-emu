@@ -1,5 +1,5 @@
 use bitfields::bitfield;
-use emu_core::ppu::NesColour;
+use emu_core::{graphics::Colour, ppu::NesColour, unsafe_assert};
 
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -288,272 +288,30 @@ pub struct Rgb565 {
 	blue: u8,
 }
 
+impl From<Bgr8> for Rgb565 {
+	fn from(bgr8: Bgr8) -> Self {
+		let mut ret = Rgb565::new();
+		ret.set_red(bgr8.red >> 3);
+		ret.set_green(bgr8.green >> 2);
+		ret.set_blue(bgr8.blue >> 3);
+		ret
+	}
+}
+
 impl From<NesColour> for Rgb565 {
-	fn from(c: NesColour) -> Self {
-		let mut res = Self::new();
-		use NesColour::*;
-		match c {
-			Black => {
-				res.set_red(0);
-				res.set_blue(0);
-				res.set_green(0);
-			}
-			DarkGrey => {
-				res.set_red(84);
-				res.set_green(84);
-				res.set_blue(84);
-			}
-			AzureDark => {
-				res.set_red(0);
-				res.set_green(30);
-				res.set_blue(116);
-			}
-			BlueDark => {
-				res.set_red(8);
-				res.set_green(16);
-				res.set_blue(144);
-			}
-			VioletDark => {
-				res.set_red(48);
-				res.set_green(0);
-				res.set_blue(136);
-			}
-			MagentaDark => {
-				res.set_red(68);
-				res.set_green(0);
-				res.set_blue(100);
-			}
-			RoseDark => {
-				res.set_red(92);
-				res.set_green(0);
-				res.set_blue(48);
-			}
-			RedDark => {
-				res.set_red(84);
-				res.set_green(4);
-				res.set_blue(0);
-			}
-			OrangeDark => {
-				res.set_red(60);
-				res.set_green(24);
-				res.set_blue(0);
-			}
-			YellowDark => {
-				res.set_red(32);
-				res.set_green(42);
-				res.set_blue(0);
-			}
-			ChartreuseDark => {
-				res.set_red(8);
-				res.set_green(58);
-				res.set_blue(0);
-			}
-			GreenDark => {
-				res.set_red(0);
-				res.set_green(64);
-				res.set_blue(0);
-			}
-			SpringDark => {
-				res.set_red(0);
-				res.set_green(60);
-				res.set_blue(0);
-			}
-			CyanDark => {
-				res.set_red(0);
-				res.set_green(50);
-				res.set_blue(60);
-			}
-			LightGrey => {
-				res.set_red(152);
-				res.set_green(150);
-				res.set_blue(152);
-			}
-			AzureMed => {
-				res.set_red(8);
-				res.set_green(76);
-				res.set_blue(196);
-			}
-			BlueMed => {
-				res.set_red(48);
-				res.set_green(50);
-				res.set_blue(236);
-			}
-			MagentaMed => {
-				res.set_red(136);
-				res.set_green(20);
-				res.set_blue(176);
-			}
-			RoseMed => {
-				res.set_red(160);
-				res.set_green(20);
-				res.set_blue(100);
-			}
-			RedMed => {
-				res.set_red(152);
-				res.set_green(34);
-				res.set_blue(32);
-			}
-			OrangeMed => {
-				res.set_red(120);
-				res.set_green(60);
-				res.set_blue(0);
-			}
-			YellowMed => {
-				res.set_red(84);
-				res.set_green(90);
-				res.set_blue(0);
-			}
-			ChartreuseMed => {
-				res.set_red(40);
-				res.set_green(114);
-				res.set_blue(0);
-			}
-			GreenMed => {
-				res.set_red(8);
-				res.set_green(124);
-				res.set_blue(0);
-			}
-			SpringMed => {
-				res.set_red(0);
-				res.set_green(118);
-				res.set_blue(40);
-			}
-			CyanMed => {
-				res.set_red(0);
-				res.set_green(102);
-				res.set_blue(120);
-			}
-			White => {
-				res.set_red(236);
-				res.set_green(238);
-				res.set_blue(236);
-			}
-			BlueLight => {
-				res.set_red(120);
-				res.set_green(124);
-				res.set_blue(236);
-			}
-			VioletLight => {
-				res.set_red(176);
-				res.set_green(98);
-				res.set_blue(236);
-			}
-			MagentaLight => {
-				res.set_red(228);
-				res.set_green(84);
-				res.set_blue(236);
-			}
-			RoseLight => {
-				res.set_red(236);
-				res.set_green(88);
-				res.set_blue(180);
-			}
-			RedLight => {
-				res.set_red(236);
-				res.set_green(106);
-				res.set_blue(100);
-			}
-			OrangeLight => {
-				res.set_red(212);
-				res.set_green(136);
-				res.set_blue(32);
-			}
-			YellowLight => {
-				res.set_red(160);
-				res.set_green(170);
-				res.set_blue(0);
-			}
-			ChartreuseLight => {
-				res.set_red(116);
-				res.set_green(196);
-				res.set_blue(0);
-			}
-			GreenLight => {
-				res.set_red(76);
-				res.set_green(208);
-				res.set_blue(32);
-			}
-			SpringLight => {
-				res.set_red(56);
-				res.set_green(204);
-				res.set_blue(108);
-			}
-			CyanLight => {
-				res.set_red(56);
-				res.set_green(180);
-				res.set_blue(204);
-			}
-			AzurePale => {
-				res.set_red(236);
-				res.set_green(238);
-				res.set_blue(236);
-			}
-			BluePale => {
-				res.set_red(168);
-				res.set_green(204);
-				res.set_blue(236);
-			}
-			VioletPale => {
-				res.set_red(188);
-				res.set_green(188);
-				res.set_blue(236);
-			}
-			MagentaPale => {
-				res.set_red(212);
-				res.set_green(178);
-				res.set_blue(236);
-			}
-			RosePale => {
-				res.set_red(236);
-				res.set_green(174);
-				res.set_blue(236);
-			}
-			RedPale => {
-				res.set_red(236);
-				res.set_green(174);
-				res.set_blue(212);
-			}
-			OrangePale => {
-				res.set_red(236);
-				res.set_green(180);
-				res.set_blue(176);
-			}
-			YellowPale => {
-				res.set_red(228);
-				res.set_green(196);
-				res.set_blue(144);
-			}
-			ChartreusePale => {
-				res.set_red(204);
-				res.set_green(210);
-				res.set_blue(120);
-			}
-			GreenPale => {
-				res.set_red(180);
-				res.set_green(222);
-				res.set_blue(120);
-			}
-			SpringPale => {
-				res.set_red(168);
-				res.set_green(226);
-				res.set_blue(144);
-			}
-			CyanPale => {
-				res.set_red(152);
-				res.set_green(226);
-				res.set_blue(180);
-			}
-			VioletMed => {
-				res.set_red(92);
-				res.set_green(30);
-				res.set_blue(228);
-			}
-			AzureLight => {
-				res.set_red(76);
-				res.set_green(154);
-				res.set_blue(236);
-			}
+	fn from(value: NesColour) -> Self {
+		const fn convert_colour(c: NesColour) -> Rgb565 {
+			let Colour {
+				blue, green, red, ..
+			} = Colour::from_const(c);
+			let mut ret = Rgb565::new();
+			ret.set_red(red >> 3);
+			ret.set_green(green >> 2);
+			ret.set_blue(blue >> 3);
+			ret
 		}
-		res
+		const TRANSLATED_COLOURS: [Rgb565; 64] = NesColour::PALETTE.map(convert_colour);
+		unsafe { unsafe_assert!((0..64).contains(&(value as usize))) };
+		TRANSLATED_COLOURS[value as usize]
 	}
 }

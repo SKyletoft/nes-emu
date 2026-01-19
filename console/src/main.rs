@@ -1,3 +1,5 @@
+#![feature(const_array, const_trait_impl)]
+
 mod colour;
 
 use std::{
