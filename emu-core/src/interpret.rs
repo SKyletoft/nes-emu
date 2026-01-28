@@ -340,7 +340,7 @@ impl<M: Mapper, F> State<M, F> {
 		self.rest.ppu.sprite_cache = sprite_cache;
 	}
 
-	fn calculate_sprite_overflow(&mut self) {
+	fn update_sprite_overflow(&mut self) {
 		let scanline = self.rest.ppu.scanline + 1;
 		let height = if self.rest.ppu.ctrl.sprite_size() {
 			16
@@ -376,7 +376,7 @@ impl<M: Mapper, F> State<M, F> {
 			n += 4;
 		}
 
-		self.rest.ppu.sprite_overflow_latch = overflow;
+		self.rest.ppu.status.set_sprite_overflow(overflow);
 	}
 
 	pub fn sprite_get_colour(&self, sprite: &Sprite) -> Option<NesColour> {
@@ -606,7 +606,7 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 
 	pub fn step_ppu_scanline(&mut self) {
 		if (0..240).contains(&self.rest.ppu.scanline) {
-			self.calculate_sprite_overflow();
+			self.update_sprite_overflow();
 			// self.update_sprite_cache();
 			self.render_line(self.rest.ppu.scanline);
 			self.update_sprite_0();
@@ -615,11 +615,6 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 		self.rest.ppu.cycles += 341;
 		self.rest.ppu.scanline += 1;
 		self.rest.ppu.dot = 0;
-
-		self.rest
-			.ppu
-			.status
-			.set_sprite_overflow(self.rest.ppu.sprite_overflow_latch);
 
 		match self.rest.ppu.scanline {
 			-1 if (self.rest.ppu.mask.show_bg() || self.rest.ppu.mask.show_spr())
