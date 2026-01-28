@@ -8,6 +8,7 @@ Makefile
 Main
 callgrind
 perf.data*
+**.3dsx
 
 reference-logs/SMB1-Mesen-long.log
 reference-logs/nestest.log
