@@ -6,6 +6,7 @@ use std::{
 
 use emu_core::{inst::Inst, mapper::Mapper, nrom128::NROM128, nrom256::NROM256};
 use proc_macro::TokenStream;
+use proc_macro2::Literal;
 use quote::quote;
 use syn::{LitStr, parse_macro_input};
 
@@ -124,10 +125,10 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::Token
 		0 if *prg_size == 1 => {
 			let mapper = syn::Ident::new("NROM128", proc_macro2::Span::call_site());
 			let parsed_file = NROM128::parse_ines(buffer).unwrap();
-			let lit1 = proc_macro2::Literal::byte_string(&parsed_file.prg_ram);
-			let lit2 = proc_macro2::Literal::byte_string(&parsed_file.prg_rom);
-			let lit3 = proc_macro2::Literal::byte_string(&parsed_file.chr_rom);
-			let lit4 = proc_macro2::Literal::byte_string(unsafe {
+			let lit1 = Literal::byte_string(&parsed_file.prg_ram);
+			let lit2 = Literal::byte_string(&parsed_file.prg_rom);
+			let lit3 = Literal::byte_string(&parsed_file.chr_rom);
+			let lit4 = Literal::byte_string(unsafe {
 				std::mem::transmute::<&[[[[u8; 8]; 8]; 256]; 2], &[u8; 32768]>(
 					&parsed_file.parsed_graphics,
 				)
@@ -147,10 +148,10 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::Token
 		0 if *prg_size == 2 => {
 			let mapper = syn::Ident::new("NROM256", proc_macro2::Span::call_site());
 			let parsed_file = NROM256::parse_ines(buffer).unwrap();
-			let lit1 = proc_macro2::Literal::byte_string(&parsed_file.prg_ram);
-			let lit2 = proc_macro2::Literal::byte_string(&parsed_file.prg_rom);
-			let lit3 = proc_macro2::Literal::byte_string(&parsed_file.chr_rom);
-			let lit4 = proc_macro2::Literal::byte_string(unsafe {
+			let lit1 = Literal::byte_string(&parsed_file.prg_ram);
+			let lit2 = Literal::byte_string(&parsed_file.prg_rom);
+			let lit3 = Literal::byte_string(&parsed_file.chr_rom);
+			let lit4 = Literal::byte_string(unsafe {
 				std::mem::transmute::<&[[[[u8; 8]; 8]; 256]; 2], &[u8; 32768]>(
 					&parsed_file.parsed_graphics,
 				)
