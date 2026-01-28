@@ -36,6 +36,7 @@ pub struct StateTail<M, F> {
 	pub ppu_runahead: usize,
 	pub interrupt_requested: InterruptTiming,
 	pub frame: F,
+	pub lines: [(i16, i16); 240],
 }
 
 impl<M: Mapper, F> State<M, F> {
@@ -80,6 +81,7 @@ impl<M: Mapper, F> State<M, F> {
 				interrupt_requested,
 				ppu_runahead,
 				frame: output,
+				lines: [(0, 0); _],
 			}),
 		}
 	}
@@ -608,7 +610,8 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 		if (0..240).contains(&self.rest.ppu.scanline) {
 			self.update_sprite_overflow();
 			// self.update_sprite_cache();
-			self.render_line(self.rest.ppu.scanline);
+			// self.render_line(self.rest.ppu.scanline);
+			self.rest.lines[self.rest.ppu.scanline as usize] = self.rest.ppu.actual_pos();
 			self.update_sprite_0();
 		}
 
@@ -633,6 +636,9 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 			// know. Again, matching Mesen's behaviour.
 			240 => {
 				self.rest.ppu.frame += 1;
+				for (at, pos) in self.rest.lines.into_iter().enumerate() {
+					self.render_line(pos, at);
+				}
 				self.render_sprites();
 				self.rest.frame.swap();
 			}
@@ -673,15 +679,14 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 		}
 	}
 
-	fn render_line(&mut self, line: i16) {
+	fn render_line(&mut self, pos: (i16, i16), at: usize) {
 		let show_bg = self.rest.ppu.mask.show_bg();
 		let bg = self.rest.ppu.palettes[0][0];
 
 		if show_bg {
 			for dot in Self::RENDER_RANGE {
-				let tilemap_x =
-					(dot + self.rest.ppu.scroll.x as i16 + self.rest.ppu.ctrl.x_offset()) % 512;
-				let tilemap_y = line; // This is broken, but I'm preserving behaviour for now
+				let tilemap_x = (dot + pos.0) % 512;
+				let tilemap_y = pos.1; // This is broken, but I'm preserving behaviour for now
 				let col = self
 					.rest
 					.rom
@@ -692,11 +697,11 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 						&self.rest.ppu.palettes,
 					)
 					.unwrap_or(self.rest.ppu.palettes[0][0]);
-				self.rest.frame.set(line as usize, dot as usize, col);
+				self.rest.frame.set(at, dot as usize, col);
 			}
 		} else {
 			for dot in Self::RENDER_RANGE.clone() {
-				self.rest.frame.set(line as usize, dot as usize, bg);
+				self.rest.frame.set(at, dot as usize, bg);
 			}
 		}
 	}
