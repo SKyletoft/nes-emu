@@ -204,15 +204,20 @@ impl Mapper for NROM256 {
 				} else {
 					// Update 4x4 tiles
 					let in_attr = in_nametable - 0x3C0;
-					let tile_x = (in_attr % 16) as i16 * 2;
-					let tile_y = (in_attr / 16) as i16 * 2;
-					unsafe { unsafe_assert!((0..32).contains(&tile_x)) };
-					unsafe { unsafe_assert!((0..32).contains(&tile_y)) };
+
+					let attr_x = (in_attr % 8) as i16;
+					let attr_y = (in_attr / 8) as i16;
+
+					let tile_x = attr_x * 4;
+					let tile_y = attr_y * 4;
+
 					let half = (adr - in_nametable) == 0x2400 || (adr - in_nametable) == 0x2C00;
-					self.rerender_tile(half as usize, tile_x, tile_y, ppu);
-					self.rerender_tile(half as usize, tile_x + 1, tile_y, ppu);
-					self.rerender_tile(half as usize, tile_x, tile_y + 1, ppu);
-					self.rerender_tile(half as usize, tile_x + 1, tile_y + 1, ppu);
+
+					for y in tile_y..(tile_y + 4).min(30) {
+						for x in tile_x..(tile_x + 4).min(32) {
+							self.rerender_tile(half as usize, x, y, ppu);
+						}
+					}
 				}
 				Some(())
 			}
