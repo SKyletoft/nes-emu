@@ -79,23 +79,20 @@ fn main() {
 	let mut ppu_dur = Duration::new(0, 0);
 	let mut frame_time = Instant::now();
 	while apt.main_loop() {
-		let before = Instant::now();
-		while system_state.rest.ppu_runahead <= 341 {
-			game::nes_game(&mut system_state);
-		}
-		let after = Instant::now();
-		cpu_dur += after - before;
+		while last_frame == system_state.rest.ppu.frame {
+			let before = Instant::now();
+			while system_state.rest.ppu_runahead <= 341 {
+				game::nes_game(&mut system_state);
+			}
+			let after = Instant::now();
+			cpu_dur += after - before;
 
-		let before_ppu = Instant::now();
-		system_state.catch_up_ppu();
-		let after_ppu = Instant::now();
-		ppu_dur += after_ppu - before_ppu;
-
-		let frame = system_state.rest.ppu.frame;
-		if last_frame == frame {
-			continue;
+			let before_ppu = Instant::now();
+			system_state.catch_up_ppu();
+			let after_ppu = Instant::now();
+			ppu_dur += after_ppu - before_ppu;
 		}
-		last_frame = frame;
+		last_frame = system_state.rest.ppu.frame;
 
 		let frame_count = system_state.rest.ppu.frame;
 
