@@ -183,7 +183,7 @@ impl Mapper for NROM256 {
 				let col_idx = adr % 4;
 				let old = ppu.palettes[pal_idx][col_idx];
 				ppu.palettes[pal_idx][col_idx] = col;
-				let is_bg_pal = pal_idx >= 4;
+				let is_bg_pal = pal_idx < 4;
 				if old != col && is_bg_pal {
 					self.rerender_background(ppu);
 				}
