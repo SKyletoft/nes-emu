@@ -636,10 +636,32 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 			// know. Again, matching Mesen's behaviour.
 			240 => {
 				self.rest.ppu.frame += 1;
-				for (at, pos) in self.rest.lines.into_iter().enumerate() {
-					self.render_line(pos, at);
+				let bg = self.rest.ppu.palettes[0][0];
+				for dot in Self::RENDER_RANGE.clone() {
+					for (at, _) in self.rest.lines.into_iter().enumerate() {
+						self.rest.frame.set(at, dot as usize, bg);
+					}
 				}
-				self.render_sprites();
+				self.render_sprite_layer(false);
+				if self.rest.ppu.mask.show_bg() {
+					for (at, pos) in self.rest.lines.into_iter().enumerate() {
+						for dot in Self::RENDER_RANGE {
+							let tilemap_x = (dot + pos.0) % 512;
+							let tilemap_y = pos.1; // This is broken, but I'm preserving behaviour for now
+							let palettes = self.rest.ppu.palettes;
+							let Some(col) = self.rest.rom.get_bg_pixel(
+								tilemap_x,
+								tilemap_y,
+								&self.rest.ppu,
+								&palettes,
+							) else {
+								continue;
+							};
+							self.rest.frame.set(at, dot as usize, col);
+						}
+					}
+				}
+				self.render_sprite_layer(true);
 				self.rest.frame.swap();
 			}
 			241 => {
