@@ -10,6 +10,48 @@ use proc_macro2::Literal;
 use quote::quote;
 use syn::{LitStr, parse_macro_input};
 
+enum Mappers {
+	NROM128(NROM128),
+	NROM256(NROM256),
+}
+
+impl Mapper for Mappers {
+	fn get_cpu(&self, adr: u16) -> Option<u8> {
+		match self {
+			Mappers::NROM128(x) => x.get_cpu(adr),
+			Mappers::NROM256(x) => x.get_cpu(adr),
+		}
+	}
+
+	fn set_cpu(&mut self, adr: u16, val: u8) -> Option<()> {
+		match self {
+			Mappers::NROM128(x) => x.set_cpu(adr, val),
+			Mappers::NROM256(x) => x.set_cpu(adr, val),
+		}
+	}
+
+	fn get_ppu(&self, adr: u16, ppu: &emu_core::ppu::Ppu) -> Option<u8> {
+		match self {
+			Mappers::NROM128(x) => x.get_ppu(adr, ppu),
+			Mappers::NROM256(x) => x.get_ppu(adr, ppu),
+		}
+	}
+
+	fn set_ppu(&mut self, adr: u16, ppu: &mut emu_core::ppu::Ppu, val: u8) -> Option<()> {
+		match self {
+			Mappers::NROM128(x) => x.set_ppu(adr, ppu, val),
+			Mappers::NROM256(x) => x.set_ppu(adr, ppu, val),
+		}
+	}
+
+	fn get_palette_index(&self, half: bool, tile: u8, y: u8, x: u8) -> u8 {
+		match self {
+			Mappers::NROM128(m) => m.get_palette_index(half, tile, y, x),
+			Mappers::NROM256(m) => m.get_palette_index(half, tile, y, x),
+		}
+	}
+}
+
 #[proc_macro]
 pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 	let path_lit = parse_macro_input!(input as LitStr);
@@ -27,7 +69,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 	let mut branches = Vec::new();
 	let mut starting_points = BTreeSet::new();
 
-	let sorted_instructions = collect_starting_points(&*rom);
+	let sorted_instructions = collect_starting_points(&rom);
 
 	for func in sorted_instructions.chunk_by(|_, (is_start, ..)| *is_start != IsStart::Yes) {
 		assert!(
@@ -113,7 +155,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 	.into()
 }
 
-fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::TokenStream) {
+fn parse_ines(buffer: &[u8]) -> (syn::Ident, Mappers, proc_macro2::TokenStream) {
 	let [b'N', b'E', b'S', 0x1A, prg_size, _, flags_6, flags_7, ..] = &buffer[0..16] else {
 		panic!("Invalid file");
 	};
@@ -143,7 +185,7 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::Token
 					},
 				};
 			};
-			(mapper, parsed_file, mapper_literal)
+			(mapper, Mappers::NROM128(*parsed_file), mapper_literal)
 		}
 		0 if *prg_size == 2 => {
 			let mapper = syn::Ident::new("NROM256", proc_macro2::Span::call_site());
@@ -167,7 +209,7 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Box<dyn Mapper>, proc_macro2::Token
 					rendered_background: [[[None; 240]; 256]; 2]
 				};
 			};
-			(mapper, parsed_file, mapper_literal)
+			(mapper, Mappers::NROM256(*parsed_file), mapper_literal)
 		}
 		x => panic!("Unsupported Mapper: {x} ({prg_size})"),
 	}
@@ -186,7 +228,7 @@ enum IsStart {
 	No,
 }
 
-fn collect_starting_points(rom: &dyn Mapper) -> Vec<(IsStart, u16, Inst, End)> {
+fn collect_starting_points(rom: &Mappers) -> Vec<(IsStart, u16, Inst, End)> {
 	let mut instructions: VecDeque<(u16, Inst)> = (0x8000..=0xFFFD)
 		.map(|i| {
 			let inst: Inst = [
