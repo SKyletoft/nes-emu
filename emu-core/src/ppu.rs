@@ -190,6 +190,10 @@ impl Sprite {
 	pub fn is_visible_at(&self, x: u8, y: u8) -> bool {
 		(self.y..self.y + 8).contains(&y) && (self.x..self.x + 8).contains(&x)
 	}
+
+	pub fn is_visible(&self) -> bool {
+		self.y < 240 && self.x < 255
+	}
 }
 
 #[bitfield(u8)]
