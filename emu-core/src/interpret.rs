@@ -707,15 +707,25 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 	}
 
 	fn render_sprites(&mut self) {
+		self.render_sprite_layer(false);
+		self.render_sprite_layer(true);
+	}
+
+	fn render_sprite_layer(&mut self, layer: bool) {
 		if self.rest.ppu.mask.show_spr() {
-			for sprite in self.rest.ppu.oam.iter() {
+			for sprite in self.rest.ppu.oam.iter().filter(|s| s.is_visible() && s.attr.priority() != layer) {
 				let sprite_y = sprite.y as i16 + 1; // Hardware bug
 				let sprite_x = sprite.x as i16;
-				for line in sprite_y..(sprite_y + 8).min(240) {
-					for dot in sprite_x..(sprite_x + 8).min(256) {
-						if let Some(col) = self.sprite_get_colour_at(sprite, dot, line) {
-							self.rest.frame.set(line as usize, dot as usize, col);
-						}
+				let sprite_pixels = self.rest.rom.get_sprite_pixels(sprite, &self.rest.ppu);
+				let y_range = sprite_y..(sprite_y + 8);
+				let x_range = sprite_x..(sprite_x + 8);
+				for ((line, dot), col) in y_range
+					.flat_map(move |l| x_range.clone().map(move |d| (l, d)))
+					.zip(sprite_pixels)
+					.filter(|((l, d), _)| *l < 240 && *d < 256)
+				{
+					if let Some(col) = col {
+						self.rest.frame.set(line as usize, dot as usize, col);
 					}
 				}
 			}
