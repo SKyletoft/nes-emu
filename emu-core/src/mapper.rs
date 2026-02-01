@@ -1,7 +1,7 @@
 use bitfields::bitfield;
 
 use crate::{
-	ppu::{NesColour, Ppu},
+	ppu::{NesColour, Ppu, Sprite},
 	unsafe_assert, unsafe_unreachable,
 };
 
@@ -35,6 +35,45 @@ pub trait Mapper {
 		else { unsafe { unsafe_unreachable!() } };
 
 		crate::interpret::calculate_background_colour(tile, attribute, palettes)
+	}
+
+	fn get_sprite_pixels(
+		&self,
+		sprite_idx: usize,
+		ppu: &Ppu,
+	) -> impl Iterator<Item = Option<NesColour>> {
+		let sprite = ppu.oam[sprite_idx];
+		let calc = |y, x| {
+			let palette_index =
+				self.get_palette_index(ppu.ctrl.sprite_pattern_table(), sprite.tile, y, x);
+			if palette_index == 0 {
+				return None;
+			}
+			unsafe { unsafe_assert!((0..4).contains(&sprite.attr.palette())) };
+			unsafe { unsafe_assert!((0..4).contains(&palette_index)) };
+			let col_idx = sprite.attr.palette() as u16 * 4 + palette_index as u16;
+			unsafe { unsafe_assert!((0..16).contains(&col_idx)) };
+
+			let Some(raw_col) = self.get_ppu(0x3F10 + col_idx, ppu) else {
+				unsafe { unsafe_unreachable!("Palette RAM must be in-bounds") }
+			};
+			let col = NesColour::try_from(raw_col).expect("Game used invalid colour");
+			Some(col)
+		};
+
+		let mut colour_data = std::array::from_fn::<_, 8, _>(move |y| {
+			std::array::from_fn::<_, 8, _>(|x| calc(y as u8, x as u8))
+		});
+
+		if sprite.attr.flip_h() {
+			colour_data.iter_mut().for_each(|xs| xs.reverse());
+		}
+		if sprite.attr.flip_v() {
+			colour_data.reverse();
+		}
+
+		let colour_data = unsafe { std::mem::transmute::<[[Option<NesColour>; 8]; 8], [Option<NesColour>; 64]>(colour_data) };
+		colour_data.into_iter()
 	}
 }
 

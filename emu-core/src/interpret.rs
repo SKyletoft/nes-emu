@@ -735,10 +735,10 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 
 	fn render_sprite_layer(&mut self, layer: bool) {
 		if self.rest.ppu.mask.show_spr() {
-			for sprite in self.rest.ppu.oam.iter().filter(|s| s.is_visible() && s.attr.priority() != layer) {
+			for (idx, sprite) in self.rest.ppu.oam.iter().enumerate().filter(|(_, s)| s.is_visible() && s.attr.priority() != layer) {
 				let sprite_y = sprite.y as i16 + 1; // Hardware bug
 				let sprite_x = sprite.x as i16;
-				let sprite_pixels = self.rest.rom.get_sprite_pixels(sprite, &self.rest.ppu);
+				let sprite_pixels = self.rest.rom.get_sprite_pixels(idx, &self.rest.ppu);
 				let y_range = sprite_y..(sprite_y + 8);
 				let x_range = sprite_x..(sprite_x + 8);
 				for ((line, dot), col) in y_range
