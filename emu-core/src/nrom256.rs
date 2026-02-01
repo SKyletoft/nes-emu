@@ -2,7 +2,7 @@ use anyhow::{Result, bail};
 
 use crate::{
 	mapper::{Mapper, PatternAddressBuilder},
-	ppu::{NesColour, Ppu, VRAM_MASK},
+	ppu::{NesColour, Ppu, Sprite, VRAM_MASK},
 	unsafe_assert, unsafe_unreachable,
 };
 
@@ -15,6 +15,7 @@ pub struct NROM256 {
 	/// `this[pattern table][tile][y][x]`
 	pub parsed_graphics: [[[[u8; 8]; 8]; 256]; 2],
 	pub rendered_background: [[[Option<NesColour>; 240]; 256]; 2],
+	pub rendered_sprites: [[Option<NesColour>; 64]; 64],
 }
 
 impl NROM256 {
@@ -56,6 +57,7 @@ impl NROM256 {
 					chr_rom: [0; _],
 					parsed_graphics: [[[[0; _]; _]; _]; _],
 					rendered_background: [[[None; _]; _]; _],
+					rendered_sprites: [[None; _]; _],
 				});
 				let NROM256 {
 					prg_rom,
@@ -158,6 +160,7 @@ impl Mapper for NROM256 {
 			chr_rom: _,
 			parsed_graphics: _,
 			rendered_background: _,
+			rendered_sprites: _,
 		} = self;
 		let adr = adr & VRAM_MASK;
 		match adr {
@@ -248,6 +251,16 @@ impl Mapper for NROM256 {
 		let tilemap_x = tilemap_x as usize % 256;
 		let tilemap_y = tilemap_y as usize;
 		self.rendered_background[tilemap][tilemap_x][tilemap_y]
+	}
+
+	#[inline]
+	fn get_sprite_pixels(
+		&self,
+		sprite_idx: usize,
+		_: &Ppu,
+	) -> impl Iterator<Item = Option<NesColour>> {
+		unsafe { unsafe_assert!(sprite_idx < self.rendered_sprites.len()) };
+		self.rendered_sprites[sprite_idx].into_iter()
 	}
 }
 
