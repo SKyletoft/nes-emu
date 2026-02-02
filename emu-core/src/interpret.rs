@@ -106,7 +106,7 @@ impl<M: Mapper, F> State<M, F> {
 		];
 		let res: Inst = code.into();
 		// To set the open bus
-		let _ = self.mem(self.cpu.pc.wrapping_sub(1).wrapping_add(res.len() as u16));
+		let _ = self.mem(self.cpu.pc.wrapping_sub(1).wrapping_add(res.size() as u16));
 		res
 	}
 
@@ -318,28 +318,6 @@ impl<M: Mapper, F> State<M, F> {
 			InterruptTiming::Waiting => self.rest.interrupt_requested = InterruptTiming::Ready,
 			InterruptTiming::Ready => self.set_vblank(),
 		}
-	}
-
-	fn update_sprite_cache(&mut self) {
-		let mut sprites: [Sprite; 64] = self.rest.ppu.oam;
-
-		// Stable sort: Primarily by x, then by prio, lastly by index.
-		sprites.sort_by(|l, r| {
-			l.x.cmp(&r.x)
-				.then(l.attr.priority().cmp(&r.attr.priority()))
-		});
-
-		let mut sprite_cache = [None; _];
-		for (cache, sprite) in sprite_cache.iter_mut().zip(
-			sprites
-				.iter()
-				.filter(|sprite| self.rest.ppu.sprite_is_visible_y(sprite))
-				.take(8),
-		) {
-			*cache = Some(*sprite);
-		}
-
-		self.rest.ppu.sprite_cache = sprite_cache;
 	}
 
 	fn update_sprite_overflow(&mut self) {
@@ -609,8 +587,6 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 	pub fn step_ppu_scanline(&mut self) {
 		if (0..240).contains(&self.rest.ppu.scanline) {
 			self.update_sprite_overflow();
-			// self.update_sprite_cache();
-			// self.render_line(self.rest.ppu.scanline);
 			self.rest.lines[self.rest.ppu.scanline as usize] = self.rest.ppu.actual_pos();
 			self.update_sprite_0();
 		}
@@ -701,38 +677,6 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 		}
 	}
 
-	fn render_line(&mut self, pos: (i16, i16), at: usize) {
-		let show_bg = self.rest.ppu.mask.show_bg();
-		let bg = self.rest.ppu.palettes[0][0];
-
-		if show_bg {
-			for dot in Self::RENDER_RANGE {
-				let tilemap_x = (dot + pos.0) % 512;
-				let tilemap_y = pos.1; // This is broken, but I'm preserving behaviour for now
-				let col = self
-					.rest
-					.rom
-					.get_bg_pixel(
-						tilemap_x,
-						tilemap_y,
-						&self.rest.ppu,
-						&self.rest.ppu.palettes,
-					)
-					.unwrap_or(self.rest.ppu.palettes[0][0]);
-				self.rest.frame.set(at, dot as usize, col);
-			}
-		} else {
-			for dot in Self::RENDER_RANGE.clone() {
-				self.rest.frame.set(at, dot as usize, bg);
-			}
-		}
-	}
-
-	fn render_sprites(&mut self) {
-		self.render_sprite_layer(false);
-		self.render_sprite_layer(true);
-	}
-
 	fn render_sprite_layer(&mut self, layer: bool) {
 		if self.rest.ppu.mask.show_spr() {
 			for (idx, sprite) in self.rest.ppu.oam.iter().enumerate().filter(|(_, s)| s.is_visible() && s.attr.priority() != layer) {
@@ -752,33 +696,6 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 				}
 			}
 		}
-	}
-
-	fn render_pixel(&mut self) {
-		let visible_sprites_iter = self
-			.rest
-			.ppu
-			.sprite_cache
-			.iter()
-			.filter_map(|&s| s)
-			.filter(|sprite| self.rest.ppu.sprite_is_visible_x(sprite));
-		let colour = visible_sprites_iter
-			.clone()
-			.filter(|s| !s.attr.priority())
-			.filter_map(|s| self.sprite_get_colour(&s))
-			.chain(self.background_get_colour())
-			.chain(
-				visible_sprites_iter
-					.filter(|s| s.attr.priority())
-					.filter_map(|s| self.sprite_get_colour(&s)),
-			)
-			.next()
-			.unwrap_or(self.rest.ppu.palettes[0][0]);
-		self.rest.frame.set(
-			self.rest.ppu.scanline as usize,
-			self.rest.ppu.dot as usize,
-			colour,
-		);
 	}
 }
 

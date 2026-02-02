@@ -360,7 +360,7 @@ impl Inst {
 		)
 	}
 
-	pub fn len(&self) -> u8 {
+	pub fn size(&self) -> u8 {
 		match self {
 			Inst::AslAccumulator
 			| Inst::Brk

@@ -10,6 +10,7 @@ use proc_macro2::Literal;
 use quote::quote;
 use syn::{LitStr, parse_macro_input};
 
+#[allow(clippy::large_enum_variant)]
 enum Mappers {
 	NROM128(NROM128),
 	NROM256(NROM256),
@@ -244,7 +245,7 @@ fn collect_starting_points(rom: &Mappers) -> Vec<(IsStart, u16, Inst, End)> {
 	let mut sorted = Vec::new();
 
 	while let Some((idx, inst)) = instructions.pop_front() {
-		let mut next = idx + inst.len() as u16;
+		let mut next = idx + inst.size() as u16;
 		sorted.push((IsStart::No, idx, inst, End::Continue));
 		if inst.ends_bb() {
 			continue;
@@ -253,7 +254,7 @@ fn collect_starting_points(rom: &Mappers) -> Vec<(IsStart, u16, Inst, End)> {
 			let (idx, inst) = instructions
 				.remove(j)
 				.expect("Literally just binary searched for it");
-			next = idx + inst.len() as u16;
+			next = idx + inst.size() as u16;
 			sorted.push((IsStart::No, idx, inst, End::Continue));
 			if inst.ends_bb() {
 				break;
@@ -262,7 +263,7 @@ fn collect_starting_points(rom: &Mappers) -> Vec<(IsStart, u16, Inst, End)> {
 	}
 
 	for i in 0..(sorted.len() - 1) {
-		let next = sorted[i].1 + sorted[i].2.len() as u16;
+		let next = sorted[i].1 + sorted[i].2.size() as u16;
 		if sorted[i].2.ends_bb() {
 			sorted[i].3 = End::Break;
 			sorted[i + 1].0 = IsStart::Yes;
@@ -277,7 +278,7 @@ fn collect_starting_points(rom: &Mappers) -> Vec<(IsStart, u16, Inst, End)> {
 				| Inst::Bvs(y) => {
 					let next = sorted[i]
 						.1
-						.wrapping_add(sorted[i].2.len() as u16)
+						.wrapping_add(sorted[i].2.size() as u16)
 						.wrapping_add(y as i16 as u16);
 					let Some(j) = sorted.iter().position(|(_, x, ..)| *x == next) else {
 						continue;
