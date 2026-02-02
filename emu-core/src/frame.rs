@@ -44,8 +44,7 @@ pub trait NesFramebuffer {
 					let tilemap_x = (dot + pos.0) % 512;
 					let tilemap_y = pos.1; // This is broken, but I'm preserving behaviour for now
 					let palettes = ppu.palettes;
-					let Some(col) = m.get_bg_pixel(tilemap_x, tilemap_y, ppu, &palettes)
-					else {
+					let Some(col) = m.get_bg_pixel(tilemap_x, tilemap_y, ppu, &palettes) else {
 						continue;
 					};
 					self.set(at, dot as usize, col);

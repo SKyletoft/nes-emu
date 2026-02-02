@@ -28,11 +28,15 @@ pub trait Mapper {
 		let Some(attribute) =
 			crate::interpret::calculate_attribute_bits(tilemap_x, tilemap_y, self, ppu)
 				.nth(tilemap_x as usize % 8)
-		else { unsafe { unsafe_unreachable!() } };
+		else {
+			unsafe { unsafe_unreachable!() }
+		};
 		let Some(tile) =
 			crate::interpret::calculate_tile_palette_index(tilemap_x, tilemap_y, self, ppu)
 				.nth(tilemap_x as usize % 8)
-		else { unsafe { unsafe_unreachable!() } };
+		else {
+			unsafe { unsafe_unreachable!() }
+		};
 
 		crate::interpret::calculate_background_colour(tile, attribute, palettes)
 	}
@@ -72,7 +76,9 @@ pub trait Mapper {
 			colour_data.reverse();
 		}
 
-		let colour_data = unsafe { std::mem::transmute::<[[Option<NesColour>; 8]; 8], [Option<NesColour>; 64]>(colour_data) };
+		let colour_data = unsafe {
+			std::mem::transmute::<[[Option<NesColour>; 8]; 8], [Option<NesColour>; 64]>(colour_data)
+		};
 		colour_data.into_iter()
 	}
 }
