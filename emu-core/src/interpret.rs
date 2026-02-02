@@ -5,7 +5,7 @@ use crate::{
 	frame::NesFramebuffer,
 	inst::Inst,
 	mapper::Mapper,
-	ppu::{DoubleWriter, NesColour, Ppu, Scroll, Sprite},
+	ppu::{DoubleWriter, NesColour, Ppu, Scroll},
 	unsafe_assert, unsafe_assert_eq, unsafe_unreachable,
 };
 
@@ -359,63 +359,6 @@ impl<M: Mapper, F> State<M, F> {
 		self.rest.ppu.status.set_sprite_overflow(overflow);
 	}
 
-	pub fn sprite_get_colour(&self, sprite: &Sprite) -> Option<NesColour> {
-		self.sprite_get_colour_at(sprite, self.rest.ppu.dot, self.rest.ppu.scanline)
-	}
-
-	pub fn sprite_get_colour_at(
-		&self,
-		sprite: &Sprite,
-		dot: i16,
-		scanline: i16,
-	) -> Option<NesColour> {
-		if !self.rest.ppu.mask.show_spr() {
-			return None;
-		}
-
-		let pixel_x = dot - sprite.x as i16;
-		let pixel_y = scanline - sprite.y as i16 - 1;
-
-		unsafe { unsafe_assert!((0..8).contains(&pixel_x), "{pixel_x}") };
-		unsafe { unsafe_assert!((0..8).contains(&pixel_y), "{pixel_y}") };
-
-		let pixel_x = if sprite.attr.flip_h() {
-			7 - pixel_x
-		} else {
-			pixel_x
-		};
-		let pixel_y = if sprite.attr.flip_v() {
-			7 - pixel_y
-		} else {
-			pixel_y
-		};
-
-		unsafe { unsafe_assert!((0..8).contains(&pixel_x), "{pixel_x}") };
-		unsafe { unsafe_assert!((0..8).contains(&pixel_y), "{pixel_y}") };
-
-		let palette_index = self.rest.rom.get_palette_index(
-			self.rest.ppu.ctrl.sprite_pattern_table(),
-			sprite.tile,
-			pixel_y as _,
-			pixel_x as _,
-		);
-
-		if palette_index == 0 {
-			return None;
-		}
-
-		unsafe { unsafe_assert!((0..4).contains(&sprite.attr.palette())) };
-		unsafe { unsafe_assert!((0..4).contains(&palette_index)) };
-		let col_idx = sprite.attr.palette() as u16 * 4 + palette_index as u16;
-		unsafe { unsafe_assert!((0..16).contains(&col_idx)) };
-
-		let Some(raw_col) = self.rest.rom.get_ppu(0x3F10 + col_idx, &self.rest.ppu) else {
-			unsafe { unsafe_unreachable!("Palette RAM must be in-bounds") }
-		};
-		let col = NesColour::try_from(raw_col).expect("Game used invalid colour");
-		Some(col)
-	}
-
 	pub fn wait_for_interrupt(&mut self) {
 		const ENTIRE_FRAME: isize = 341 * 262;
 
@@ -608,18 +551,29 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 				self.rest.ppu.dot = dot;
 				let sprite_0 = &self.rest.ppu.oam[0];
 				let (tilemap_x, tilemap_y) = self.rest.ppu.actual_pos();
-				self.rest.ppu.sprite_is_visible_x(sprite_0)
-					&& self.sprite_get_colour(sprite_0).is_some()
-					&& self
-						.rest
-						.rom
-						.get_bg_pixel(
-							tilemap_x,
-							tilemap_y,
-							&self.rest.ppu,
-							&self.rest.ppu.palettes,
-						)
-						.is_some()
+				let sprites_enabled = self.rest.ppu.sprite_is_visible_x(sprite_0);
+				let background_visible = self
+					.rest
+					.rom
+					.get_sprite_pixels(0, &self.rest.ppu)
+					.nth({
+						let x = tilemap_x - sprite_0.x as i16;
+						let y = tilemap_y - sprite_0.y as i16;
+						(y * 8 + x) as usize
+					})
+					.flatten()
+					.is_some();
+				let sprite_0_visible = self
+					.rest
+					.rom
+					.get_bg_pixel(
+						tilemap_x,
+						tilemap_y,
+						&self.rest.ppu,
+						&self.rest.ppu.palettes,
+					)
+					.is_some();
+				sprites_enabled && background_visible && sprite_0_visible
 			});
 			self.rest
 				.ppu
