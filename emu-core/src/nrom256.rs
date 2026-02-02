@@ -2,7 +2,7 @@ use anyhow::{Result, bail};
 
 use crate::{
 	mapper::{Mapper, PatternAddressBuilder},
-	ppu::{NesColour, Ppu, Sprite, VRAM_MASK},
+	ppu::{NesColour, Ppu, VRAM_MASK},
 	unsafe_assert, unsafe_unreachable,
 };
 

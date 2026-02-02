@@ -1,7 +1,7 @@
 use bitfields::bitfield;
 
 use crate::{
-	ppu::{NesColour, Ppu, Sprite},
+	ppu::{NesColour, Ppu},
 	unsafe_assert, unsafe_unreachable,
 };
 
