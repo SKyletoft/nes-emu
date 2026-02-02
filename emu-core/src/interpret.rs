@@ -612,33 +612,9 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 			// know. Again, matching Mesen's behaviour.
 			240 => {
 				self.rest.ppu.frame += 1;
-				let bg = self.rest.ppu.palettes[0][0];
-				for dot in Self::RENDER_RANGE.clone() {
-					for (at, _) in self.rest.lines.into_iter().enumerate() {
-						self.rest.frame.set(at, dot as usize, bg);
-					}
-				}
-				self.render_sprite_layer(false);
-				if self.rest.ppu.mask.show_bg() {
-					for (at, pos) in self.rest.lines.into_iter().enumerate() {
-						for dot in Self::RENDER_RANGE {
-							let tilemap_x = (dot + pos.0) % 512;
-							let tilemap_y = pos.1; // This is broken, but I'm preserving behaviour for now
-							let palettes = self.rest.ppu.palettes;
-							let Some(col) = self.rest.rom.get_bg_pixel(
-								tilemap_x,
-								tilemap_y,
-								&self.rest.ppu,
-								&palettes,
-							) else {
-								continue;
-							};
-							self.rest.frame.set(at, dot as usize, col);
-						}
-					}
-				}
-				self.render_sprite_layer(true);
-				self.rest.frame.swap();
+				self.rest
+					.frame
+					.render(&self.rest.rom, &self.rest.ppu, &self.rest.lines);
 			}
 			241 => {
 				self.rest.interrupt_requested = InterruptTiming::Ready;
@@ -674,27 +650,6 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 				.ppu
 				.status
 				.set_sprite_0_hit(self.rest.ppu.status.sprite_0_hit() | hit);
-		}
-	}
-
-	fn render_sprite_layer(&mut self, layer: bool) {
-		if self.rest.ppu.mask.show_spr() {
-			for (idx, sprite) in self.rest.ppu.oam.iter().enumerate().filter(|(_, s)| s.is_visible() && s.attr.priority() != layer) {
-				let sprite_y = sprite.y as i16 + 1; // Hardware bug
-				let sprite_x = sprite.x as i16;
-				let sprite_pixels = self.rest.rom.get_sprite_pixels(idx, &self.rest.ppu);
-				let y_range = sprite_y..(sprite_y + 8);
-				let x_range = sprite_x..(sprite_x + 8);
-				for ((line, dot), col) in y_range
-					.flat_map(move |l| x_range.clone().map(move |d| (l, d)))
-					.zip(sprite_pixels)
-					.filter(|((l, d), _)| *l < 240 && *d < 256)
-				{
-					if let Some(col) = col {
-						self.rest.frame.set(line as usize, dot as usize, col);
-					}
-				}
-			}
 		}
 	}
 }
