@@ -209,7 +209,7 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Mappers, proc_macro2::TokenStream) 
 					rendered_background: [[[None; 240]; 256]; 2]
 				};
 			};
-			(mapper, Mappers::NROM256(*parsed_file), mapper_literal)
+			(mapper, Mappers::NROM256(parsed_file), mapper_literal)
 		}
 		x => panic!("Unsupported Mapper: {x} ({prg_size})"),
 	}

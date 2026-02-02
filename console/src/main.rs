@@ -70,8 +70,7 @@ fn main() {
 	let _console = Console::new(gfx.bottom_screen.borrow_mut());
 	println!(" FRAME   CPU   PPU  FPS  ACTUAL");
 
-	let game = Box::new(game::MAPPER.clone());
-	let mut system_state = State::new(game, ConsoleFramebuffer::new(&gfx));
+	let mut system_state = State::new(game::MAPPER.clone(), ConsoleFramebuffer::new(&gfx));
 
 	let mut last_frame = 0;
 

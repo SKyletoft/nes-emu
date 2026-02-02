@@ -19,7 +19,7 @@ pub struct NROM256 {
 }
 
 impl NROM256 {
-	pub fn parse_ines(buffer: &[u8]) -> Result<Box<Self>> {
+	pub fn parse_ines(buffer: &[u8]) -> Result<Self> {
 		let [
 			b'N',
 			b'E',
@@ -51,20 +51,20 @@ impl NROM256 {
 
 		match mapper_type {
 			0 if *prg_size == 2 => {
-				let mut mapper = Box::new(NROM256 {
+				let mut mapper = NROM256 {
 					prg_ram: [0; _],
 					prg_rom: [0; _],
 					chr_rom: [0; _],
 					parsed_graphics: [[[[0; _]; _]; _]; _],
 					rendered_background: [[[None; _]; _]; _],
 					rendered_sprites: [[None; _]; _],
-				});
+				};
 				let NROM256 {
 					prg_rom,
 					chr_rom,
 					parsed_graphics,
 					..
-				} = &mut *mapper;
+				} = &mut mapper;
 				prg_rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
 				chr_rom.copy_from_slice(&buffer[chr_offset..chr_offset + 8 * 1024]);
 

@@ -40,7 +40,7 @@ pub struct StateTail<M, F> {
 }
 
 impl<M: Mapper, F> State<M, F> {
-	pub fn new(rom: Box<M>, output: F) -> Self {
+	pub fn new(rom: M, output: F) -> Self {
 		let pc = u16::from_le_bytes([
 			rom.get_cpu(0xFFFC).expect("Cannot read reset vector"),
 			rom.get_cpu(0xFFFD).expect("Cannot read reset vector (2)"),
@@ -70,7 +70,7 @@ impl<M: Mapper, F> State<M, F> {
 			cpu,
 			rest: Box::new(StateTail {
 				ppu,
-				rom: *rom,
+				rom,
 				ram,
 				cpu_bus,
 				ppu_bus,
