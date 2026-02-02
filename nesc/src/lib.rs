@@ -206,7 +206,8 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Mappers, proc_macro2::TokenStream) 
 					parsed_graphics: unsafe {
 						std::mem::transmute::<[u8; 32768], [[[[u8; 8]; 8]; 256]; 2]>(*#lit4)
 					},
-					rendered_background: [[[None; 240]; 256]; 2]
+					rendered_background: [[[None; 240]; 256]; 2],
+					rendered_sprites: [[None; _]; _],
 				};
 			};
 			(mapper, Mappers::NROM256(parsed_file), mapper_literal)
