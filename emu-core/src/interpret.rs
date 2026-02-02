@@ -416,41 +416,6 @@ impl<M: Mapper, F> State<M, F> {
 		Some(col)
 	}
 
-	pub fn background_get_colour(&self) -> Option<NesColour> {
-		if !self.rest.ppu.mask.show_bg() {
-			return None;
-		}
-
-		let (x, y) = self.rest.ppu.actual_pos();
-
-		let pixel_x = (x % 8) as u16;
-		let Some(tile_palette_index) =
-			calculate_tile_palette_index(x, y, &self.rest.rom, &self.rest.ppu)
-				.nth(pixel_x as usize)
-		else {
-			unsafe { unsafe_unreachable!() }
-		};
-
-		if tile_palette_index == 0 {
-			return None;
-		}
-
-		let Some(attribute_bits) =
-			calculate_attribute_bits(x, y, &self.rest.rom, &self.rest.ppu).nth(pixel_x as usize)
-		else {
-			unsafe { unsafe_unreachable!() }
-		};
-
-		unsafe { unsafe_assert!((0..4).contains(&attribute_bits)) };
-		unsafe { unsafe_assert!((0..4).contains(&tile_palette_index)) };
-
-		let col_idx = attribute_bits as u16 * 4 + tile_palette_index as u16;
-		unsafe { unsafe_assert!((0..16).contains(&col_idx)) };
-
-		let col = self.rest.ppu.palettes[attribute_bits as usize][tile_palette_index as usize];
-		Some(col)
-	}
-
 	pub fn wait_for_interrupt(&mut self) {
 		const ENTIRE_FRAME: isize = 341 * 262;
 
@@ -642,9 +607,19 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 			let hit = sprite_range.any(|dot| {
 				self.rest.ppu.dot = dot;
 				let sprite_0 = &self.rest.ppu.oam[0];
+				let (tilemap_x, tilemap_y) = self.rest.ppu.actual_pos();
 				self.rest.ppu.sprite_is_visible_x(sprite_0)
 					&& self.sprite_get_colour(sprite_0).is_some()
-					&& self.background_get_colour().is_some()
+					&& self
+						.rest
+						.rom
+						.get_bg_pixel(
+							tilemap_x,
+							tilemap_y,
+							&self.rest.ppu,
+							&self.rest.ppu.palettes,
+						)
+						.is_some()
 			});
 			self.rest
 				.ppu
