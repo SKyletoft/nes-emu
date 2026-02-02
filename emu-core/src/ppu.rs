@@ -350,6 +350,7 @@ impl NesColour {
 
 const _: () = {
 	assert!(std::mem::size_of::<Option<NesColour>>() == std::mem::size_of::<NesColour>());
+	assert!(std::mem::size_of::<Option<NesColour>>() == 1);
 };
 
 impl TryFrom<u8> for NesColour {
