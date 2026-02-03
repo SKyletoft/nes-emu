@@ -9,11 +9,13 @@ pub trait NesFramebuffer {
 
 	fn render<M: Mapper>(&mut self, m: &M, ppu: &Ppu, lines: &[(i16, i16); 240]) {
 		let bg = ppu.palettes[0][0];
+
 		for dot in 0..256 {
 			for (at, _) in lines.iter().copied().enumerate() {
 				self.set(at, dot as usize, bg);
 			}
 		}
+
 		if ppu.mask.show_spr() {
 			for (idx, sprite) in ppu
 				.oam
