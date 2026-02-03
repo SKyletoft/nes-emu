@@ -5,7 +5,7 @@ use crate::{
 	frame::NesFramebuffer,
 	inst::Inst,
 	mapper::Mapper,
-	ppu::{DoubleWriter, NesColour, Ppu, Scroll},
+	ppu::{DoubleWriter, NesColour, Ppu, Scroll, Sprite},
 	unsafe_assert, unsafe_assert_eq, unsafe_unreachable,
 };
 
