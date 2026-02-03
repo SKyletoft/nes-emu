@@ -1,0 +1,2 @@
+[target.armv6k-nintendo-3ds]
+runner = "azahar"
