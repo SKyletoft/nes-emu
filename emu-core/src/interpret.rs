@@ -501,6 +501,7 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 	pub fn step_ppu_scanline(&mut self) {
 		if (0..240).contains(&self.rest.ppu.scanline) {
 			self.update_sprite_overflow();
+			unsafe { unsafe_assert!((self.rest.ppu.scanline as usize) < self.rest.lines.len()) };
 			self.rest.lines[self.rest.ppu.scanline as usize] = self.rest.ppu.actual_pos();
 			self.update_sprite_0();
 		}
