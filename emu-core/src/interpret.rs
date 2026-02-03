@@ -285,15 +285,21 @@ impl<M: Mapper, F> State<M, F> {
 			self.rest.cycles += 1;
 			self.rest.ppu_runahead += 3;
 		}
-		for (from, to) in (0..256).map(|i| (((page as u16) << 8) | i, i as usize)) {
-			let val = self.mem(from);
-			self.rest.cycles += 1;
-			self.rest.ppu_runahead += 3;
+		self.rest.cycles += 512;
+		self.rest.ppu_runahead += 6 * 256;
 
-			let buf: &mut [u8] = bytemuck::cast_slice_mut(&mut self.rest.ppu.oam);
-			buf[to] = val;
-			self.rest.cycles += 1;
-			self.rest.ppu_runahead += 3;
+		let mut new_sprites: [Sprite; 64] = [Default::default(); 64];
+		let sprite_buf = bytemuck::cast_slice_mut(&mut new_sprites);
+		for (from, sprite_byte) in (0..256)
+			.map(|i| ((page as u16) << 8) | i)
+			.zip(sprite_buf.iter_mut())
+		{
+			let val = self.mem(from);
+			*sprite_byte = val;
+		}
+
+		for (idx, new) in new_sprites.into_iter().enumerate() {
+			self.rest.rom.set_sprite(&mut self.rest.ppu, new, idx);
 		}
 	}
 

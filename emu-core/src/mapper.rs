@@ -1,7 +1,7 @@
 use bitfields::bitfield;
 
 use crate::{
-	ppu::{NesColour, Ppu},
+	ppu::{NesColour, Ppu, Sprite},
 	unsafe_assert, unsafe_unreachable,
 };
 
@@ -80,6 +80,11 @@ pub trait Mapper {
 			std::mem::transmute::<[[Option<NesColour>; 8]; 8], [Option<NesColour>; 64]>(colour_data)
 		};
 		colour_data.into_iter()
+	}
+
+	fn set_sprite(&mut self, ppu: &mut Ppu, sprite: Sprite, idx: usize) {
+		unsafe { unsafe_assert!(idx < ppu.oam.len()) };
+		ppu.oam[idx] = sprite;
 	}
 }
 
