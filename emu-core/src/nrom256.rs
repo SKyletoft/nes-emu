@@ -2,7 +2,7 @@ use anyhow::{Result, bail};
 
 use crate::{
 	mapper::{Mapper, PatternAddressBuilder},
-	ppu::{NesColour, Ppu, VRAM_MASK},
+	ppu::{NesColour, Ppu, Sprite, VRAM_MASK},
 	unsafe_assert, unsafe_unreachable,
 };
 
@@ -262,9 +262,83 @@ impl Mapper for NROM256 {
 		unsafe { unsafe_assert!(sprite_idx < self.rendered_sprites.len()) };
 		self.rendered_sprites[sprite_idx].into_iter()
 	}
+
+	#[inline]
+	fn set_sprite(&mut self, ppu: &mut Ppu, new: Sprite, idx: usize) {
+		unsafe { unsafe_assert!(idx < ppu.oam.len()) };
+		let old = ppu.oam[idx];
+		ppu.oam[idx] = new;
+		if new.attr != old.attr || new.tile != old.tile {
+			self.rerender_sprite(ppu, idx);
+		}
+	}
 }
 
 impl NROM256 {
+	fn rerender_sprite(&mut self, ppu: &mut Ppu, idx: usize) {
+		unsafe { unsafe_assert!(idx < ppu.oam.len()) };
+
+		let sprite = ppu.oam[idx];
+		let calc = |y, x| {
+			let palette_index = {
+				unsafe { unsafe_assert!(y < 8 && x < 8) };
+				self.parsed_graphics[ppu.ctrl.sprite_pattern_table() as usize][sprite.tile as usize]
+					[y as usize][x as usize]
+			};
+			if palette_index == 0 {
+				return None;
+			}
+			unsafe { unsafe_assert!((0..4).contains(&sprite.attr.palette())) };
+			unsafe { unsafe_assert!((0..4).contains(&palette_index)) };
+			let col_idx = sprite.attr.palette() as u16 * 4 + palette_index as u16;
+			unsafe { unsafe_assert!((0..16).contains(&col_idx)) };
+
+			let Some(raw_col) = ({
+				let adr = (0x3F10 + col_idx) & VRAM_MASK;
+				let palettes_raw = ppu.raw_palettes();
+				palettes_raw.get((adr & 0x1F) as usize).copied()
+			}) else {
+				unsafe { unsafe_unreachable!("Palette RAM must be in-bounds") }
+			};
+			let col = NesColour::try_from(raw_col).expect("Game used invalid colour");
+			Some(col)
+		};
+
+		let colour_data: &mut [[Option<NesColour>; 8]; 8] =
+			unsafe { std::mem::transmute(&mut self.rendered_sprites[idx]) };
+
+		match (sprite.attr.flip_h(), sprite.attr.flip_v()) {
+			(false, false) => {
+				for (y, row) in colour_data.iter_mut().enumerate() {
+					for (x, col) in row.iter_mut().enumerate() {
+						*col = calc(y as u8, x as u8);
+					}
+				}
+			}
+			(false, true) => {
+				for (y, row) in colour_data.iter_mut().rev().enumerate() {
+					for (x, col) in row.iter_mut().enumerate() {
+						*col = calc(y as u8, x as u8);
+					}
+				}
+			}
+			(true, false) => {
+				for (y, row) in colour_data.iter_mut().enumerate() {
+					for (x, col) in row.iter_mut().rev().enumerate() {
+						*col = calc(y as u8, x as u8);
+					}
+				}
+			}
+			(true, true) => {
+				for (y, row) in colour_data.iter_mut().rev().enumerate() {
+					for (x, col) in row.iter_mut().rev().enumerate() {
+						*col = calc(y as u8, x as u8);
+					}
+				}
+			}
+		}
+	}
+
 	fn rerender_tile(&mut self, tilemap: usize, tile_x: i16, tile_y: i16, ppu: &Ppu) {
 		let px = tile_x * 8 + if tilemap == 0 { 0 } else { 256 };
 		let x = (tile_x * 8) as usize;
