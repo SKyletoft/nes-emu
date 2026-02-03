@@ -54,12 +54,12 @@ impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
 
 	#[inline]
 	fn swap(&mut self) {
-		self.gfx.wait_for_vblank();
 		self.screen.swap_buffers();
 		let frame_buf = self.screen.raw_framebuffer();
 		let unsafe_raw_frame_buf =
 			unsafe { std::mem::transmute::<_, &mut [[ColourFormat; 240]; 400]>(frame_buf.ptr) };
 		self.unsafe_raw_frame_buf = unsafe_raw_frame_buf;
+		self.gfx.wait_for_vblank();
 	}
 }
 
