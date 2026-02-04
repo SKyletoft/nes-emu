@@ -5,10 +5,7 @@ edition = "2024"
 
 [dependencies]
 ctru-rs = { git = "https://github.com/rust3ds/ctru-rs" }
-# citro2d = { git = "https://github.com/SKyletoft/citro3d-rs", branch = "feature/Citro2DStart" }
-citro2d = { path = "../../citro3d-rs/citro2d" }
-citro2d-sys = { path = "../../citro3d-rs/citro2d-sys" }
-citro3d-sys = { path = "../../citro3d-rs/citro3d-sys" }
+citro2d = { path = "../citro3d-rs/citro2d" }
 
 [package.metadata.cargo-3ds]
 romfs_dir = "romfs"
