@@ -25,15 +25,93 @@ pub struct SdlFramebuffer {
 }
 
 impl NesFramebuffer for SdlFramebuffer {
-	#[inline]
-	fn set(&mut self, y: usize, x: usize, col: emu_core::ppu::NesColour) {
-		unsafe { unsafe_assert!((0..HEIGHT).contains(&y)) };
-		unsafe { unsafe_assert!((0..WIDTH).contains(&x)) };
-		self.current_texture[y][x] = col.into();
-	}
+	fn render<M: emu_core::mapper::Mapper>(
+		&mut self,
+		m: &M,
+		ppu: &emu_core::ppu::Ppu,
+		lines: &[(i16, i16); 240],
+	) {
+		fn set(
+			framebuffer: &mut SdlFramebuffer,
+			y: usize,
+			x: usize,
+			col: emu_core::ppu::NesColour,
+		) {
+			unsafe { unsafe_assert!((0..HEIGHT).contains(&y)) };
+			unsafe { unsafe_assert!((0..WIDTH).contains(&x)) };
+			framebuffer.current_texture[y][x] = col.into();
+		}
 
-	#[inline]
-	fn swap(&mut self) {
+		let bg = ppu.palettes[0][0];
+
+		for dot in 0..256 {
+			for (at, _) in lines.iter().copied().enumerate() {
+				set(self, at, dot as usize, bg);
+			}
+		}
+
+		if ppu.mask.show_spr() {
+			for (idx, sprite) in ppu
+				.oam
+				.iter()
+				.enumerate()
+				.filter(|(_, s)| s.is_visible() && s.attr.priority())
+			{
+				let sprite_y = sprite.y as i16 + 1; // Hardware bug
+				let sprite_x = sprite.x as i16;
+				let sprite_pixels = m.get_sprite_pixels(idx, ppu);
+				let y_range = sprite_y..(sprite_y + 8);
+				let x_range = sprite_x..(sprite_x + 8);
+				for ((line, dot), col) in y_range
+					.flat_map(move |l| x_range.clone().map(move |d| (l, d)))
+					.zip(sprite_pixels)
+					.filter(|((l, d), _)| *l < 240 && *d < 256)
+				{
+					if let Some(col) = col {
+						set(self, line as usize, dot as usize, col);
+					}
+				}
+			}
+		}
+
+		if ppu.mask.show_bg() {
+			for (at, pos) in lines.iter().enumerate() {
+				for dot in 0..256 {
+					let tilemap_x = (dot + pos.0) % 512;
+					let tilemap_y = pos.1; // This is broken, but I'm preserving behaviour for now
+					let palettes = ppu.palettes;
+					let Some(col) = m.get_bg_pixel(tilemap_x, tilemap_y, ppu, &palettes) else {
+						continue;
+					};
+					set(self, at, dot as usize, col);
+				}
+			}
+		}
+
+		if ppu.mask.show_spr() {
+			for (idx, sprite) in ppu
+				.oam
+				.iter()
+				.enumerate()
+				.filter(|(_, s)| s.is_visible() && !s.attr.priority())
+			{
+				let sprite_y = sprite.y as i16 + 1; // Hardware bug
+				let sprite_x = sprite.x as i16;
+				let sprite_pixels = m.get_sprite_pixels(idx, ppu);
+				let y_range = sprite_y..(sprite_y + 8);
+				let x_range = sprite_x..(sprite_x + 8);
+				for ((line, dot), col) in y_range
+					.flat_map(move |l| x_range.clone().map(move |d| (l, d)))
+					.zip(sprite_pixels)
+					.filter(|((l, d), _)| *l < 240 && *d < 256)
+				{
+					if let Some(col) = col {
+						set(self, line as usize, dot as usize, col);
+					}
+				}
+			}
+		}
+
 		let mut texture = self.output_texture.lock().unwrap();
 		std::mem::swap(&mut self.current_texture, &mut texture);
 	}

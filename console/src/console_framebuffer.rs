@@ -35,25 +35,14 @@ impl<'a> ConsoleFramebuffer<'a> {
 }
 
 impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
-	#[inline]
-	fn set(&mut self, y: usize, x: usize, col: NesColour) {
-		unsafe { unsafe_assert!(x < 400 && y < 240) };
-		let y = 239 - y;
-		let x = (400 - 256) / 2 + x;
-		self.unsafe_raw_frame_buf[x][y] = col.into();
-	}
-
-	#[inline]
-	fn swap(&mut self) {
-		self.screen.swap_buffers();
-		let frame_buf = self.screen.raw_framebuffer();
-		let unsafe_raw_frame_buf =
-			unsafe { std::mem::transmute::<_, &mut [[ColourFormat; 240]; 400]>(frame_buf.ptr) };
-		self.unsafe_raw_frame_buf = unsafe_raw_frame_buf;
-		self.gfx.wait_for_vblank();
-	}
-
 	fn render<M: Mapper>(&mut self, m: &M, ppu: &Ppu, lines: &[(i16, i16); 240]) {
+		fn set(framebuffer: &mut ConsoleFramebuffer, y: usize, x: usize, col: NesColour) {
+			unsafe { unsafe_assert!(x < 400 && y < 240) };
+			let y = 239 - y;
+			let x = (400 - 256) / 2 + x;
+			framebuffer.unsafe_raw_frame_buf[x][y] = col.into();
+		}
+
 		let bg = ppu.palettes[0][0];
 
 		if ppu.mask.show_bg() {
@@ -65,7 +54,7 @@ impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
 					let col = m
 						.get_bg_pixel(tilemap_x, tilemap_y, ppu, &palettes)
 						.unwrap_or(bg);
-					self.set(at, dot as usize, col);
+					set(self, at, dot as usize, col);
 				}
 			}
 		}
@@ -83,11 +72,17 @@ impl<'a> NesFramebuffer for ConsoleFramebuffer<'a> {
 					.filter(|((l, d), _)| *l < 240 && *d < 256)
 				{
 					if let Some(col) = col {
-						self.set(line as usize, dot as usize, col);
+						set(self, line as usize, dot as usize, col);
 					}
 				}
 			}
 		}
-		self.swap();
+
+		self.screen.swap_buffers();
+		let frame_buf = self.screen.raw_framebuffer();
+		let unsafe_raw_frame_buf =
+			unsafe { std::mem::transmute::<_, &mut [[ColourFormat; 240]; 400]>(frame_buf.ptr) };
+		self.unsafe_raw_frame_buf = unsafe_raw_frame_buf;
+		self.gfx.wait_for_vblank();
 	}
 }
