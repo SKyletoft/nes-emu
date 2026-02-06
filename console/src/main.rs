@@ -1,5 +1,6 @@
 #![feature(const_array, const_trait_impl)]
 
+mod citro2d_framebuffer;
 mod colour;
 mod console_framebuffer;
 
