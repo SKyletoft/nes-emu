@@ -169,12 +169,8 @@ impl Mapper for NROM256 {
 				let Ok(col) = val.try_into() else {
 					unsafe { unsafe_unreachable!("Writing invalid colour to palette") }
 				};
-				let old = ppu.palettes[0][0];
 				ppu.palettes[0][0] = col;
 				ppu.palettes[4][0] = col;
-				if old != col {
-					self.rerender_background(ppu);
-				}
 				Some(())
 			}
 			0x3F00..=0x3FFF => {
@@ -188,7 +184,7 @@ impl Mapper for NROM256 {
 				ppu.palettes[pal_idx][col_idx] = col;
 				let is_bg_pal = pal_idx < 4;
 				if old != col && is_bg_pal {
-					self.rerender_background(ppu);
+					self.rerender_background_targetted(ppu, pal_idx as u8);
 				}
 				Some(())
 			}
@@ -367,11 +363,19 @@ impl NROM256 {
 		}
 	}
 
-	fn rerender_background(&mut self, ppu: &Ppu) {
+	fn rerender_background_targetted(&mut self, ppu: &Ppu, pal: u8) {
 		for tilemap in 0..2 {
 			for tile_x in 0..32 {
 				for tile_y in 0..30 {
-					self.rerender_tile(tilemap, tile_x, tile_y, ppu);
+					let attr = crate::interpret::calculate_attribute_bits(
+						tile_x * 8 + if tilemap == 0 { 0 } else { 256 },
+						tile_y * 8,
+						self,
+						ppu,
+					);
+					if pal == attr {
+						self.rerender_tile(tilemap, tile_x, tile_y, ppu);
+					}
 				}
 			}
 		}
