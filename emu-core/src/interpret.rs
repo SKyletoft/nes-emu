@@ -590,12 +590,7 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 	}
 }
 
-pub fn calculate_attribute_bits<M: Mapper>(
-	x: i16,
-	y: i16,
-	rom: &M,
-	self_rest_ppu: &Ppu,
-) -> impl Iterator<Item = u8> {
+pub fn calculate_attribute_bits<M: Mapper>(x: i16, y: i16, rom: &M, self_rest_ppu: &Ppu) -> u8 {
 	unsafe { unsafe_assert!((0..512).contains(&x)) };
 	unsafe { unsafe_assert!((0..480).contains(&y)) };
 	let nametable_adr = match (x, y) {
@@ -613,8 +608,7 @@ pub fn calculate_attribute_bits<M: Mapper>(
 		unsafe { unsafe_unreachable!() }
 	};
 	let shift = ((tile_y % 4) / 2) * 4 + ((tile_x % 4) / 2) * 2;
-	let attribute_bits = (attribute_byte >> shift) & 0b11;
-	std::iter::repeat_n(attribute_bits, 16)
+	(attribute_byte >> shift) & 0b11
 }
 
 pub fn calculate_tile_palette_index<M: Mapper>(

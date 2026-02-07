@@ -25,12 +25,7 @@ pub trait Mapper {
 		unsafe { unsafe_assert!((0..512).contains(&tilemap_x)) };
 		unsafe { unsafe_assert!((0..480).contains(&tilemap_y)) };
 
-		let Some(attribute) =
-			crate::interpret::calculate_attribute_bits(tilemap_x, tilemap_y, self, ppu)
-				.nth(tilemap_x as usize % 8)
-		else {
-			unsafe { unsafe_unreachable!() }
-		};
+		let attribute = crate::interpret::calculate_attribute_bits(tilemap_x, tilemap_y, self, ppu);
 		let Some(tile) =
 			crate::interpret::calculate_tile_palette_index(tilemap_x, tilemap_y, self, ppu)
 				.nth(tilemap_x as usize % 8)

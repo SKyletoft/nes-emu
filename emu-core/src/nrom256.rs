@@ -344,15 +344,20 @@ impl NROM256 {
 		let x = (tile_x * 8) as usize;
 		let py = tile_y * 8;
 
+		let attr = crate::interpret::calculate_attribute_bits(
+			tile_x * 8 + if tilemap == 0 { 0 } else { 256 },
+			tile_y * 8,
+			self,
+			ppu,
+		);
 		for line in 0..8 {
 			let y = py + line;
 
-			let attrs = crate::interpret::calculate_attribute_bits(px, y, self, ppu);
 			let tiles = crate::interpret::calculate_tile_palette_index(px, y, self, ppu);
 
 			let mut buf: [Option<NesColour>; 8] = [None; 8];
 
-			for (i, (attr, tile)) in attrs.zip(tiles).enumerate() {
+			for (i, tile) in tiles.enumerate() {
 				buf[i] = crate::interpret::calculate_background_colour(tile, attr, &ppu.palettes);
 			}
 
