@@ -8,7 +8,7 @@ ctru-rs = { git = "https://github.com/rust3ds/ctru-rs" }
 citro2d = { path = "../citro3d-rs/citro2d" }
 emu-core = { path = "../emu-core" }
 bytemuck = { version = "1.23", features = [ "derive" ] }
-game = { path = "../game" }
+# game = { path = "../game" }
 bitfields = "1.0"
 
 [package.metadata.cargo-3ds]

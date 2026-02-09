@@ -21,7 +21,14 @@ fn main() {
 	let _console = Console::new(gfx.bottom_screen.borrow_mut());
 	println!(" FRAME   CPU   PPU  FPS  ACTUAL");
 
-	let mut system_state = State::new(game::MAPPER.clone(), ConsoleFramebuffer::new(&gfx));
+	// let game = Box::new(game::MAPPER.clone());
+	let game =
+		emu_core::nrom256::NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes")).unwrap();
+	let mut system_state = State::new(
+		game,
+		Citro2DFramebuffer::new(&gfx).unwrap(),
+		// ConsoleFramebuffer::new(&gfx),
+	);
 
 	let mut last_frame = 0;
 
@@ -32,7 +39,8 @@ fn main() {
 		while last_frame == system_state.rest.ppu.frame {
 			let before = Instant::now();
 			while system_state.rest.ppu_runahead <= 341 {
-				game::nes_game(&mut system_state);
+				// game::nes_game(&mut system_state);
+				system_state.next();
 			}
 			let after = Instant::now();
 			cpu_dur += after - before;
