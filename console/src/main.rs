@@ -11,13 +11,10 @@ use emu_core::{controller::ControllerState, interpret::State};
 
 use crate::{citro2d_framebuffer::Citro2DFramebuffer, console_framebuffer::ConsoleFramebuffer};
 
-// type ColourFormat = crate::colour::Bgr8;
-type ColourFormat = crate::colour::Rgb565;
-
 fn main() {
 	let apt = Apt::new().unwrap();
 	let mut hid = Hid::new().unwrap();
-	let gfx = Gfx::with_formats_shared(FramebufferFormat::Rgb565, FramebufferFormat::Bgr8).unwrap();
+	let gfx = Gfx::new().unwrap();
 	let _console = Console::new(gfx.bottom_screen.borrow_mut());
 	println!(" FRAME   CPU   PPU  FPS  ACTUAL");
 
@@ -27,7 +24,6 @@ fn main() {
 	let mut system_state = State::new(
 		game,
 		Citro2DFramebuffer::new(&gfx).unwrap(),
-		// ConsoleFramebuffer::new(&gfx),
 	);
 
 	let mut last_frame = 0;
