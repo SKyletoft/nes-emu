@@ -267,13 +267,18 @@ impl Mapper for NROM256 {
 
 	#[inline]
 	fn dirty_tiles(&mut self) -> ([bool; 64], [[[bool; 240]; 256]; 2]) {
-		(self.dirty_sprites, self.dirty_tiles)
+		let ret = (self.dirty_sprites, self.dirty_tiles);
+		self.dirty_sprites = [false; _];
+		self.dirty_tiles = [[[false; _]; _]; _];
+		ret
 	}
 }
 
 impl NROM256 {
 	fn rerender_sprite(&mut self, ppu: &mut Ppu, idx: usize) {
 		unsafe { unsafe_assert!(idx < ppu.oam.len()) };
+
+		self.dirty_sprites[idx] = true;
 
 		let sprite = ppu.oam[idx];
 		let calc = |y, x| {
@@ -359,6 +364,7 @@ impl NROM256 {
 			}
 
 			for (i, c) in buf.into_iter().enumerate() {
+				self.dirty_tiles[tilemap][x + i][y as usize] = true;
 				self.rendered_background[tilemap][x + i][y as usize] = c;
 			}
 		}
