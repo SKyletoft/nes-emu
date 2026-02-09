@@ -154,14 +154,6 @@ impl Mapper for NROM256 {
 
 	#[inline]
 	fn set_ppu(&mut self, adr: u16, ppu: &mut Ppu, val: u8) -> Option<()> {
-		let NROM256 {
-			prg_ram: _,
-			prg_rom: _,
-			chr_rom: _,
-			parsed_graphics: _,
-			rendered_background: _,
-			rendered_sprites: _,
-		} = self;
 		let adr = adr & VRAM_MASK;
 		match adr {
 			0x0000..=0x1FFF => Some(()),
