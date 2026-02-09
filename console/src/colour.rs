@@ -1,4 +1,5 @@
 use bitfields::bitfield;
+use citro2d::pixel_type::Rgba5551;
 use emu_core::{graphics::Colour, ppu::NesColour, unsafe_assert};
 
 #[repr(C)]
@@ -314,4 +315,27 @@ impl From<NesColour> for Rgb565 {
 		unsafe { unsafe_assert!((0..64).contains(&(value as usize))) };
 		TRANSLATED_COLOURS[value as usize]
 	}
+}
+
+pub fn nes_colour_to_rgba5551(value: Option<NesColour>) -> Rgba5551 {
+	let Some(value) = value else {
+		return Rgba5551::TRANSPARENT;
+	};
+	const fn convert_colour(c: NesColour) -> Rgba5551 {
+		let Colour {
+			blue,
+			green,
+			red,
+			alpha,
+		} = Colour::from_const(c);
+		let mut ret = Rgba5551::new();
+		ret.set_red(red >> 3);
+		ret.set_green(green >> 3);
+		ret.set_blue(blue >> 3);
+		ret.set_alpha(alpha != 0);
+		ret
+	}
+	const TRANSLATED_COLOURS: [Rgba5551; 64] = NesColour::PALETTE.map(convert_colour);
+	unsafe { unsafe_assert!((0..64).contains(&(value as usize))) };
+	TRANSLATED_COLOURS[value as usize]
 }

@@ -6,10 +6,10 @@ mod console_framebuffer;
 
 use std::time::{Duration, Instant};
 
-use ctru::{prelude::*, services::gspgpu::FramebufferFormat};
+use ctru::prelude::*;
 use emu_core::{controller::ControllerState, interpret::State};
 
-use crate::console_framebuffer::ConsoleFramebuffer;
+use crate::{citro2d_framebuffer::Citro2DFramebuffer, console_framebuffer::ConsoleFramebuffer};
 
 // type ColourFormat = crate::colour::Bgr8;
 type ColourFormat = crate::colour::Rgb565;
