@@ -16,6 +16,8 @@ pub struct NROM256 {
 	pub parsed_graphics: [[[[u8; 8]; 8]; 256]; 2],
 	pub rendered_background: [[[Option<NesColour>; 240]; 256]; 2],
 	pub rendered_sprites: [[Option<NesColour>; 64]; 64],
+	pub dirty_sprites: [bool; 64],
+	pub dirty_tiles: [[[bool; 240]; 256]; 2],
 }
 
 impl NROM256 {
@@ -58,6 +60,8 @@ impl NROM256 {
 					parsed_graphics: [[[[0; _]; _]; _]; _],
 					rendered_background: [[[None; _]; _]; _],
 					rendered_sprites: [[None; _]; _],
+					dirty_sprites: [true; _],
+					dirty_tiles: [[[true; _]; _]; _],
 				};
 				let NROM256 {
 					prg_rom,
@@ -259,6 +263,11 @@ impl Mapper for NROM256 {
 		if new.attr != old.attr || new.tile != old.tile {
 			self.rerender_sprite(ppu, idx);
 		}
+	}
+
+	#[inline]
+	fn dirty_tiles(&mut self) -> ([bool; 64], [[[bool; 240]; 256]; 2]) {
+		(self.dirty_sprites, self.dirty_tiles)
 	}
 }
 

@@ -209,6 +209,8 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Mappers, proc_macro2::TokenStream) 
 					},
 					rendered_background: [[[None; 240]; 256]; 2],
 					rendered_sprites: [[None; _]; _],
+					dirty_sprites: [true; _],
+					dirty_tiles: [[[true; _]; _]; _],
 				};
 			};
 			(mapper, Mappers::NROM256(parsed_file), mapper_literal)
