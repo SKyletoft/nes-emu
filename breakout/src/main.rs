@@ -2,6 +2,7 @@
 
 use citro2d::{
 	Instance,
+	pixel_type::Rgb565,
 	render::{Colour, Target},
 	sprites::Sprite,
 	texture::Tex,
@@ -38,8 +39,8 @@ fn create_texture_data(texture_index: usize) -> Vec<u8> {
 	data
 }
 
-fn rgb565(r: u8, g: u8, b: u8) -> u16 {
-	(((r as u16) >> 3) << 11) | (((g as u16) >> 2) << 5) | ((b as u16) >> 3)
+fn rgb565(r: u8, g: u8, b: u8) -> Rgb565 {
+	Rgb565::from_bits((((r as u16) >> 3) << 11) | (((g as u16) >> 2) << 5) | ((b as u16) >> 3))
 }
 
 fn deadzone((dx, dy): (i16, i16)) -> (f32, f32) {
@@ -56,8 +57,8 @@ fn deadzone((dx, dy): (i16, i16)) -> (f32, f32) {
 fn main() {
 	let apt = Apt::new().unwrap();
 	let mut hid = Hid::new().unwrap();
-	let gfx = unsafe { Gfx::with_formats_vram(FramebufferFormat::Bgr8, FramebufferFormat::Bgr8) }
-		.unwrap();
+	let gfx = unsafe { Gfx::with_formats_vram(FramebufferFormat::Bgr8, FramebufferFormat::Bgr8) } .unwrap();
+	// let gfx = Gfx::new().unwrap();
 	// let _console = Console::new(gfx.bottom_screen.borrow_mut()); // Cannot exist if framebuffers are in vram
 
 	let mut c2d = Instance::new().unwrap();
@@ -72,7 +73,9 @@ fn main() {
 			ColourFormat::Rgb565,
 		);
 		let data = std::array::from_fn(|i| {
+			let i = 63 - i;
 			std::array::from_fn(|j| {
+				let j = 63 - j;
 				rgb565(
 					(i * 255 / TEXTURE_SIZE) as u8,
 					(j * 255 / TEXTURE_SIZE) as u8,
@@ -80,13 +83,25 @@ fn main() {
 				)
 			})
 		});
-		tex.swizzle_and_upload::<u16, TEXTURE_SIZE, TEXTURE_SIZE, { TEXTURE_SIZE * TEXTURE_SIZE }>(
+		tex.swizzle_and_upload::<Rgb565, TEXTURE_SIZE, TEXTURE_SIZE, { TEXTURE_SIZE * TEXTURE_SIZE }>(
 			&data,
 		);
 		let mut sprite = Sprite::from_tex(tex);
 		let (h, w) = sprite.size();
 		sprite.set_centre((h / 2., w / 2.));
 		sprite.set_pos((200., 120.));
+
+		let data2: [[Rgb565; 8]; 8] = unsafe {
+			std::array::from_fn(|i| {
+				std::array::from_fn(|j| rgb565((i * 255 / 8) as u8, (j * 255 / 8) as u8, 0))
+				// std::array::from_fn(|j| rgb565(0, 0, 0))
+			})
+		};
+
+		sprite.texture_mut().unwrap().update_tile(&data2, 0, 0);
+		sprite.texture_mut().unwrap().update_tile(&data2, 1, 1);
+		sprite.texture_mut().unwrap().update_tile(&data2, 3, 3);
+
 		sprite
 	});
 	for i in 0..NUM_TEXTURES {
@@ -125,12 +140,12 @@ fn main() {
 
 		let (mut h, mut w) = sprites[current_texture].size();
 		if hid.keys_held().contains(KeyPad::X) {
-			h = (h + 1.).clamp(2., 200.);
-			w = (w + 1.).clamp(2., 200.);
+			h = (h + 1.).clamp(0.5, 240.);
+			w = (w + 1.).clamp(0.5, 240.);
 		}
 		if hid.keys_held().contains(KeyPad::Y) {
-			h = (h - 1.).clamp(2., 200.);
-			w = (w - 1.).clamp(2., 200.);
+			h = (h - 1.).clamp(0.5, 240.);
+			w = (w - 1.).clamp(0.5, 240.);
 		}
 		sprites[current_texture].set_size((h, w));
 		sprites[current_texture].set_centre((h / 2., w / 2.));
