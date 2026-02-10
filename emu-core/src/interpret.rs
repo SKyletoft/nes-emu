@@ -530,6 +530,7 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 				self.rest
 					.frame
 					.render(&self.rest.rom, &self.rest.ppu, &self.rest.lines);
+				self.rest.rom.reset_dirty();
 			}
 			241 => {
 				self.rest.interrupt_requested = InterruptTiming::Ready;
