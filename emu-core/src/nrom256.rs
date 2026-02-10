@@ -260,7 +260,7 @@ impl Mapper for NROM256 {
 		unsafe { unsafe_assert!(idx < ppu.oam.len()) };
 		let old = ppu.oam[idx];
 		ppu.oam[idx] = new;
-		if new.attr != old.attr || new.tile != old.tile {
+		if new.attr.palette() != old.attr.palette() || new.tile != old.tile {
 			self.rerender_sprite(ppu, idx);
 		}
 	}
