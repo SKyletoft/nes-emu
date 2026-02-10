@@ -2,13 +2,16 @@ use citro2d::{
 	Instance,
 	pixel_type::Rgba5551,
 	render::Target,
-	sprites::Sprite,
+	sprites::{Mirroring, Sprite},
 	texture::{ColourFormat, Tex},
 };
 use ctru::prelude::*;
 use emu_core::{frame::NesFramebuffer, mapper::Mapper, ppu::Ppu};
 
 use crate::colour::nes_colour_to_rgba5551;
+
+const X_OFFSET: f32 = (400. - 256.) / 2.;
+const SLICE_SIZE: i16 = 16;
 
 pub struct Citro2DFramebuffer<'a> {
 	instance: Instance,
@@ -25,10 +28,20 @@ impl<'a> Citro2DFramebuffer<'a> {
 		let instance = Instance::new()?;
 		let target = Target::new(top_screen)?;
 
-		let bg1 = Sprite::from_tex(Tex::new(8 * 32, 8 * 32, ColourFormat::Rgba5551));
-		let bg2 = Sprite::from_tex(Tex::new(8 * 32, 8 * 32, ColourFormat::Rgba5551));
+		let mut bg1 = Sprite::from_tex(Tex::new(8 * 32, 8 * 32, ColourFormat::Rgba5551));
+		bg1.set_pos((X_OFFSET, 0.));
+		bg1.set_size((256., SLICE_SIZE as f32));
 
-		let sprites = std::array::from_fn(|_| Sprite::new());
+		let mut bg2 = Sprite::from_tex(Tex::new(8 * 32, 8 * 32, ColourFormat::Rgba5551));
+		bg2.set_pos((X_OFFSET, 0.));
+		bg2.set_size((256., SLICE_SIZE as f32));
+
+		let sprites = std::array::from_fn(|_| {
+			let mut s = Sprite::from_tex(Tex::new(8, 8, ColourFormat::Rgba5551));
+			s.set_size((8., 8.));
+			s.set_mirroring(Mirroring::MirrorXY);
+			s
+		});
 
 		Ok(Self {
 			instance,
@@ -41,43 +54,141 @@ impl<'a> Citro2DFramebuffer<'a> {
 }
 
 impl NesFramebuffer for Citro2DFramebuffer<'_> {
-	fn render<M: Mapper>(&mut self, m: &M, ppu: &Ppu, _lines: &[(i16, i16); 240]) {
-		let mut background: [[Rgba5551; 256]; 256] = [[Rgba5551::TRANSPARENT; _]; _];
+	fn render<M: Mapper>(&mut self, m: &M, ppu: &Ppu, lines: &[(i16, i16); 240]) {
+		let mut background = [[Rgba5551::TRANSPARENT; 256]; 256];
+		let mut buffer = [[Rgba5551::TRANSPARENT; 8]; 8];
 
-		for (y, line) in background.iter_mut().take(240).enumerate() {
-			for (x, col) in line.iter_mut().enumerate() {
-				let new_col = m.get_bg_pixel(x as i16, y as i16, ppu, &ppu.palettes);
-				// dbg!(*col, new_col);
-				*col = nes_colour_to_rgba5551(new_col);
-			}
-		}
-		self.bg1
-			.texture_mut()
-			.unwrap()
-			.swizzle_and_upload::<Rgba5551, 256, 256, { 256 * 256 }>(
-				&background, // &unsafe {std::mem::transmute::<_, [u8; size_of::<[[Rgba5551; 256]; 256]>()]>(background) }
-			);
+		let (dirty_sprites, [dirty_tiles_bg1, dirty_tiles_bg2]) = m.dirty_tiles();
 
-		for (y, line) in background.iter_mut().take(240).enumerate() {
-			for (x, col) in line.iter_mut().enumerate() {
-				*col =
-					nes_colour_to_rgba5551(m.get_bg_pixel(x as i16, y as i16, ppu, &ppu.palettes));
+		for (x, y) in dirty_tiles_bg1.iter().enumerate().flat_map(|(x, row)| {
+			row.iter()
+				.enumerate()
+				.filter(|(y, b)| **b)
+				.map(move |(y, _)| (x, y))
+		}) {
+			for (idx, (col, pixel)) in (0..8)
+				.flat_map(move |dy| (0..8).map(move |dx| (dx, dy)))
+				.map(|(dx, dy)| {
+					nes_colour_to_rgba5551(m.get_bg_pixel(
+						(x * 8 + dx) as i16,
+						(y * 8 + dy) as i16,
+						ppu,
+						&ppu.palettes,
+					))
+				})
+				.zip(buffer.iter_mut().flat_map(|l| l.iter_mut()))
+				.enumerate()
+			{
+				*pixel = col;
 			}
+			self.bg1
+				.texture_mut()
+				.unwrap()
+				.swizzle_and_update_tile(buffer, y as _, x as _);
 		}
-		self.bg2
-			.texture_mut()
-			.unwrap()
-			.swizzle_and_upload::<Rgba5551, 256, 256, { 256 * 256 }>(
-				&background, // &unsafe {std::mem::transmute::<_, [u8; size_of::<[[Rgba5551; 256]; 256]>()]>(background) }
-			);
+
+		for (x, y) in dirty_tiles_bg2.iter().enumerate().flat_map(|(x, row)| {
+			row.iter()
+				.enumerate()
+				.filter(|(y, b)| **b)
+				.map(move |(y, _)| (x, y))
+		}) {
+			for (idx, (col, pixel)) in (0..8)
+				.flat_map(move |dy| (0..8).map(move |dx| (dx, dy)))
+				.map(|(dx, dy)| {
+					nes_colour_to_rgba5551(m.get_bg_pixel(
+						256 + (x * 8 + dx) as i16,
+						(y * 8 + dy) as i16,
+						ppu,
+						&ppu.palettes,
+					))
+				})
+				.zip(buffer.iter_mut().flat_map(|l| l.iter_mut()))
+				.enumerate()
+			{
+				*pixel = col;
+			}
+			self.bg2
+				.texture_mut()
+				.unwrap()
+				.swizzle_and_update_tile(buffer, y as _, x as _);
+		}
+
+		let mut sprite_textures: [[[Rgba5551; 8]; 8]; 64] = [[[Rgba5551::TRANSPARENT; _]; _]; _];
+		for ((idx, (sprite, texture)), dirty) in self
+			.sprites
+			.iter_mut()
+			.zip(sprite_textures.iter_mut())
+			.enumerate()
+			.zip(dirty_sprites)
+		{
+			if dirty {
+				let data = m.get_sprite_pixels(idx, ppu);
+				for (pixel, col) in texture
+					.iter_mut()
+					.flat_map(|xs: &mut [Rgba5551; 8]| xs.iter_mut())
+					.zip(data)
+				{
+					*pixel = nes_colour_to_rgba5551(col);
+				}
+				sprite
+					.texture_mut()
+					.unwrap()
+					.swizzle_and_upload::<Rgba5551, 8, 8, { 8 * 8 }>(texture);
+			}
+			sprite.set_pos((X_OFFSET + ppu.oam[idx].x as f32, ppu.oam[idx].y as f32));
+		}
 
 		self.instance.render_target(&mut self.target, |_, t| {
 			let emu_core::graphics::Colour {
 				blue, green, red, ..
 			} = emu_core::graphics::Colour::from_const(ppu.palettes[0][0]);
 			t.clear(citro2d::render::Colour::new(red, green, blue));
-			t.render_2d_shape(&self.bg1);
-			t.render_2d_shape(&self.bg2);
+
+			for (y, (x_offset, y_offset)) in lines
+				.iter()
+				.copied()
+				.enumerate()
+				.step_by(SLICE_SIZE as usize)
+			{
+				let x1 = {
+					let base = X_OFFSET - x_offset as f32;
+					if base < X_OFFSET - 256. {
+						base + 512.
+					} else {
+						base
+					}
+				};
+				self.bg1.set_pos((x1, y as f32));
+				self.bg1.set_mirroring(Mirroring::Custom {
+					left: 1.,
+					right: 0.,
+					top: y_offset as f32 / 256.,
+					bottom: (y_offset + SLICE_SIZE) as f32 / 256.,
+				});
+				t.render_2d_shape(&self.bg1);
+
+				let x2 = {
+					let base = X_OFFSET + 256. - x_offset as f32;
+					if base < X_OFFSET - 256. {
+						base + 512.
+					} else {
+						base
+					}
+				};
+				self.bg2.set_pos((x2, y as f32));
+				self.bg2.set_mirroring(Mirroring::Custom {
+					left: 1.,
+					right: 0.,
+					top: y_offset as f32 / 256.,
+					bottom: (y_offset + 16) as f32 / 256.,
+				});
+				t.render_2d_shape(&self.bg2);
+			}
+
+			for sp in self.sprites.iter() {
+				t.render_2d_shape(sp);
+			}
 		});
 	}
 }
