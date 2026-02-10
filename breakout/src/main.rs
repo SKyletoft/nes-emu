@@ -57,8 +57,8 @@ fn deadzone((dx, dy): (i16, i16)) -> (f32, f32) {
 fn main() {
 	let apt = Apt::new().unwrap();
 	let mut hid = Hid::new().unwrap();
-	let gfx = unsafe { Gfx::with_formats_vram(FramebufferFormat::Bgr8, FramebufferFormat::Bgr8) } .unwrap();
-	// let gfx = Gfx::new().unwrap();
+	// let gfx = unsafe { Gfx::with_formats_vram(FramebufferFormat::Bgr8, FramebufferFormat::Bgr8) } .unwrap();
+	let gfx = Gfx::new().unwrap();
 	// let _console = Console::new(gfx.bottom_screen.borrow_mut()); // Cannot exist if framebuffers are in vram
 
 	let mut c2d = Instance::new().unwrap();
@@ -98,9 +98,9 @@ fn main() {
 			})
 		};
 
-		sprite.texture_mut().unwrap().update_tile(&data2, 0, 0);
-		sprite.texture_mut().unwrap().update_tile(&data2, 1, 1);
-		sprite.texture_mut().unwrap().update_tile(&data2, 3, 3);
+		sprite.texture_mut().unwrap().swizzle_and_update_tile(data2.clone(), 0, 0);
+		sprite.texture_mut().unwrap().swizzle_and_update_tile(data2.clone(), 1, 1);
+		sprite.texture_mut().unwrap().swizzle_and_update_tile(data2.clone(), 3, 3);
 
 		sprite
 	});
