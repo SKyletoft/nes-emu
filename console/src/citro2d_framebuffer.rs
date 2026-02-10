@@ -55,7 +55,6 @@ impl<'a> Citro2DFramebuffer<'a> {
 
 impl NesFramebuffer for Citro2DFramebuffer<'_> {
 	fn render<M: Mapper>(&mut self, m: &M, ppu: &Ppu, lines: &[(i16, i16); 240]) {
-		let mut background = [[Rgba5551::TRANSPARENT; 256]; 256];
 		let mut buffer = [[Rgba5551::TRANSPARENT; 8]; 8];
 
 		let (dirty_sprites, [dirty_tiles_bg1, dirty_tiles_bg2]) = m.dirty_tiles();
@@ -63,10 +62,10 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 		for (x, y) in dirty_tiles_bg1.iter().enumerate().flat_map(|(x, row)| {
 			row.iter()
 				.enumerate()
-				.filter(|(y, b)| **b)
+				.filter(|(_, b)| **b)
 				.map(move |(y, _)| (x, y))
 		}) {
-			for (idx, (col, pixel)) in (0..8)
+			for (col, pixel) in (0..8)
 				.flat_map(move |dy| (0..8).map(move |dx| (dx, dy)))
 				.map(|(dx, dy)| {
 					nes_colour_to_rgba5551(m.get_bg_pixel(
@@ -77,7 +76,6 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 					))
 				})
 				.zip(buffer.iter_mut().flat_map(|l| l.iter_mut()))
-				.enumerate()
 			{
 				*pixel = col;
 			}
@@ -90,10 +88,10 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 		for (x, y) in dirty_tiles_bg2.iter().enumerate().flat_map(|(x, row)| {
 			row.iter()
 				.enumerate()
-				.filter(|(y, b)| **b)
+				.filter(|(_, b)| **b)
 				.map(move |(y, _)| (x, y))
 		}) {
-			for (idx, (col, pixel)) in (0..8)
+			for (col, pixel) in (0..8)
 				.flat_map(move |dy| (0..8).map(move |dx| (dx, dy)))
 				.map(|(dx, dy)| {
 					nes_colour_to_rgba5551(m.get_bg_pixel(
@@ -104,7 +102,6 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 					))
 				})
 				.zip(buffer.iter_mut().flat_map(|l| l.iter_mut()))
-				.enumerate()
 			{
 				*pixel = col;
 			}
@@ -114,17 +111,15 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 				.swizzle_and_update_tile(buffer, y as _, x as _);
 		}
 
-		let mut sprite_textures: [[[Rgba5551; 8]; 8]; 64] = [[[Rgba5551::TRANSPARENT; _]; _]; _];
-		for ((idx, (sprite, texture)), dirty) in self
+		for ((idx, sprite), dirty) in self
 			.sprites
 			.iter_mut()
-			.zip(sprite_textures.iter_mut())
 			.enumerate()
 			.zip(dirty_sprites)
 		{
 			if dirty {
 				let data = m.get_sprite_pixels(idx, ppu);
-				for (pixel, col) in texture
+				for (pixel, col) in buffer
 					.iter_mut()
 					.flat_map(|xs: &mut [Rgba5551; 8]| xs.iter_mut())
 					.zip(data)
@@ -134,7 +129,7 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 				sprite
 					.texture_mut()
 					.unwrap()
-					.swizzle_and_upload::<Rgba5551, 8, 8, { 8 * 8 }>(texture);
+					.swizzle_and_update_tile(buffer, 0, 0);
 			}
 			sprite.set_pos((X_OFFSET + ppu.oam[idx].x as f32, ppu.oam[idx].y as f32));
 		}
