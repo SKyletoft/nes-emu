@@ -11,7 +11,6 @@ use emu_core::{frame::NesFramebuffer, mapper::Mapper, ppu::Ppu};
 use crate::colour::nes_colour_to_rgba5551;
 
 const X_OFFSET: f32 = (400. - 256.) / 2.;
-const SLICE_SIZE: i16 = 16;
 
 pub struct Citro2DFramebuffer<'a> {
 	instance: Instance,
@@ -30,11 +29,9 @@ impl<'a> Citro2DFramebuffer<'a> {
 
 		let mut bg1 = Sprite::from_tex(Tex::new(8 * 32, 8 * 32, ColourFormat::Rgba5551));
 		bg1.set_pos((X_OFFSET, 0.));
-		bg1.set_size((256., SLICE_SIZE as f32));
 
 		let mut bg2 = Sprite::from_tex(Tex::new(8 * 32, 8 * 32, ColourFormat::Rgba5551));
 		bg2.set_pos((X_OFFSET, 0.));
-		bg2.set_size((256., SLICE_SIZE as f32));
 
 		let sprites = std::array::from_fn(|_| {
 			let mut s = Sprite::from_tex(Tex::new(8, 8, ColourFormat::Rgba5551));
@@ -140,12 +137,18 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 			} = emu_core::graphics::Colour::from_const(ppu.palettes[0][0]);
 			t.clear(citro2d::render::Colour::new(red, green, blue));
 
-			for (y, (x_offset, y_offset)) in lines
-				.iter()
-				.copied()
-				.enumerate()
-				.step_by(SLICE_SIZE as usize)
-			{
+			let background_slices =
+				lines
+					.chunk_by(|l, r| l.0 == r.0 && l.1 + 1 == r.1)
+					.scan(0, |acc, curr| {
+						let old_acc = *acc;
+						*acc += curr.len();
+						Some((curr[0].0, curr[0].1, old_acc, curr.len() as i16))
+					});
+			for (x_offset, y_offset, y, height) in background_slices {
+				self.bg1.set_size((256., height as f32));
+				self.bg2.set_size((256., height as f32));
+
 				let x1 = {
 					let base = X_OFFSET - x_offset as f32;
 					if base < X_OFFSET - 256. {
@@ -159,7 +162,7 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 					left: 1.,
 					right: 0.,
 					top: y_offset as f32 / 256.,
-					bottom: (y_offset + SLICE_SIZE) as f32 / 256.,
+					bottom: (y_offset + height) as f32 / 256.,
 				});
 				t.render_2d_shape(&self.bg1);
 
@@ -176,7 +179,7 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 					left: 1.,
 					right: 0.,
 					top: y_offset as f32 / 256.,
-					bottom: (y_offset + 16) as f32 / 256.,
+					bottom: (y_offset + height) as f32 / 256.,
 				});
 				t.render_2d_shape(&self.bg2);
 			}
