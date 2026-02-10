@@ -17,7 +17,7 @@ pub struct NROM256 {
 	pub rendered_background: [[[Option<NesColour>; 240]; 256]; 2],
 	pub rendered_sprites: [[Option<NesColour>; 64]; 64],
 	pub dirty_sprites: [bool; 64],
-	pub dirty_tiles: [[[bool; 240]; 256]; 2],
+	pub dirty_tiles: [[[bool; 30]; 32]; 2],
 }
 
 impl NROM256 {
@@ -266,11 +266,14 @@ impl Mapper for NROM256 {
 	}
 
 	#[inline]
-	fn dirty_tiles(&mut self) -> ([bool; 64], [[[bool; 240]; 256]; 2]) {
-		let ret = (self.dirty_sprites, self.dirty_tiles);
+	fn dirty_tiles(&self) -> ([bool; 64], [[[bool; 30]; 32]; 2]) {
+		(self.dirty_sprites, self.dirty_tiles)
+	}
+
+	#[inline]
+	fn reset_dirty(&mut self) {
 		self.dirty_sprites = [false; _];
 		self.dirty_tiles = [[[false; _]; _]; _];
-		ret
 	}
 }
 
@@ -342,6 +345,7 @@ impl NROM256 {
 	}
 
 	fn rerender_tile(&mut self, tilemap: usize, tile_x: i16, tile_y: i16, ppu: &Ppu) {
+		self.dirty_tiles[tilemap][tile_x as usize][tile_y as usize] = true;
 		let px = tile_x * 8 + if tilemap == 0 { 0 } else { 256 };
 		let x = (tile_x * 8) as usize;
 		let py = tile_y * 8;
@@ -364,7 +368,6 @@ impl NROM256 {
 			}
 
 			for (i, c) in buf.into_iter().enumerate() {
-				self.dirty_tiles[tilemap][x + i][y as usize] = true;
 				self.rendered_background[tilemap][x + i][y as usize] = c;
 			}
 		}
