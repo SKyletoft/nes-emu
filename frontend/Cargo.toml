@@ -1,0 +1,26 @@
+[package]
+name = "frontend"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+emu-core = { path = "../emu-core" }
+bytemuck = { version = "1.23", features = [ "derive" ] }
+
+[target.'cfg(not(target_os = "horizon"))'.dependencies]
+sdl2 = { version = "0.38", features = [ "use-pkgconfig" ] }
+
+[target.'cfg(target_os = "horizon")'.dependencies]
+ctru-rs = { git = "https://github.com/rust3ds/ctru-rs" }
+citro2d = { path = "../citro3d-rs/citro2d" }
+
+[features]
+precompiled = []
+default = [ "precompiled" ]
+
+[package.metadata.cargo-3ds]
+romfs_dir = "romfs"
+
+[[bin]]
+name = "frontend"
+path = "src/main.rs"

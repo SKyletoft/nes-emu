@@ -1,7 +1,3 @@
-#![feature(const_array, const_trait_impl)]
-
-mod citro2d_framebuffer;
-
 use std::time::{Duration, Instant};
 
 use ctru::prelude::*;
@@ -9,7 +5,7 @@ use emu_core::{controller::ControllerState, interpret::State};
 
 use crate::citro2d_framebuffer::Citro2DFramebuffer;
 
-fn main() {
+pub fn main() {
 	let apt = Apt::new().unwrap();
 	let mut hid = Hid::new().unwrap();
 	let gfx = Gfx::new().unwrap();

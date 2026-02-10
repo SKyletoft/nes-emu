@@ -279,17 +279,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "console"
-version = "0.1.0"
-dependencies = [
- "bitfields",
- "bytemuck",
- "citro2d",
- "ctru-rs",
- "emu-core",
-]
-
-[[package]]
 name = "ctru-rs"
 version = "0.7.1"
 source = "git+https://github.com/rust3ds/ctru-rs#92ee28f3f845a489111fdac94418acb1065bc76d"
@@ -408,6 +397,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a3076410a55c90011c298b04d0cfa770b00fa04e1e3c97d3f6c9de105a03844"
 
 [[package]]
+name = "frontend"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "citro2d",
+ "ctru-rs",
+ "emu-core",
+ "sdl2",
+]
+
+[[package]]
 name = "game"
 version = "0.1.0"
 dependencies = [
@@ -508,15 +508,6 @@ checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
 dependencies = [
  "cfg-if",
  "windows-link",
-]
-
-[[package]]
-name = "linux"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "emu-core",
- "sdl2",
 ]
 
 [[package]]

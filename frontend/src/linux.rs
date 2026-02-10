@@ -1,4 +1,4 @@
-mod drawing;
+use crate::sdl_framebuffer;
 
 use std::{
 	sync::{
@@ -23,7 +23,7 @@ fn emulation_loop(
 		emu_core::nrom256::NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes")).unwrap();
 	let mut system_state = State::new(
 		game,
-		drawing::SdlFramebuffer {
+		sdl_framebuffer::SdlFramebuffer {
 			output_texture: shared_texture,
 			current_texture: Box::new(graphics::empty_bitmap()),
 		},
@@ -52,7 +52,7 @@ fn emulation_loop(
 	}
 }
 
-fn main() {
+pub fn main() {
 	let shared_texture = emu_core::graphics::new_bitmap();
 	let controller_state = AtomicU8::new(0);
 	let kill_predicate = AtomicBool::new(true);
@@ -60,7 +60,7 @@ fn main() {
 	let texture_ptr = shared_texture.clone();
 	std::thread::scope(|s| {
 		s.spawn(|| emulation_loop(texture_ptr, &controller_state, &kill_predicate));
-		drawing::sdl_thread(shared_texture, &controller_state).unwrap();
+		sdl_framebuffer::sdl_thread(shared_texture, &controller_state).unwrap();
 		kill_predicate.store(false, Ordering::SeqCst);
 	});
 }

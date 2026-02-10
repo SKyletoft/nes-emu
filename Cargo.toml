@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = [ "emu-core", "linux", "console", "nesc", "game", "benchmark", "breakout" ]
+members = [ "emu-core", "frontend", "nesc", "game", "benchmark", "breakout" ]
 
 [profile.dev]
 opt-level = 1
