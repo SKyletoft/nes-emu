@@ -1,15 +1,13 @@
 #![feature(const_array, const_trait_impl)]
 
 mod citro2d_framebuffer;
-mod colour;
-mod console_framebuffer;
 
 use std::time::{Duration, Instant};
 
 use ctru::prelude::*;
 use emu_core::{controller::ControllerState, interpret::State};
 
-use crate::{citro2d_framebuffer::Citro2DFramebuffer, console_framebuffer::ConsoleFramebuffer};
+use crate::citro2d_framebuffer::Citro2DFramebuffer;
 
 fn main() {
 	let apt = Apt::new().unwrap();
@@ -18,13 +16,11 @@ fn main() {
 	let _console = Console::new(gfx.bottom_screen.borrow_mut());
 	println!(" FRAME   CPU   PPU  FPS  ACTUAL");
 
-	// let game = Box::new(game::MAPPER.clone());
+	// let game = game::MAPPER.clone();
 	let game =
 		emu_core::nrom256::NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes")).unwrap();
-	let mut system_state = State::new(
-		game,
-		Citro2DFramebuffer::new(&gfx).unwrap(),
-	);
+	let framebuffer = Citro2DFramebuffer::new(&gfx).unwrap();
+	let mut system_state = State::new(game, framebuffer);
 
 	let mut last_frame = 0;
 

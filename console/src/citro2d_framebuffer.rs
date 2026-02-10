@@ -6,9 +6,9 @@ use citro2d::{
 	texture::{ColourFormat, Tex},
 };
 use ctru::prelude::*;
-use emu_core::{frame::NesFramebuffer, mapper::Mapper, ppu::Ppu};
-
-use crate::colour::nes_colour_to_rgba5551;
+use emu_core::{
+	frame::NesFramebuffer, graphics::Colour, mapper::Mapper, ppu::{NesColour, Ppu}, unsafe_assert
+};
 
 const X_OFFSET: f32 = (400. - 256.) / 2.;
 
@@ -163,4 +163,27 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 			}
 		});
 	}
+}
+
+fn nes_colour_to_rgba5551(value: Option<NesColour>) -> Rgba5551 {
+	let Some(value) = value else {
+		return Rgba5551::TRANSPARENT;
+	};
+	const fn convert_colour(c: NesColour) -> Rgba5551 {
+		let Colour {
+			blue,
+			green,
+			red,
+			alpha,
+		} = Colour::from_const(c);
+		let mut ret = Rgba5551::new();
+		ret.set_red(red >> 3);
+		ret.set_green(green >> 3);
+		ret.set_blue(blue >> 3);
+		ret.set_alpha(alpha != 0);
+		ret
+	}
+	const TRANSLATED_COLOURS: [Rgba5551; 64] = NesColour::PALETTE.map(convert_colour);
+	unsafe { unsafe_assert!((0..64).contains(&(value as usize))) };
+	TRANSLATED_COLOURS[value as usize]
 }
