@@ -33,9 +33,11 @@ impl<'a> Citro2DFramebuffer<'a> {
 
 		let mut bg1 = Sprite::from_tex(Tex::new(8 * 32, 8 * 32, ColourFormat::Rgba5551));
 		bg1.set_pos((X_OFFSET, 0.));
+		bg1.set_depth(0.5);
 
 		let mut bg2 = Sprite::from_tex(Tex::new(8 * 32, 8 * 32, ColourFormat::Rgba5551));
 		bg2.set_pos((X_OFFSET, 0.));
+		bg2.set_depth(0.5);
 
 		let sprites = std::array::from_fn(|_| {
 			let mut s = Sprite::from_tex(Tex::new(8, 8, ColourFormat::Rgba5551));
@@ -106,64 +108,80 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 					.unwrap()
 					.swizzle_and_update_tile(buffer, 0, 0);
 			}
+			sprite.set_depth(if ppu.oam[idx].attr.priority() {
+				0.1
+			} else {
+				0.9
+			});
 			sprite.set_pos((X_OFFSET + ppu.oam[idx].x as f32, ppu.oam[idx].y as f32));
 		}
 
+		let background_slices =
+			lines
+				.chunk_by(|l, r| l.0 == r.0 && l.1 + 1 == r.1)
+				.scan(0, |acc, curr| {
+					let old_acc = *acc;
+					*acc += curr.len();
+					Some((curr[0].0, curr[0].1, old_acc, curr.len() as i16))
+				});
 		self.instance.render_target(&mut self.target, |_, t| {
 			let emu_core::graphics::Colour {
 				blue, green, red, ..
 			} = emu_core::graphics::Colour::from_const(ppu.palettes[0][0]);
 			t.clear(citro2d::render::Colour::new(red, green, blue));
 
-			let background_slices =
-				lines
-					.chunk_by(|l, r| l.0 == r.0 && l.1 + 1 == r.1)
-					.scan(0, |acc, curr| {
-						let old_acc = *acc;
-						*acc += curr.len();
-						Some((curr[0].0, curr[0].1, old_acc, curr.len() as i16))
-					});
-			for (x_offset, y_offset, y, height) in background_slices {
-				self.bg1.set_size((256., height as f32));
-				self.bg2.set_size((256., height as f32));
-
-				let x1 = {
-					let base = X_OFFSET - x_offset as f32;
-					if base < X_OFFSET - 256. {
-						base + 512.
-					} else {
-						base
-					}
-				};
-				self.bg1.set_pos((x1, y as f32));
-				self.bg1.set_mirroring(Mirroring::Custom {
-					left: 1.,
-					right: 0.,
-					top: y_offset as f32 / 256.,
-					bottom: (y_offset + height) as f32 / 256.,
-				});
-				t.render_2d_shape(&self.bg1);
-
-				let x2 = {
-					let base = X_OFFSET + 256. - x_offset as f32;
-					if base < X_OFFSET - 256. {
-						base + 512.
-					} else {
-						base
-					}
-				};
-				self.bg2.set_pos((x2, y as f32));
-				self.bg2.set_mirroring(Mirroring::Custom {
-					left: 1.,
-					right: 0.,
-					top: y_offset as f32 / 256.,
-					bottom: (y_offset + height) as f32 / 256.,
-				});
-				t.render_2d_shape(&self.bg2);
+			if ppu.mask.show_spr() {
+				for sp in self.sprites.iter().filter(|sp| sp.depth() <= 0.5) {
+					t.render_2d_shape(sp);
+				}
 			}
 
-			for sp in self.sprites.iter() {
-				t.render_2d_shape(sp);
+			if ppu.mask.show_bg() {
+				for (x_offset, y_offset, y, height) in background_slices {
+					self.bg1.set_size((256., height as f32));
+					self.bg2.set_size((256., height as f32));
+
+					let x1 = {
+						let base = X_OFFSET - x_offset as f32;
+						if base < X_OFFSET - 256. {
+							base + 512.
+						} else {
+							base
+						}
+					};
+					self.bg1.set_pos((x1, y as f32));
+					self.bg1.set_mirroring(Mirroring::Custom {
+						left: 1.,
+						right: 0.,
+						top: y_offset as f32 / 256.,
+						bottom: (y_offset + height) as f32 / 256.,
+					});
+
+					let x2 = {
+						let base = X_OFFSET + 256. - x_offset as f32;
+						if base < X_OFFSET - 256. {
+							base + 512.
+						} else {
+							base
+						}
+					};
+					self.bg2.set_pos((x2, y as f32));
+					self.bg2.set_mirroring(Mirroring::Custom {
+						left: 1.,
+						right: 0.,
+						top: y_offset as f32 / 256.,
+						bottom: (y_offset + height) as f32 / 256.,
+					});
+
+					t.render_2d_shape(&self.bg1);
+					t.render_2d_shape(&self.bg2);
+				}
+			}
+
+			if ppu.mask.show_spr() {
+				for sp in self.sprites.iter().filter(|sp| sp.depth() > 0.5) {
+					t.render_2d_shape(sp);
+				}
 			}
 		});
 	}
