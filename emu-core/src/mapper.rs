@@ -17,11 +17,6 @@ pub trait Mapper {
 	fn set_ppu(&mut self, adr: u16, ppu: &mut Ppu, val: u8) -> Option<()>;
 	fn get_palette_index(&self, half: bool, tile: u8, y: u8, x: u8) -> u8;
 
-	fn dirty_tiles(&self) -> ([bool; 64], [[[bool; 30]; 32]; 2]) {
-		([true; _], [[[true; _]; _]; _])
-	}
-	fn reset_dirty(&mut self) {}
-
 	fn get_bg_pixel(&self, tilemap_x: i16, tilemap_y: i16, ppu: &Ppu) -> Option<NesColour>
 	where
 		Self: Sized,

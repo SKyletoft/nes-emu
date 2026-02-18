@@ -529,7 +529,6 @@ impl<M: Mapper> State<M> {
 					&mut *(self.rest.rom.framebuffer() as *mut <M as Mapper>::Framebuffer)
 				};
 				framebuffer.render(&self.rest.rom, &self.rest.ppu, &self.rest.lines);
-				self.rest.rom.reset_dirty();
 			}
 			241 => {
 				self.rest.interrupt_requested = InterruptTiming::Ready;

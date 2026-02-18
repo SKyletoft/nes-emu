@@ -103,27 +103,6 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 	}
 
 	fn render<M: Mapper>(&mut self, m: &M, ppu: &Ppu, lines: &[(i16, i16); 240]) {
-		let (dirty_sprites, dirty_tiles) = m.dirty_tiles();
-
-		for (dirty_tiles, x_offset) in dirty_tiles.into_iter().zip([0, 256].into_iter()) {
-			for (x, y) in dirty_tiles.iter().enumerate().flat_map(|(x, row)| {
-				row.iter()
-					.enumerate()
-					.filter(|(_, b)| **b)
-					.map(move |(y, _)| (x, y))
-			}) {
-				let tile_data = m.get_bg_pixels((x + x_offset / 8) as i16, y as i16, ppu);
-				self.update_tile(tile_data, x, y, x_offset);
-			}
-		}
-
-		for (idx, dirty) in dirty_sprites.iter().copied().enumerate() {
-			if dirty {
-				let sprite_data = m.get_sprite_pixels(idx, ppu);
-				self.update_sprite(sprite_data, idx);
-			}
-		}
-
 		for (idx, sprite) in self.sprites.iter_mut().enumerate() {
 			sprite.set_depth(if ppu.oam[idx].attr.priority() {
 				0.1

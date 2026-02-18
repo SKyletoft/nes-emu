@@ -18,8 +18,6 @@ pub struct NROM256<F: NesFramebuffer = crate::frame::NoFramebuffer> {
 	pub parsed_graphics: [[[[u8; 8]; 8]; 256]; 2],
 	pub rendered_background: [[[Option<NesColour>; 240]; 256]; 2],
 	pub rendered_sprites: [[Option<NesColour>; 64]; 64],
-	pub dirty_sprites: [bool; 64],
-	pub dirty_tiles: [[[bool; 30]; 32]; 2],
 }
 
 impl NROM256 {
@@ -63,8 +61,6 @@ impl NROM256 {
 					parsed_graphics: [[[[0; _]; _]; _]; _],
 					rendered_background: [[[None; _]; _]; _],
 					rendered_sprites: [[None; _]; _],
-					dirty_sprites: [true; _],
-					dirty_tiles: [[[true; _]; _]; _],
 				};
 				let NROM256 {
 					prg_rom,
@@ -117,8 +113,6 @@ impl NROM256 {
 			parsed_graphics: self.parsed_graphics,
 			rendered_background: self.rendered_background,
 			rendered_sprites: self.rendered_sprites,
-			dirty_sprites: self.dirty_sprites,
-			dirty_tiles: self.dirty_tiles,
 		}
 	}
 }
@@ -281,24 +275,11 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 			self.rerender_sprite(ppu, idx);
 		}
 	}
-
-	#[inline]
-	fn dirty_tiles(&self) -> ([bool; 64], [[[bool; 30]; 32]; 2]) {
-		(self.dirty_sprites, self.dirty_tiles)
-	}
-
-	#[inline]
-	fn reset_dirty(&mut self) {
-		self.dirty_sprites = [false; _];
-		self.dirty_tiles = [[[false; _]; _]; _];
-	}
 }
 
 impl<F: NesFramebuffer> NROM256<F> {
 	fn rerender_sprite(&mut self, ppu: &mut Ppu, idx: usize) {
 		unsafe { unsafe_assert!(idx < ppu.oam.len()) };
-
-		self.dirty_sprites[idx] = true;
 
 		let sprite = ppu.oam[idx];
 		let calc = |y, x| {
@@ -362,7 +343,6 @@ impl<F: NesFramebuffer> NROM256<F> {
 	}
 
 	fn rerender_tile(&mut self, tilemap: usize, tile_x: i16, tile_y: i16, ppu: &Ppu) {
-		self.dirty_tiles[tilemap][tile_x as usize][tile_y as usize] = true;
 		let px = tile_x * 8 + if tilemap == 0 { 0 } else { 256 };
 		let x = (tile_x * 8) as usize;
 		let py = tile_y * 8;
