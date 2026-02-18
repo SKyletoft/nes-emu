@@ -1,5 +1,3 @@
-use crate::sdl_framebuffer;
-
 use std::{
 	sync::{
 		Arc, Mutex,
@@ -12,6 +10,8 @@ use emu_core::{
 	graphics::{self, Bitmap},
 	interpret::State,
 };
+
+use crate::sdl_framebuffer;
 
 fn emulation_loop(
 	shared_texture: Arc<Mutex<Box<Bitmap>>>,

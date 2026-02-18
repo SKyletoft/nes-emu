@@ -7,7 +7,11 @@ use citro2d::{
 };
 use ctru::prelude::*;
 use emu_core::{
-	frame::NesFramebuffer, graphics::Colour, mapper::Mapper, ppu::{NesColour, Ppu}, unsafe_assert
+	frame::NesFramebuffer,
+	graphics::Colour,
+	mapper::Mapper,
+	ppu::{NesColour, Ppu},
+	unsafe_assert,
 };
 
 const X_OFFSET: f32 = (400. - 256.) / 2.;
