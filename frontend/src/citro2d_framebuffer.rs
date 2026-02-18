@@ -1,7 +1,8 @@
 use citro2d::{
-	Instance,
-	pixel_type::Rgba5551,
+	Instance, Point, Size,
+	pixel_type::{Rgba8, Rgba5551},
 	render::Target,
+	shapes::RectangleSolid,
 	sprites::{Mirroring, Sprite},
 	texture::{ColourFormat, Tex},
 };
@@ -23,6 +24,9 @@ pub struct Citro2DFramebuffer<'a> {
 	bg1: Sprite,
 	bg2: Sprite,
 	sprites: [Sprite; 64],
+
+	pub hide_left: bool,
+	pub hide_right: bool,
 }
 
 impl<'a> Citro2DFramebuffer<'a> {
@@ -46,12 +50,17 @@ impl<'a> Citro2DFramebuffer<'a> {
 			s
 		});
 
+		let hide_left = true;
+		let hide_right = true;
+
 		Ok(Self {
 			instance,
 			target,
 			bg1,
 			bg2,
 			sprites,
+			hide_left,
+			hide_right,
 		})
 	}
 }
@@ -182,6 +191,35 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 				for sp in self.sprites.iter().filter(|sp| sp.depth() > 0.5) {
 					t.render_2d_shape(sp);
 				}
+			}
+
+			if self.hide_left {
+				t.render_2d_shape(&RectangleSolid {
+					point: Point {
+						x: 0.,
+						y: 0.,
+						z: 1.,
+					},
+					size: Size {
+						width: 72.,
+						height: 240.,
+					},
+					color: Rgba8::new(0, 0, 0),
+				});
+			}
+			if self.hide_right {
+				t.render_2d_shape(&RectangleSolid {
+					point: Point {
+						x: 328.,
+						y: 0.,
+						z: 1.,
+					},
+					size: Size {
+						width: 72.,
+						height: 240.,
+					},
+					color: Rgba8::new(0, 0, 0),
+				});
 			}
 		});
 	}

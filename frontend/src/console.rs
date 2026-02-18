@@ -65,6 +65,13 @@ pub fn main() {
 		c.set_right(hid.keys_held().contains(KeyPad::DPAD_RIGHT));
 		*system_state.rest.controller1.state_mut() = c.into_bits();
 
+		if hid.keys_down().contains(KeyPad::L) {
+			system_state.rest.frame.hide_left = !system_state.rest.frame.hide_left;
+		}
+		if hid.keys_down().contains(KeyPad::R) {
+			system_state.rest.frame.hide_right = !system_state.rest.frame.hide_right;
+		}
+
 		if hid.keys_down().contains(KeyPad::SELECT) {
 			break;
 		}
