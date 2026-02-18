@@ -250,12 +250,7 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 	}
 
 	#[inline]
-	fn get_bg_pixel(
-		&self,
-		tilemap_x: i16,
-		tilemap_y: i16,
-		_: &Ppu,
-	) -> Option<NesColour>
+	fn get_bg_pixel(&self, tilemap_x: i16, tilemap_y: i16, _: &Ppu) -> Option<NesColour>
 	where
 		Self: Sized,
 	{

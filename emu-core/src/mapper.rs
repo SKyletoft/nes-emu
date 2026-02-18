@@ -22,12 +22,7 @@ pub trait Mapper {
 	}
 	fn reset_dirty(&mut self) {}
 
-	fn get_bg_pixel(
-		&self,
-		tilemap_x: i16,
-		tilemap_y: i16,
-		ppu: &Ppu,
-	) -> Option<NesColour>
+	fn get_bg_pixel(&self, tilemap_x: i16, tilemap_y: i16, ppu: &Ppu) -> Option<NesColour>
 	where
 		Self: Sized,
 	{
@@ -84,6 +79,24 @@ pub trait Mapper {
 			std::mem::transmute::<[[Option<NesColour>; 8]; 8], [Option<NesColour>; 64]>(colour_data)
 		};
 		colour_data.into_iter()
+	}
+
+	fn get_bg_pixels(
+		&self,
+		tile_x: i16,
+		tile_y: i16,
+		ppu: &Ppu,
+	) -> impl Iterator<Item = Option<NesColour>>
+	where
+		Self: Sized,
+	{
+		let tilemap_x = (tile_x % 32) * 8;
+		let tilemap_y = tile_y * 8;
+		unsafe { unsafe_assert!((0..512).contains(&tilemap_x)) };
+		unsafe { unsafe_assert!((0..240).contains(&tilemap_y)) };
+		(0..8)
+			.flat_map(move |dy| (0..8).map(move |dx| (dx, dy)))
+			.map(move |(dx, dy)| self.get_bg_pixel(tilemap_x + dx, tilemap_y + dy, ppu))
 	}
 
 	fn set_sprite(&mut self, ppu: &mut Ppu, sprite: Sprite, idx: usize) {
