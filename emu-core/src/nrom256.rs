@@ -340,6 +340,12 @@ impl<F: NesFramebuffer> NROM256<F> {
 				}
 			}
 		}
+
+		let sprite_data = {
+			unsafe { unsafe_assert!(idx < self.rendered_sprites.len()) };
+			self.rendered_sprites[idx].into_iter()
+		};
+		self.framebuffer.update_sprite(sprite_data, idx);
 	}
 
 	fn rerender_tile(&mut self, tilemap: usize, tile_x: i16, tile_y: i16, ppu: &Ppu) {
@@ -368,6 +374,32 @@ impl<F: NesFramebuffer> NROM256<F> {
 				self.rendered_background[tilemap][x + i][y as usize] = c;
 			}
 		}
+
+		let tile_data = {
+			unsafe { unsafe_assert!((0..32).contains(&tile_x), "{tile_x}") };
+			unsafe { unsafe_assert!((0..30).contains(&tile_y), "{tile_y}") };
+			(0..8)
+				.flat_map(move |dy| {
+					(0..8).map(move |dx| {
+						let tilemap_x = tile_x * 8 + dx;
+						let tilemap_y = tile_y * 8 + dy;
+						unsafe { unsafe_assert!((0..512).contains(&tilemap_x)) };
+						unsafe { unsafe_assert!((0..240).contains(&tilemap_y)) };
+						let tilemap_x = tilemap_x as usize % 256;
+						let tilemap_y = tilemap_y as usize;
+						(tilemap_x, tilemap_y)
+					})
+				})
+				.map(|(tilemap_x, tilemap_y)| {
+					self.rendered_background[tilemap][tilemap_x][tilemap_y]
+				})
+		};
+		self.framebuffer.update_tile(
+			tile_data,
+			tile_x as usize,
+			tile_y as usize,
+			if tilemap != 0 { 256 } else { 0 },
+		);
 	}
 
 	fn rerender_background_targetted(&mut self, ppu: &Ppu, pal: u8) {
