@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use ctru::prelude::*;
-use emu_core::{controller::ControllerState, interpret::State};
+use emu_core::{controller::ControllerState, interpret::State, mapper::Mapper};
 
 use crate::citro2d_framebuffer::Citro2DFramebuffer;
 
@@ -12,11 +12,14 @@ pub fn main() {
 	let _console = Console::new(gfx.bottom_screen.borrow_mut());
 	println!(" FRAME   CPU   PPU  FPS  ACTUAL");
 
-	// let game = game::MAPPER.clone();
-	let game =
-		emu_core::nrom256::NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes")).unwrap();
 	let framebuffer = Citro2DFramebuffer::new(&gfx).unwrap();
-	let mut system_state = State::new(game, framebuffer);
+	// let game = game::MAPPER
+	//	.clone()
+	//	.with_framebuffer(framebuffer);
+	let game = emu_core::nrom256::NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes"))
+		.unwrap()
+		.with_framebuffer(framebuffer);
+	let mut system_state = State::new(game);
 
 	let mut last_frame = 0;
 
@@ -66,10 +69,12 @@ pub fn main() {
 		*system_state.rest.controller1.state_mut() = c.into_bits();
 
 		if hid.keys_down().contains(KeyPad::L) {
-			system_state.rest.frame.hide_left = !system_state.rest.frame.hide_left;
+			system_state.rest.rom.framebuffer().hide_left =
+				!system_state.rest.rom.framebuffer().hide_left;
 		}
 		if hid.keys_down().contains(KeyPad::R) {
-			system_state.rest.frame.hide_right = !system_state.rest.frame.hide_right;
+			system_state.rest.rom.framebuffer().hide_right =
+				!system_state.rest.rom.framebuffer().hide_right;
 		}
 
 		if hid.keys_down().contains(KeyPad::SELECT) {

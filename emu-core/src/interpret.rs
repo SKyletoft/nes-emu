@@ -18,12 +18,12 @@ pub enum InterruptTiming {
 	Ready,
 }
 
-pub struct State<M, F> {
+pub struct State<M: Mapper> {
 	pub cpu: Cpu,
-	pub rest: Box<StateTail<M, F>>,
+	pub rest: Box<StateTail<M>>,
 }
 
-pub struct StateTail<M, F> {
+pub struct StateTail<M: Mapper> {
 	pub ppu: Ppu,
 	pub apu: Apu,
 	pub controller1: Controller,
@@ -35,12 +35,11 @@ pub struct StateTail<M, F> {
 	pub cycles: usize,
 	pub ppu_runahead: usize,
 	pub interrupt_requested: InterruptTiming,
-	pub frame: F,
 	pub lines: [(i16, i16); 240],
 }
 
-impl<M: Mapper, F> State<M, F> {
-	pub fn new(rom: M, output: F) -> Self {
+impl<M: Mapper> State<M> {
+	pub fn new(rom: M) -> Self {
 		let pc = u16::from_le_bytes([
 			rom.get_cpu(0xFFFC).expect("Cannot read reset vector"),
 			rom.get_cpu(0xFFFD).expect("Cannot read reset vector (2)"),
@@ -80,7 +79,6 @@ impl<M: Mapper, F> State<M, F> {
 				controller2,
 				interrupt_requested,
 				ppu_runahead,
-				frame: output,
 				lines: [(0, 0); _],
 			}),
 		}
@@ -483,7 +481,7 @@ impl<M: Mapper, F> State<M, F> {
 	}
 }
 
-impl<M: Mapper, F: NesFramebuffer> State<M, F> {
+impl<M: Mapper> State<M> {
 	const RENDER_RANGE: std::ops::Range<i16> = 0..256i16;
 	const WORKING_RANGE: std::ops::Range<i16> = 0..341;
 
@@ -527,9 +525,10 @@ impl<M: Mapper, F: NesFramebuffer> State<M, F> {
 			// know. Again, matching Mesen's behaviour.
 			240 => {
 				self.rest.ppu.frame += 1;
-				self.rest
-					.frame
-					.render(&self.rest.rom, &self.rest.ppu, &self.rest.lines);
+				let framebuffer = unsafe {
+					&mut *(self.rest.rom.framebuffer() as *mut <M as Mapper>::Framebuffer)
+				};
+				framebuffer.render(&self.rest.rom, &self.rest.ppu, &self.rest.lines);
 				self.rest.rom.reset_dirty();
 			}
 			241 => {

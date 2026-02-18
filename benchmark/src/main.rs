@@ -1,15 +1,5 @@
-use emu_core::{frame::NesFramebuffer, ppu::NesColour};
-
-struct MockFramebuffer;
-
-impl NesFramebuffer for MockFramebuffer {
-	fn set(&mut self, _: usize, _: usize, _: NesColour) {}
-
-	fn swap(&mut self) {}
-}
-
 fn main() {
-	let mut system_state = emu_core::interpret::State::new(game::MAPPER.clone(), MockFramebuffer);
+	let mut system_state = emu_core::interpret::State::new(game::MAPPER.clone());
 
 	while system_state.rest.ppu.frame < 10000 {
 		while system_state.rest.ppu_runahead <= 341 {

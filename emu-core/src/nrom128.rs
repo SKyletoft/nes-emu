@@ -1,6 +1,7 @@
 use anyhow::{Result, bail};
 
 use crate::{
+	frame::NoFramebuffer,
 	mapper::{Mapper, PatternAddressBuilder},
 	ppu::{NesColour, Ppu, VRAM_MASK},
 	unsafe_assert,
@@ -14,10 +15,12 @@ pub struct NROM128 {
 
 	/// `this[pattern table][tile][y][x]`
 	pub parsed_graphics: [[[[u8; 8]; 8]; 256]; 2],
+
+	framebuffer: NoFramebuffer,
 }
 
 impl NROM128 {
-	pub fn parse_ines(buffer: &[u8]) -> Result<Box<Self>> {
+	pub fn parse_ines(buffer: &[u8]) -> Result<Self> {
 		let [
 			b'N',
 			b'E',
@@ -49,18 +52,19 @@ impl NROM128 {
 
 		match mapper_type {
 			0 if *prg_size == 1 => {
-				let mut mapper = Box::new(NROM128 {
+				let mut mapper = NROM128 {
 					prg_ram: [0; _],
 					prg_rom: [0; _],
 					chr_rom: [0; _],
 					parsed_graphics: [[[[0; _]; _]; _]; _],
-				});
+					framebuffer: NoFramebuffer,
+				};
 				let NROM128 {
 					prg_rom,
 					chr_rom,
 					parsed_graphics,
 					..
-				} = &mut *mapper;
+				} = &mut mapper;
 				prg_rom.copy_from_slice(&buffer[prg_offset..prg_offset + 16 * 1024]);
 				chr_rom.copy_from_slice(&buffer[chr_offset..chr_offset + 8 * 1024]);
 
@@ -99,6 +103,12 @@ impl NROM128 {
 }
 
 impl Mapper for NROM128 {
+	type Framebuffer = crate::frame::NoFramebuffer;
+
+	fn framebuffer(&mut self) -> &mut Self::Framebuffer {
+		&mut self.framebuffer
+	}
+
 	fn get_cpu(&self, adr: u16) -> Option<u8> {
 		let NROM128 {
 			prg_ram: ram,
@@ -146,12 +156,6 @@ impl Mapper for NROM128 {
 	}
 
 	fn set_ppu(&mut self, adr: u16, ppu: &mut Ppu, val: u8) -> Option<()> {
-		let NROM128 {
-			prg_ram: _,
-			prg_rom: _,
-			chr_rom: _,
-			parsed_graphics: _,
-		} = self;
 		let adr = adr & VRAM_MASK;
 		match adr {
 			0x0000..=0x1FFF => Some(()),

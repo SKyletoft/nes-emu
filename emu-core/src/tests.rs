@@ -898,7 +898,7 @@ macro_rules! make_log_test {
 
 			let buffer = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), $game)).unwrap();
 			let game = <$mapper_type>::parse_ines(&buffer).unwrap();
-			let mut state = State::new(game, graphics::new_bitmap());
+			let mut state = State::new(game);
 			let reader =
 				BufReader::new(File::open(concat!(env!("CARGO_MANIFEST_DIR"), $log)).unwrap());
 			let mut ours = String::new();

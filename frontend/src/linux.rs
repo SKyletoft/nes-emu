@@ -19,15 +19,13 @@ fn emulation_loop(
 	kill: &AtomicBool,
 ) {
 	// let game = Box::new(game::MAPPER.clone());
-	let game =
-		emu_core::nrom256::NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes")).unwrap();
-	let mut system_state = State::new(
-		game,
-		sdl_framebuffer::SdlFramebuffer {
+	let game = emu_core::nrom256::NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes"))
+		.unwrap()
+		.with_framebuffer(sdl_framebuffer::SdlFramebuffer {
 			output_texture: shared_texture,
 			current_texture: Box::new(graphics::empty_bitmap()),
-		},
-	);
+		});
+	let mut system_state = State::new(game);
 
 	let mut frame_last = 0;
 	let mut last_time = Instant::now();

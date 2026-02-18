@@ -17,6 +17,15 @@ enum Mappers {
 }
 
 impl Mapper for Mappers {
+	type Framebuffer = emu_core::frame::NoFramebuffer;
+
+	fn framebuffer(&mut self) -> &mut Self::Framebuffer {
+		match self {
+			Mappers::NROM128(x) => x.framebuffer(),
+			Mappers::NROM256(x) => x.framebuffer(),
+		}
+	}
+
 	fn get_cpu(&self, adr: u16) -> Option<u8> {
 		match self {
 			Mappers::NROM128(x) => x.get_cpu(adr),
@@ -113,7 +122,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 
 		starting_points.insert(pc);
 		fns.push(quote! {
-			fn #ident<F>(mut state: State<#mapper, F>) -> State<#mapper, F> {
+			fn #ident<M: emu_core::mapper::Mapper>(mut state: State<M>) -> State<M> {
 				#(#insts)*
 				#end
 			}
@@ -137,11 +146,11 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 
 		fn id<T>(x: T) -> T { x }
 
-		fn b_ffff<F>(state: State<#mapper, F>) -> State<#mapper, F> { state }
+		fn b_ffff<M: emu_core::mapper::Mapper>(state: State<M>) -> State<M> { state }
 
-		pub fn nes_game<F>(state: &mut State<#mapper, F>) {
+		pub fn nes_game<M: emu_core::mapper::Mapper>(state: &mut State<M>) {
 			unsafe {
-				let mut local: State<#mapper, F> = (&raw mut *state).read();
+				let mut local: State<M> = (&raw mut *state).read();
 				(&raw mut *state).write(
 					match local.cpu.pc {
 						0..0x8000 => id,
@@ -186,7 +195,7 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Mappers, proc_macro2::TokenStream) 
 					},
 				};
 			};
-			(mapper, Mappers::NROM128(*parsed_file), mapper_literal)
+			(mapper, Mappers::NROM128(parsed_file), mapper_literal)
 		}
 		0 if *prg_size == 2 => {
 			let mapper = syn::Ident::new("NROM256", proc_macro2::Span::call_site());
@@ -201,6 +210,7 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Mappers, proc_macro2::TokenStream) 
 			});
 			let mapper_literal = quote! {
 				pub const MAPPER: NROM256 = NROM256 {
+					framebuffer: emu_core::frame::NoFramebuffer,
 					prg_ram: *#lit1,
 					prg_rom: *#lit2,
 					chr_rom: *#lit3,

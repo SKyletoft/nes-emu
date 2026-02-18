@@ -1,13 +1,15 @@
 use anyhow::{Result, bail};
 
 use crate::{
+	frame::NesFramebuffer,
 	mapper::{Mapper, PatternAddressBuilder},
 	ppu::{NesColour, Ppu, Sprite, VRAM_MASK},
 	unsafe_assert, unsafe_unreachable,
 };
 
 #[derive(Debug, Clone)]
-pub struct NROM256 {
+pub struct NROM256<F: NesFramebuffer = crate::frame::NoFramebuffer> {
+	pub framebuffer: F,
 	pub prg_ram: [u8; 8 * 1024],
 	pub prg_rom: [u8; 32 * 1024],
 	pub chr_rom: [u8; 8 * 1024],
@@ -54,6 +56,7 @@ impl NROM256 {
 		match mapper_type {
 			0 if *prg_size == 2 => {
 				let mut mapper = NROM256 {
+					framebuffer: crate::frame::NoFramebuffer,
 					prg_ram: [0; _],
 					prg_rom: [0; _],
 					chr_rom: [0; _],
@@ -104,9 +107,29 @@ impl NROM256 {
 			_ => bail!("Unknown mapper type {mapper_type}"),
 		}
 	}
+
+	pub fn with_framebuffer<NewF: NesFramebuffer>(self, framebuffer: NewF) -> NROM256<NewF> {
+		NROM256 {
+			framebuffer,
+			prg_ram: self.prg_ram,
+			prg_rom: self.prg_rom,
+			chr_rom: self.chr_rom,
+			parsed_graphics: self.parsed_graphics,
+			rendered_background: self.rendered_background,
+			rendered_sprites: self.rendered_sprites,
+			dirty_sprites: self.dirty_sprites,
+			dirty_tiles: self.dirty_tiles,
+		}
+	}
 }
 
-impl Mapper for NROM256 {
+impl<F: NesFramebuffer> Mapper for NROM256<F> {
+	type Framebuffer = F;
+
+	fn framebuffer(&mut self) -> &mut Self::Framebuffer {
+		&mut self.framebuffer
+	}
+
 	#[inline]
 	fn get_cpu(&self, adr: u16) -> Option<u8> {
 		let NROM256 {
@@ -277,7 +300,7 @@ impl Mapper for NROM256 {
 	}
 }
 
-impl NROM256 {
+impl<F: NesFramebuffer> NROM256<F> {
 	fn rerender_sprite(&mut self, ppu: &mut Ppu, idx: usize) {
 		unsafe { unsafe_assert!(idx < ppu.oam.len()) };
 

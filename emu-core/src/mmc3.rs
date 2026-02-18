@@ -108,6 +108,12 @@ impl MMC3 {
 }
 
 impl Mapper for MMC3 {
+	type Framebuffer = crate::frame::NoFramebuffer;
+
+	fn framebuffer(&mut self) -> &mut Self::Framebuffer {
+		&mut NoFramebuffer
+	}
+
 	fn get_cpu(&self, adr: u16) -> Option<u8> {
 		if !(0x4020..=0xFFFF).contains(&adr) {
 			return None;
