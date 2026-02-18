@@ -14,10 +14,6 @@ sdl2 = { version = "0.38", features = [ "use-pkgconfig" ] }
 ctru-rs = { git = "https://github.com/rust3ds/ctru-rs" }
 citro2d = { path = "../citro3d-rs/citro2d" }
 
-[features]
-precompiled = []
-default = [ "precompiled" ]
-
 [package.metadata.cargo-3ds]
 romfs_dir = "romfs"
 
