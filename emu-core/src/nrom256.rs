@@ -255,7 +255,6 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 		tilemap_x: i16,
 		tilemap_y: i16,
 		_: &Ppu,
-		_: &[[NesColour; 4]; 8],
 	) -> Option<NesColour>
 	where
 		Self: Sized,

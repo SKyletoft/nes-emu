@@ -78,7 +78,6 @@ impl<'a> Citro2DFramebuffer<'a> {
 					(x * 8 + dx + x_offset) as i16,
 					(y * 8 + dy) as i16,
 					ppu,
-					&ppu.palettes,
 				))
 			})
 			.zip(buffer.iter_mut().flat_map(|l| l.iter_mut()))

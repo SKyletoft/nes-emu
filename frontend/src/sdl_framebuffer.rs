@@ -79,8 +79,7 @@ impl NesFramebuffer for SdlFramebuffer {
 				for dot in 0..256 {
 					let tilemap_x = (dot + pos.0) % 512;
 					let tilemap_y = pos.1; // This is broken, but I'm preserving behaviour for now
-					let palettes = ppu.palettes;
-					let Some(col) = m.get_bg_pixel(tilemap_x, tilemap_y, ppu, &palettes) else {
+					let Some(col) = m.get_bg_pixel(tilemap_x, tilemap_y, ppu) else {
 						continue;
 					};
 					set(self, at, dot as usize, col);

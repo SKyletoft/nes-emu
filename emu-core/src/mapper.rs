@@ -27,7 +27,6 @@ pub trait Mapper {
 		tilemap_x: i16,
 		tilemap_y: i16,
 		ppu: &Ppu,
-		palettes: &[[NesColour; 4]; 8],
 	) -> Option<NesColour>
 	where
 		Self: Sized,
@@ -43,7 +42,7 @@ pub trait Mapper {
 			unsafe { unsafe_unreachable!() }
 		};
 
-		crate::interpret::calculate_background_colour(tile, attribute, palettes)
+		crate::interpret::calculate_background_colour(tile, attribute, &ppu.palettes)
 	}
 
 	fn get_sprite_pixels(

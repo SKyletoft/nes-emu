@@ -577,7 +577,6 @@ impl<M: Mapper> State<M> {
 						tilemap_x,
 						tilemap_y,
 						&self.rest.ppu,
-						&self.rest.ppu.palettes,
 					)
 					.is_some();
 				sprites_enabled && background_visible && sprite_0_visible
