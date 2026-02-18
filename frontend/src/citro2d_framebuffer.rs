@@ -63,7 +63,9 @@ impl<'a> Citro2DFramebuffer<'a> {
 			hide_right,
 		})
 	}
+}
 
+impl NesFramebuffer for Citro2DFramebuffer<'_> {
 	fn update_tile(
 		&mut self,
 		tile_data: impl Iterator<Item = Option<NesColour>>,
@@ -99,9 +101,7 @@ impl<'a> Citro2DFramebuffer<'a> {
 			.unwrap()
 			.swizzle_and_update_tile(buffer, 0, 0);
 	}
-}
 
-impl NesFramebuffer for Citro2DFramebuffer<'_> {
 	fn render<M: Mapper>(&mut self, m: &M, ppu: &Ppu, lines: &[(i16, i16); 240]) {
 		let (dirty_sprites, dirty_tiles) = m.dirty_tiles();
 

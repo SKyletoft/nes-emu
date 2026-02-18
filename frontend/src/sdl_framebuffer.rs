@@ -114,6 +114,22 @@ impl NesFramebuffer for SdlFramebuffer {
 		let mut texture = self.output_texture.lock().unwrap();
 		std::mem::swap(&mut self.current_texture, &mut texture);
 	}
+
+	fn update_tile(
+		&mut self,
+		_: impl Iterator<Item = Option<emu_core::ppu::NesColour>>,
+		_: usize,
+		_: usize,
+		_: usize,
+	) {
+	}
+
+	fn update_sprite(
+		&mut self,
+		_: impl Iterator<Item = Option<emu_core::ppu::NesColour>>,
+		_: usize,
+	) {
+	}
 }
 
 fn draw_horizontal_gradient(
