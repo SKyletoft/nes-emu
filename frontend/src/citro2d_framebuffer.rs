@@ -64,38 +64,33 @@ impl<'a> Citro2DFramebuffer<'a> {
 		})
 	}
 
-	fn update_tile<M: Mapper>(&mut self, m: &M, ppu: &Ppu, x: usize, y: usize, x_offset: usize) {
+	fn update_tile(
+		&mut self,
+		tile_data: impl Iterator<Item = Option<NesColour>>,
+		x: usize,
+		y: usize,
+		x_offset: usize,
+	) {
 		let mut buffer = [[Rgba5551::TRANSPARENT; 8]; 8];
 		let bg = if x_offset == 0 {
 			&mut self.bg1
 		} else {
 			&mut self.bg2
 		};
-		for (col, pixel) in (0..8)
-			.flat_map(move |dy| (0..8).map(move |dx| (dx, dy)))
-			.map(|(dx, dy)| {
-				nes_colour_to_rgba5551(m.get_bg_pixel(
-					(x * 8 + dx + x_offset) as i16,
-					(y * 8 + dy) as i16,
-					ppu,
-				))
-			})
-			.zip(buffer.iter_mut().flat_map(|l| l.iter_mut()))
-		{
-			*pixel = col;
+		for (col, pixel) in tile_data.zip(buffer.iter_mut().flat_map(|l| l.iter_mut())) {
+			*pixel = nes_colour_to_rgba5551(col);
 		}
 		bg.texture_mut()
 			.unwrap()
 			.swizzle_and_update_tile(buffer, y as _, x as _);
 	}
 
-	fn update_sprite<M: Mapper>(&mut self, m: &M, ppu: &Ppu, idx: usize) {
+	fn update_sprite(&mut self, sprite_data: impl Iterator<Item = Option<NesColour>>, idx: usize) {
 		let mut buffer = [[Rgba5551::TRANSPARENT; 8]; 8];
-		let data = m.get_sprite_pixels(idx, ppu);
 		for (pixel, col) in buffer
 			.iter_mut()
 			.flat_map(|xs: &mut [Rgba5551; 8]| xs.iter_mut())
-			.zip(data)
+			.zip(sprite_data)
 		{
 			*pixel = nes_colour_to_rgba5551(col);
 		}
@@ -117,13 +112,15 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 					.filter(|(_, b)| **b)
 					.map(move |(y, _)| (x, y))
 			}) {
-				self.update_tile(m, ppu, x, y, x_offset);
+				let tile_data = m.get_bg_pixels((x + x_offset / 8) as i16, y as i16, ppu);
+				self.update_tile(tile_data, x, y, x_offset);
 			}
 		}
 
 		for (idx, dirty) in dirty_sprites.iter().copied().enumerate() {
 			if dirty {
-				self.update_sprite(m, ppu, idx);
+				let sprite_data = m.get_sprite_pixels(idx, ppu);
+				self.update_sprite(sprite_data, idx);
 			}
 		}
 
