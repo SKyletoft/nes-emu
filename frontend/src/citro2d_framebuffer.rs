@@ -1,8 +1,8 @@
 use citro2d::{
 	Instance, Point, Size,
-	pixel_type::{Rgba8, Rgba5551},
+	pixel_type::Rgba5551,
 	render::Target,
-	shapes::RectangleSolid,
+	shapes::{MultiColor, Rectangle},
 	sprites::{Mirroring, Sprite},
 	texture::{ColourFormat, Tex},
 };
@@ -180,31 +180,41 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 			}
 
 			if self.hide_left {
-				t.render_2d_shape(&RectangleSolid {
+				t.render_2d_shape(&Rectangle {
 					point: Point {
 						x: 0.,
 						y: 0.,
 						z: 1.,
 					},
 					size: Size {
-						width: 72.,
+						width: X_OFFSET,
 						height: 240.,
 					},
-					color: Rgba8::new(0, 0, 0),
+					multi_color: MultiColor {
+						top_left: citro2d::render::Colour::new(64, 64, 64),
+						top_right: citro2d::render::Colour::new(0, 0, 0),
+						bottom_left: citro2d::render::Colour::new(64, 64, 64),
+						bottom_right: citro2d::render::Colour::new(0, 0, 0),
+					},
 				});
 			}
 			if self.hide_right {
-				t.render_2d_shape(&RectangleSolid {
+				t.render_2d_shape(&Rectangle {
 					point: Point {
-						x: 328.,
+						x: X_OFFSET + 256.,
 						y: 0.,
 						z: 1.,
 					},
 					size: Size {
-						width: 72.,
+						width: X_OFFSET,
 						height: 240.,
 					},
-					color: Rgba8::new(0, 0, 0),
+					multi_color: MultiColor {
+						top_left: citro2d::render::Colour::new(0, 0, 0),
+						top_right: citro2d::render::Colour::new(64, 64, 64),
+						bottom_left: citro2d::render::Colour::new(0, 0, 0),
+						bottom_right: citro2d::render::Colour::new(64, 64, 64),
+					},
 				});
 			}
 		});
