@@ -5,8 +5,6 @@ use bitfields::bitfield;
 use bytemuck::{Pod, Zeroable};
 use derive_more::derive::Into;
 
-use crate::graphics::Colour;
-
 pub const VRAM_MASK: u16 = (1 << 14) - 1;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -689,4 +687,13 @@ impl From<NesColour> for Colour {
 	fn from(value: NesColour) -> Self {
 		Self::from_const(value)
 	}
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Default, Pod, Zeroable)]
+pub struct Colour {
+	pub blue: u8,
+	pub green: u8,
+	pub red: u8,
+	pub alpha: u8,
 }

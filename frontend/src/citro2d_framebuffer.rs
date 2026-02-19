@@ -9,8 +9,7 @@ use citro2d::{
 use ctru::prelude::*;
 use emu_core::{
 	frame::NesFramebuffer,
-	graphics::Colour,
-	ppu::{NesColour, Ppu},
+	ppu::{Colour, NesColour, Ppu},
 	unsafe_assert,
 };
 
@@ -120,9 +119,9 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 					Some((curr[0].0, curr[0].1, old_acc, curr.len() as i16))
 				});
 		self.instance.render_target(&mut self.target, |_, t| {
-			let emu_core::graphics::Colour {
+			let Colour {
 				blue, green, red, ..
-			} = emu_core::graphics::Colour::from_const(ppu.palettes[0][0]);
+			} = Colour::from_const(ppu.palettes[0][0]);
 			t.clear(citro2d::render::Colour::new(red, green, blue));
 
 			if ppu.mask.show_spr() {
