@@ -1,6 +1,6 @@
 use emu_core::{
 	frame::NesFramebuffer,
-	graphics::{Colour, WIDTH},
+	graphics::{Colour, WIDTH, HEIGHT},
 	ppu::{NesColour, Ppu},
 };
 use sdl2::{
@@ -117,7 +117,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		let scale_num_x = dst_w as i64;
 		let scale_num_y = dst_h as i64;
 		const SCALE_DENOM_X: i64 = WIDTH as i64;
-		const SCALE_DENOM_Y: i64 = 240;
+		const SCALE_DENOM_Y: i64 = HEIGHT as i64;
 
 		if ppu.mask.show_spr() {
 			for (idx, sprite) in self.sprites.iter().enumerate() {
