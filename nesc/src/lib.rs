@@ -73,7 +73,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 	let buffer = fs::read(&path)
 		.unwrap_or_else(|e| panic!("failed to read ROM '{}': {}", path.display(), e));
 
-	let (mapper, rom, constants) = parse_ines(&buffer);
+	let (rom, constants) = parse_ines(&buffer);
 
 	let mut fns = Vec::new();
 	let mut branches = Vec::new();
@@ -165,7 +165,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 	.into()
 }
 
-fn parse_ines(buffer: &[u8]) -> (syn::Ident, Mappers, proc_macro2::TokenStream) {
+fn parse_ines(buffer: &[u8]) -> (Mappers, proc_macro2::TokenStream) {
 	let [b'N', b'E', b'S', 0x1A, prg_size, _, flags_6, flags_7, ..] = &buffer[0..16] else {
 		panic!("Invalid file");
 	};
@@ -175,7 +175,6 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Mappers, proc_macro2::TokenStream) 
 	let mapper_type = (*flags_7 & 0xF0) | *flags_6 >> 4;
 	match mapper_type {
 		0 if *prg_size == 1 => {
-			let mapper = syn::Ident::new("NROM128", proc_macro2::Span::call_site());
 			let parsed_file = NROM128::parse_ines(buffer).unwrap();
 			let lit1 = Literal::byte_string(&parsed_file.prg_ram);
 			let lit2 = Literal::byte_string(&parsed_file.prg_rom);
@@ -195,10 +194,9 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Mappers, proc_macro2::TokenStream) 
 					},
 				};
 			};
-			(mapper, Mappers::NROM128(parsed_file), mapper_literal)
+			(Mappers::NROM128(parsed_file), mapper_literal)
 		}
 		0 if *prg_size == 2 => {
-			let mapper = syn::Ident::new("NROM256", proc_macro2::Span::call_site());
 			let parsed_file = NROM256::parse_ines(buffer).unwrap();
 			let lit1 = Literal::byte_string(&parsed_file.prg_ram);
 			let lit2 = Literal::byte_string(&parsed_file.prg_rom);
@@ -219,11 +217,9 @@ fn parse_ines(buffer: &[u8]) -> (syn::Ident, Mappers, proc_macro2::TokenStream) 
 					},
 					rendered_background: [[[None; 240]; 256]; 2],
 					rendered_sprites: [[None; _]; _],
-					dirty_sprites: [true; _],
-					dirty_tiles: [[[true; _]; _]; _],
 				};
 			};
-			(mapper, Mappers::NROM256(parsed_file), mapper_literal)
+			(Mappers::NROM256(parsed_file), mapper_literal)
 		}
 		x => panic!("Unsupported Mapper: {x} ({prg_size})"),
 	}
