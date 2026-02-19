@@ -572,11 +572,7 @@ impl<M: Mapper> State<M> {
 				let sprite_0_visible = self
 					.rest
 					.rom
-					.get_bg_pixel(
-						tilemap_x,
-						tilemap_y,
-						&self.rest.ppu,
-					)
+					.get_bg_pixel(tilemap_x, tilemap_y, &self.rest.ppu)
 					.is_some();
 				sprites_enabled && background_visible && sprite_0_visible
 			});
