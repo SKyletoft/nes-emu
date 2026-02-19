@@ -10,7 +10,6 @@ use ctru::prelude::*;
 use emu_core::{
 	frame::NesFramebuffer,
 	graphics::Colour,
-	mapper::Mapper,
 	ppu::{NesColour, Ppu},
 	unsafe_assert,
 };
@@ -102,7 +101,7 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 			.swizzle_and_update_tile(buffer, 0, 0);
 	}
 
-	fn render<M: Mapper>(&mut self, m: &M, ppu: &Ppu, lines: &[(i16, i16); 240]) {
+	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
 		for (idx, sprite) in self.sprites.iter_mut().enumerate() {
 			sprite.set_depth(if ppu.oam[idx].attr.priority() {
 				0.1

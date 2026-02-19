@@ -528,7 +528,7 @@ impl<M: Mapper> State<M> {
 				let framebuffer = unsafe {
 					&mut *(self.rest.rom.framebuffer() as *mut <M as Mapper>::Framebuffer)
 				};
-				framebuffer.render(&self.rest.rom, &self.rest.ppu, &self.rest.lines);
+				framebuffer.render(&self.rest.ppu, &self.rest.lines);
 			}
 			241 => {
 				self.rest.interrupt_requested = InterruptTiming::Ready;

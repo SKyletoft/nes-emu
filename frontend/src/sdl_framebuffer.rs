@@ -1,7 +1,6 @@
 use emu_core::{
 	frame::NesFramebuffer,
 	graphics::{Colour, WIDTH},
-	mapper::Mapper,
 	ppu::{NesColour, Ppu},
 };
 use sdl2::{
@@ -96,7 +95,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		let _ = self.sprites[idx].update(None, byte_buffer, 8 * 4);
 	}
 
-	fn render<M: Mapper>(&mut self, m: &M, ppu: &Ppu, lines: &[(i16, i16); 240]) {
+	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
 		let canvas = &mut *self.canvas;
 
 		let bg_colour = Colour::from_const(ppu.palettes[0][0]);

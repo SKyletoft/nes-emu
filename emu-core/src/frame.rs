@@ -1,10 +1,7 @@
-use crate::{
-	mapper::Mapper,
-	ppu::{NesColour, Ppu},
-};
+use crate::ppu::{NesColour, Ppu};
 
 pub trait NesFramebuffer {
-	fn render<M: Mapper>(&mut self, m: &M, ppu: &Ppu, lines: &[(i16, i16); 240]);
+	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]);
 
 	fn update_tile(
 		&mut self,
@@ -21,7 +18,7 @@ pub trait NesFramebuffer {
 pub struct NoFramebuffer;
 
 impl NesFramebuffer for NoFramebuffer {
-	fn render<M: Mapper>(&mut self, _: &M, _: &Ppu, _: &[(i16, i16); 240]) {}
+	fn render(&mut self, _: &Ppu, _: &[(i16, i16); 240]) {}
 
 	fn update_tile(
 		&mut self,
