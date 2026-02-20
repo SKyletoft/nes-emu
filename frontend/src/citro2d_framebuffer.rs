@@ -107,7 +107,7 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 			} else {
 				0.9
 			});
-			sprite.set_pos((X_OFFSET + ppu.oam[idx].x as f32, ppu.oam[idx].y as f32));
+			sprite.set_pos((X_OFFSET + ppu.oam[idx].x as f32, 1. + ppu.oam[idx].y as f32));
 		}
 
 		let background_slices =
