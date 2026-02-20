@@ -525,10 +525,10 @@ impl<M: Mapper> State<M> {
 			// know. Again, matching Mesen's behaviour.
 			240 => {
 				self.rest.ppu.frame += 1;
-				let framebuffer = unsafe {
-					&mut *(self.rest.rom.framebuffer() as *mut <M as Mapper>::Framebuffer)
-				};
-				framebuffer.render(&self.rest.ppu, &self.rest.lines);
+				self.rest
+					.rom
+					.framebuffer()
+					.render(&self.rest.ppu, &self.rest.lines);
 			}
 			241 => {
 				self.rest.interrupt_requested = InterruptTiming::Ready;
