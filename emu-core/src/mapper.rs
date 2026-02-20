@@ -35,6 +35,13 @@ pub trait Mapper {
 		crate::interpret::calculate_background_colour(tile, attribute, &ppu.palettes)
 	}
 
+	fn get_bg_visible(&self, tilemap_x: i16, tilemap_y: i16, ppu: &Ppu) -> bool
+	where
+		Self: Sized,
+	{
+		self.get_bg_pixel(tilemap_x, tilemap_y, ppu).is_some()
+	}
+
 	fn get_sprite_pixels(
 		&self,
 		sprite_idx: usize,
@@ -74,6 +81,10 @@ pub trait Mapper {
 			std::mem::transmute::<[[Option<NesColour>; 8]; 8], [Option<NesColour>; 64]>(colour_data)
 		};
 		colour_data.into_iter()
+	}
+
+	fn get_sprite_visible(&self, sprite_idx: usize, ppu: &Ppu) -> impl Iterator<Item = bool> {
+		self.get_sprite_pixels(sprite_idx, ppu).map(|o| o.is_some())
 	}
 
 	fn get_bg_pixels(

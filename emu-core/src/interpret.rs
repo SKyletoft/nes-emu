@@ -558,22 +558,19 @@ impl<M: Mapper> State<M> {
 				let sprite_0 = &self.rest.ppu.oam[0];
 				let (tilemap_x, tilemap_y) = self.rest.ppu.actual_pos();
 				let sprites_enabled = self.rest.ppu.sprite_is_visible_x(sprite_0);
-				let background_visible = self
-					.rest
-					.rom
-					.get_sprite_pixels(0, &self.rest.ppu)
-					.nth({
+				let background_visible =
+					match self.rest.rom.get_sprite_visible(0, &self.rest.ppu).nth({
 						let x = tilemap_x - sprite_0.x as i16;
 						let y = tilemap_y - sprite_0.y as i16;
 						(y * 8 + x) as usize
-					})
-					.flatten()
-					.is_some();
-				let sprite_0_visible = self
-					.rest
-					.rom
-					.get_bg_pixel(tilemap_x, tilemap_y, &self.rest.ppu)
-					.is_some();
+					}) {
+						Some(true) => true,
+						_ => false,
+					};
+				let sprite_0_visible =
+					self.rest
+						.rom
+						.get_bg_visible(tilemap_x, tilemap_y, &self.rest.ppu);
 				sprites_enabled && background_visible && sprite_0_visible
 			});
 			self.rest
