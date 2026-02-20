@@ -17,7 +17,9 @@ pub struct NROM256<F: NesFramebuffer = crate::frame::NoFramebuffer> {
 	/// `this[pattern table][tile][y][x]`
 	pub parsed_graphics: [[[[u8; 8]; 8]; 256]; 2],
 	pub rendered_background: [[[Option<NesColour>; 240]; 256]; 2],
+	pub hitbox_background: [[[bool; 240]; 256]; 2],
 	pub rendered_sprites: [[Option<NesColour>; 64]; 64],
+	pub hitbox_sprites: [[bool; 64]; 64],
 }
 
 impl NROM256 {
@@ -60,7 +62,9 @@ impl NROM256 {
 					chr_rom: [0; _],
 					parsed_graphics: [[[[0; _]; _]; _]; _],
 					rendered_background: [[[None; _]; _]; _],
+					hitbox_background: [[[false; _]; _]; _],
 					rendered_sprites: [[None; _]; _],
+					hitbox_sprites: [[false; _]; _],
 				};
 				let NROM256 {
 					prg_rom,
@@ -112,7 +116,9 @@ impl NROM256 {
 			chr_rom: self.chr_rom,
 			parsed_graphics: self.parsed_graphics,
 			rendered_background: self.rendered_background,
+			hitbox_background: self.hitbox_background,
 			rendered_sprites: self.rendered_sprites,
+			hitbox_sprites: self.hitbox_sprites,
 		}
 	}
 }
@@ -257,6 +263,19 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 	}
 
 	#[inline]
+	fn get_bg_visible(&self, tilemap_x: i16, tilemap_y: i16, _: &Ppu) -> bool
+	where
+		Self: Sized,
+	{
+		unsafe { unsafe_assert!((0..512).contains(&tilemap_x)) };
+		unsafe { unsafe_assert!((0..240).contains(&tilemap_y)) };
+		let tilemap = (tilemap_x >= 256) as usize;
+		let tilemap_x = tilemap_x as usize % 256;
+		let tilemap_y = tilemap_y as usize;
+		self.hitbox_background[tilemap][tilemap_x][tilemap_y]
+	}
+
+	#[inline]
 	fn get_sprite_pixels(
 		&self,
 		sprite_idx: usize,
@@ -264,6 +283,12 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 	) -> impl Iterator<Item = Option<NesColour>> {
 		unsafe { unsafe_assert!(sprite_idx < self.rendered_sprites.len()) };
 		self.rendered_sprites[sprite_idx].into_iter()
+	}
+
+	#[inline]
+	fn get_sprite_visible(&self, sprite_idx: usize, _: &Ppu) -> impl Iterator<Item = bool> {
+		unsafe { unsafe_assert!(sprite_idx < self.rendered_sprites.len()) };
+		self.hitbox_sprites[sprite_idx].into_iter()
 	}
 
 	#[inline]
@@ -341,6 +366,8 @@ impl<F: NesFramebuffer> NROM256<F> {
 			}
 		}
 
+		self.hitbox_sprites[idx] = self.rendered_sprites[idx].map(|c| c.is_some());
+
 		let sprite_data = {
 			unsafe { unsafe_assert!(idx < self.rendered_sprites.len()) };
 			self.rendered_sprites[idx].into_iter()
@@ -372,6 +399,7 @@ impl<F: NesFramebuffer> NROM256<F> {
 
 			for (i, c) in buf.into_iter().enumerate() {
 				self.rendered_background[tilemap][x + i][y as usize] = c;
+				self.hitbox_background[tilemap][x + i][y as usize] = c.is_some();
 			}
 		}
 
