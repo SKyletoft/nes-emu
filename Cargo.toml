@@ -3,8 +3,22 @@ resolver = "3"
 members = [ "emu-core", "frontend", "nesc", "game", "benchmark", "breakout" ]
 
 [profile.dev]
-opt-level = 1
 overflow-checks = false
+
+[profile.dev.package.emu-core]
+opt-level = 1
+
+[profile.dev.package.frontend]
+opt-level = 1
+
+[profile.dev.package.nesc]
+opt-level = 0
+
+[profile.dev.package.game]
+opt-level = 0
+
+[profile.dev.package.benchmark]
+opt-level = 1
 
 [profile.dev.package."*"]
 opt-level = 3
