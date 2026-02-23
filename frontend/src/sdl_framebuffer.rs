@@ -1,6 +1,7 @@
 use emu_core::{
 	frame::NesFramebuffer,
 	ppu::{Colour, NesColour, Ppu},
+	unsafe_assert,
 };
 use sdl2::{
 	pixels::{Color, PixelFormatEnum},
@@ -12,6 +13,18 @@ use sdl2::{
 const TILE_SIZE: u32 = 8;
 const BG_TILES: u32 = 32;
 const BG_SIZE: u32 = TILE_SIZE * BG_TILES;
+
+#[rustfmt::skip]
+const SWIZZLE_ORDER: [usize; 64] = [
+	 0,  8,  1,  9, 16, 24, 17, 25,
+	 2, 10,  3, 11, 18, 26, 19, 27,
+	32, 40, 33, 41, 48, 56, 49, 57,
+	34, 42, 35, 43, 50, 58, 51, 59,
+	 4, 12,  5, 13, 20, 28, 21, 29,
+	 6, 14,  7, 15, 22, 30, 23, 31,
+	36, 44, 37, 45, 52, 60, 53, 61,
+	38, 46, 39, 47, 54, 62, 55, 63,
+];
 
 pub struct SdlFramebuffer<'tc> {
 	bg1: Texture<'tc>,
@@ -64,9 +77,10 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		y: usize,
 		x_offset: usize,
 	) {
-		let mut buffer = [[0u32; 8]; 8];
-		for (col, pixel) in tile_data.zip(buffer.iter_mut().flat_map(|l| l.iter_mut())) {
-			*pixel = nes_colour_to_argb8888(col);
+		let mut buffer = [0u32; 64];
+		for (col, i) in tile_data.zip(SWIZZLE_ORDER.iter().copied()) {
+			unsafe { unsafe_assert!(i < 64) };
+			buffer[i] = nes_colour_to_argb8888(col);
 		}
 
 		let bg = if x_offset == 0 {
@@ -77,21 +91,18 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 
 		let byte_buffer: &[u8] = bytemuck::cast_slice(&buffer);
 		let rect = Rect::new((x * 8) as i32, (y * 8) as i32, TILE_SIZE, TILE_SIZE);
-		let _ = bg.update(rect, byte_buffer, 8 * 4);
+		bg.update(rect, byte_buffer, 8 * 4).unwrap();
 	}
 
 	fn update_sprite(&mut self, sprite_data: impl Iterator<Item = Option<NesColour>>, idx: usize) {
-		let mut buffer = [[0u32; 8]; 8];
-		for (pixel, col) in buffer
-			.iter_mut()
-			.flat_map(|xs| xs.iter_mut())
-			.zip(sprite_data)
-		{
-			*pixel = nes_colour_to_argb8888(col);
+		let mut buffer = [0u32; 64];
+		for (col, i) in sprite_data.zip(SWIZZLE_ORDER.iter().copied()) {
+			unsafe { unsafe_assert!(i < 64) };
+			buffer[i] = nes_colour_to_argb8888(col);
 		}
 
 		let byte_buffer: &[u8] = bytemuck::cast_slice(&buffer);
-		let _ = self.sprites[idx].update(None, byte_buffer, 8 * 4);
+		self.sprites[idx].update(None, byte_buffer, 8 * 4).unwrap();
 	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {

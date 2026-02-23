@@ -7,6 +7,26 @@ use crate::{
 	unsafe_assert, unsafe_unreachable,
 };
 
+#[rustfmt::skip]
+const SWIZZLE_ORDER_2D: [(usize, usize); 64] = [
+	(0,0), (1,0), (0,1), (1,1),
+	(2,0), (3,0), (2,1), (3,1),
+	(0,2), (1,2), (0,3), (1,3),
+	(2,2), (3,2), (2,3), (3,3),
+	(4,0), (5,0), (4,1), (5,1),
+	(6,0), (7,0), (6,1), (7,1),
+	(4,2), (5,2), (4,3), (5,3),
+	(6,2), (7,2), (6,3), (7,3),
+	(0,4), (1,4), (0,5), (1,5),
+	(2,4), (3,4), (2,5), (3,5),
+	(0,6), (1,6), (0,7), (1,7),
+	(2,6), (3,6), (2,7), (3,7),
+	(4,4), (5,4), (4,5), (5,5),
+	(6,4), (7,4), (6,5), (7,5),
+	(4,6), (5,6), (4,7), (5,7),
+	(6,6), (7,6), (6,7), (7,7),
+];
+
 #[derive(Debug, Clone)]
 pub struct NROM256<F: NesFramebuffer = crate::frame::NoFramebuffer> {
 	pub framebuffer: F,
@@ -356,10 +376,12 @@ impl<F: NesFramebuffer> NROM256<F> {
 
 		self.hitbox_sprites[idx] = self.rendered_sprites[idx].map(|c| c.is_some());
 
-		let sprite_data = {
+		let sprite_data = SWIZZLE_ORDER_2D.iter().copied().map(|(y, x)| {
+			let offset = y * 8 + x;
 			unsafe { unsafe_assert!(idx < self.rendered_sprites.len()) };
-			self.rendered_sprites[idx].into_iter()
-		};
+			unsafe { unsafe_assert!(offset < 64) };
+			self.rendered_sprites[idx][offset]
+		});
 		self.framebuffer.update_sprite(sprite_data, idx);
 	}
 
@@ -403,16 +425,12 @@ impl<F: NesFramebuffer> NROM256<F> {
 		let parsed_graphics: &'static _ = self.parsed_graphics;
 		let hitbox_background = &mut self.hitbox_background;
 		let half = ppu.ctrl.background_pattern_table();
-		let tile_data =
-			(0..8)
-				.flat_map(|y| (0..8).map(move |x| (x, y)))
-				.map(|(pixel_x, pixel_y)| {
-					let tile = parsed_graphics[half as usize][tile_id as usize][pixel_y as usize]
-						[pixel_x as usize];
-					hitbox_background[tilemap][(tile_x * 8 + pixel_x) as usize]
-						[(tile_y * 8 + pixel_y) as usize] = tile != 0;
-					crate::interpret::calculate_background_colour(tile, attr, &ppu.palettes)
-				});
+		let tile_data = SWIZZLE_ORDER_2D.iter().copied().map(|(pixel_y, pixel_x)| {
+			let tile = parsed_graphics[half as usize][tile_id as usize][pixel_y][pixel_x];
+			hitbox_background[tilemap][(tile_x * 8 + pixel_x as i16) as usize]
+				[(tile_y * 8 + pixel_y as i16) as usize] = tile != 0;
+			crate::interpret::calculate_background_colour(tile, attr, &ppu.palettes)
+		});
 
 		self.framebuffer.update_tile(
 			tile_data,
