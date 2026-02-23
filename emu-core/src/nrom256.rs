@@ -371,9 +371,35 @@ impl<F: NesFramebuffer> NROM256<F> {
 	}
 
 	fn rerender_tile(&mut self, tilemap: usize, tile_x: i16, tile_y: i16, ppu: &Ppu) {
-		let px = tile_x * 8 + if tilemap == 0 { 0 } else { 256 };
 		let x = (tile_x * 8) as usize;
-		let py = tile_y * 8;
+		let tile_x_pixels = tile_x * 8 + if tilemap == 0 { 0 } else { 256 };
+		let tile_y_pixels = tile_y * 8;
+
+		unsafe { unsafe_assert!((0..512).contains(&tile_x_pixels)) };
+		unsafe { unsafe_assert!((0..480).contains(&tile_y_pixels)) };
+		let nametable_adr = match (tile_x_pixels, tile_y_pixels) {
+			(0..256, 0..240) => 0x2000,
+			(256..512, 0..240) => 0x2400,
+			(0..256, 240..480) => 0x2800,
+			(256..512, 240..480) => 0x2C00,
+			(..0, _) | (_, ..0) | (512.., _) | (_, 480..) => unsafe { unsafe_unreachable!() },
+		};
+
+		let chr_rom: &'static [u8; _] = self.chr_rom;
+		let Some(tile_id) = ({
+			let adr = (nametable_adr + ((tile_y << 5) | tile_x)) as u16 & VRAM_MASK;
+			match adr {
+				0x0000..=0x1FFF => chr_rom.get(adr as usize).copied(),
+				0x2000..=0x3EFF => ppu.vram.get(adr as usize & 0x07FF).copied(),
+				0x3F00..=0x3FFF => {
+					let palettes_raw = ppu.raw_palettes();
+					palettes_raw.get((adr & 0x1F) as usize).copied()
+				}
+				_ => None,
+			}
+		}) else {
+			unsafe { unsafe_unreachable!() }
+		};
 
 		let attr = crate::interpret::calculate_attribute_bits(
 			tile_x * 8 + if tilemap == 0 { 0 } else { 256 },
@@ -381,42 +407,21 @@ impl<F: NesFramebuffer> NROM256<F> {
 			self,
 			ppu,
 		);
-		for line in 0..8 {
-			let y = py + line;
 
-			let tiles = crate::interpret::calculate_tile_palette_index(px, y, self, ppu);
-
-			let mut buf: [Option<NesColour>; 8] = [None; 8];
-
-			for (i, tile) in tiles.enumerate() {
-				buf[i] = crate::interpret::calculate_background_colour(tile, attr, &ppu.palettes);
-			}
-
-			for (i, c) in buf.into_iter().enumerate() {
-				self.rendered_background[tilemap][x + i][y as usize] = c;
-				self.hitbox_background[tilemap][x + i][y as usize] = c.is_some();
-			}
-		}
-
-		let tile_data = {
-			unsafe { unsafe_assert!((0..32).contains(&tile_x), "{tile_x}") };
-			unsafe { unsafe_assert!((0..30).contains(&tile_y), "{tile_y}") };
+		let parsed_graphics: &'static _ = self.parsed_graphics;
+		let hitbox_background = &mut self.hitbox_background;
+		let half = ppu.ctrl.background_pattern_table();
+		let tile_data =
 			(0..8)
-				.flat_map(move |dy| {
-					(0..8).map(move |dx| {
-						let tilemap_x = tile_x * 8 + dx;
-						let tilemap_y = tile_y * 8 + dy;
-						unsafe { unsafe_assert!((0..512).contains(&tilemap_x)) };
-						unsafe { unsafe_assert!((0..240).contains(&tilemap_y)) };
-						let tilemap_x = tilemap_x as usize % 256;
-						let tilemap_y = tilemap_y as usize;
-						(tilemap_x, tilemap_y)
-					})
-				})
-				.map(|(tilemap_x, tilemap_y)| {
-					self.rendered_background[tilemap][tilemap_x][tilemap_y]
-				})
-		};
+				.flat_map(|y| (0..8).map(move |x| (x, y)))
+				.map(|(pixel_x, pixel_y)| {
+					let tile = parsed_graphics[half as usize][tile_id as usize][pixel_y as usize]
+						[pixel_x as usize];
+					hitbox_background[tilemap][(tile_x * 8 + pixel_x) as usize]
+						[(tile_y * 8 + pixel_y) as usize] = tile != 0;
+					crate::interpret::calculate_background_colour(tile, attr, &ppu.palettes)
+				});
+
 		self.framebuffer.update_tile(
 			tile_data,
 			tile_x as usize,
