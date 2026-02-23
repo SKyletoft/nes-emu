@@ -310,7 +310,7 @@ fn draw_horizontal_gradient(
 		},
 	];
 	let indices: [[i32; 3]; 2] = [[0, 1, 2], [2, 3, 0]];
-	let _ = canvas.render_geometry(&vertices, None, &indices);
+	canvas.render_geometry(&vertices, None, &indices).unwrap();
 }
 
 fn draw_vertical_gradient(
@@ -347,5 +347,5 @@ fn draw_vertical_gradient(
 		},
 	];
 	let indices: [[i32; 3]; 2] = [[0, 1, 2], [2, 3, 0]];
-	let _ = canvas.render_geometry(&vertices, None, &indices);
+	canvas.render_geometry(&vertices, None, &indices).unwrap();
 }
