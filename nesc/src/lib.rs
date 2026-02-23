@@ -199,20 +199,20 @@ fn parse_ines(buffer: &[u8]) -> (Mappers, proc_macro2::TokenStream) {
 		0 if *prg_size == 2 => {
 			let parsed_file = NROM256::parse_ines(buffer).unwrap();
 			let lit1 = Literal::byte_string(&parsed_file.prg_ram);
-			let lit2 = Literal::byte_string(&parsed_file.prg_rom);
-			let lit3 = Literal::byte_string(&parsed_file.chr_rom);
+			let lit2 = Literal::byte_string(parsed_file.prg_rom);
+			let lit3 = Literal::byte_string(parsed_file.chr_rom);
 			let lit4 = Literal::byte_string(unsafe {
 				std::mem::transmute::<&[[[[u8; 8]; 8]; 256]; 2], &[u8; 32768]>(
-					&parsed_file.parsed_graphics,
+					parsed_file.parsed_graphics,
 				)
 			});
 			let mapper_literal = quote! {
 				pub const MAPPER: NROM256 = NROM256 {
 					framebuffer: emu_core::frame::NoFramebuffer,
 					prg_ram: *#lit1,
-					prg_rom: *#lit2,
-					chr_rom: *#lit3,
-					parsed_graphics: unsafe {
+					prg_rom: &*#lit2,
+					chr_rom: &*#lit3,
+					parsed_graphics: &unsafe {
 						std::mem::transmute::<[u8; 32768], [[[[u8; 8]; 8]; 256]; 2]>(*#lit4)
 					},
 					rendered_background: [[[None; 240]; 256]; 2],

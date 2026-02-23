@@ -11,12 +11,12 @@ use crate::{
 pub struct NROM256<F: NesFramebuffer = crate::frame::NoFramebuffer> {
 	pub framebuffer: F,
 	pub prg_ram: [u8; 8 * 1024],
-	pub prg_rom: [u8; 32 * 1024],
-	pub chr_rom: [u8; 8 * 1024],
+	pub prg_rom: &'static [u8; 32 * 1024],
+	pub chr_rom: &'static [u8; 8 * 1024],
 
 	/// `this[pattern table][tile][y][x]`
-	pub parsed_graphics: [[[[u8; 8]; 8]; 256]; 2],
 	pub rendered_background: [[[Option<NesColour>; 240]; 256]; 2],
+	pub parsed_graphics: &'static [[[[u8; 8]; 8]; 256]; 2],
 	pub hitbox_background: [[[bool; 240]; 256]; 2],
 	pub rendered_sprites: [[Option<NesColour>; 64]; 64],
 	pub hitbox_sprites: [[bool; 64]; 64],
@@ -55,23 +55,19 @@ impl NROM256 {
 
 		match mapper_type {
 			0 if *prg_size == 2 => {
+				let mut prg_rom = Box::new([0; _]);
+				let mut chr_rom = Box::new([0; _]);
+				let mut parsed_graphics = Box::new([[[[0; _]; _]; _]; _]);
 				let mut mapper = NROM256 {
 					framebuffer: crate::frame::NoFramebuffer,
 					prg_ram: [0; _],
-					prg_rom: [0; _],
-					chr_rom: [0; _],
-					parsed_graphics: [[[[0; _]; _]; _]; _],
-					rendered_background: [[[None; _]; _]; _],
+					prg_rom: &[0; _],
+					chr_rom: &[0; _],
+					parsed_graphics: &[[[[0; _]; _]; _]; _],
 					hitbox_background: [[[false; _]; _]; _],
 					rendered_sprites: [[None; _]; _],
 					hitbox_sprites: [[false; _]; _],
 				};
-				let NROM256 {
-					prg_rom,
-					chr_rom,
-					parsed_graphics,
-					..
-				} = &mut mapper;
 				prg_rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
 				chr_rom.copy_from_slice(&buffer[chr_offset..chr_offset + 8 * 1024]);
 
@@ -100,6 +96,9 @@ impl NROM256 {
 						}
 					}
 				}
+				mapper.parsed_graphics = Box::leak(parsed_graphics);
+				mapper.chr_rom = Box::leak(chr_rom);
+				mapper.prg_rom = Box::leak(prg_rom);
 
 				Ok(mapper)
 			}
