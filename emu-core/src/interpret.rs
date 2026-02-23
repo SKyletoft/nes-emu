@@ -615,12 +615,12 @@ pub fn calculate_tile_palette_index<M: Mapper>(
 		(256..512, 0..240) => 0x2400,
 		(0..256, 240..480) => 0x2800,
 		(256..512, 240..480) => 0x2C00,
-		(..0, _) | (_, ..0) | (512.., _) | (_, 480..) => panic!(),
+		(..0, _) | (_, ..0) | (512.., _) | (_, 480..) => unsafe { unsafe_unreachable!() },
 	};
 
 	let tile_x = (x % 256 / 8) as u16;
 	let tile_y = (y % 240 / 8) as u16;
-	let pixel_y = (y % 8) as u16;
+	let pixel_y = (y % 8) as u8;
 
 	let tile_idx = (tile_y << 5) | tile_x;
 
@@ -633,7 +633,7 @@ pub fn calculate_tile_palette_index<M: Mapper>(
 		rom.get_palette_index(
 			self_rest_ppu.ctrl.background_pattern_table(),
 			tile_id,
-			pixel_y as _,
+			pixel_y,
 			pixel_x,
 		)
 	})
