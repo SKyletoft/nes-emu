@@ -71,33 +71,31 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 		y: usize,
 		x_offset: usize,
 	) {
-		let mut buffer = [[Rgba5551::TRANSPARENT; 8]; 8];
 		let bg = if x_offset == 0 {
 			&mut self.bg1
 		} else {
 			&mut self.bg2
 		};
-		for (col, pixel) in tile_data.zip(buffer.iter_mut().flat_map(|l| l.iter_mut())) {
-			*pixel = nes_colour_to_rgba5551(col);
-		}
-		bg.texture_mut()
+		let tile = bg
+			.texture_mut()
 			.unwrap()
-			.swizzle_and_update_tile(buffer, y as _, x as _);
+			.raw_flat_tile::<Rgba5551>(y as _, x as _);
+		for (col, i) in tile_data.zip(SWIZZLE_ORDER.iter().copied()) {
+			unsafe { unsafe_assert!(i < 64) };
+			tile[i] = nes_colour_to_rgba5551(col);
+		}
 	}
 
 	fn update_sprite(&mut self, sprite_data: impl Iterator<Item = Option<NesColour>>, idx: usize) {
-		let mut buffer = [[Rgba5551::TRANSPARENT; 8]; 8];
-		for (pixel, col) in buffer
-			.iter_mut()
-			.flat_map(|xs: &mut [Rgba5551; 8]| xs.iter_mut())
-			.zip(sprite_data)
-		{
-			*pixel = nes_colour_to_rgba5551(col);
-		}
-		self.sprites[idx]
+		unsafe { unsafe_assert!(idx < 64) };
+		let tile = self.sprites[idx]
 			.texture_mut()
 			.unwrap()
-			.swizzle_and_update_tile(buffer, 0, 0);
+			.raw_flat_tile::<Rgba5551>(0, 0);
+		for (col, i) in sprite_data.zip(SWIZZLE_ORDER.iter().copied()) {
+			unsafe { unsafe_assert!(i < 64) };
+			tile[i] = nes_colour_to_rgba5551(col);
+		}
 	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
@@ -242,3 +240,15 @@ fn nes_colour_to_rgba5551(value: Option<NesColour>) -> Rgba5551 {
 	unsafe { unsafe_assert!((0..64).contains(&(value as usize))) };
 	TRANSLATED_COLOURS[value as usize]
 }
+
+#[rustfmt::skip]
+const SWIZZLE_ORDER: [usize; 64] = [
+	0,  2,  8,  10, 32, 34, 40, 42,
+	1,  3,  9,  11, 33, 35, 41, 43,
+	4,  6,  12, 14, 36, 38, 44, 46,
+	5,  7,  13, 15, 37, 39, 45, 47,
+	16, 18, 24, 26, 48, 50, 56, 58,
+	17, 19, 25, 27, 49, 51, 57, 59,
+	20, 22, 28, 30, 52, 54, 60, 62,
+	21, 23, 29, 31, 53, 55, 61, 63
+];
