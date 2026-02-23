@@ -364,7 +364,6 @@ impl<F: NesFramebuffer> NROM256<F> {
 	}
 
 	fn rerender_tile(&mut self, tilemap: usize, tile_x: i16, tile_y: i16, ppu: &Ppu) {
-		let x = (tile_x * 8) as usize;
 		let tile_x_pixels = tile_x * 8 + if tilemap == 0 { 0 } else { 256 };
 		let tile_y_pixels = tile_y * 8;
 
