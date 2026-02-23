@@ -15,7 +15,6 @@ pub struct NROM256<F: NesFramebuffer = crate::frame::NoFramebuffer> {
 	pub chr_rom: &'static [u8; 8 * 1024],
 
 	/// `this[pattern table][tile][y][x]`
-	pub rendered_background: [[[Option<NesColour>; 240]; 256]; 2],
 	pub parsed_graphics: &'static [[[[u8; 8]; 8]; 256]; 2],
 	pub hitbox_background: [[[bool; 240]; 256]; 2],
 	pub rendered_sprites: [[Option<NesColour>; 64]; 64],
@@ -110,7 +109,6 @@ impl NROM256 {
 			prg_rom: self.prg_rom,
 			chr_rom: self.chr_rom,
 			parsed_graphics: self.parsed_graphics,
-			rendered_background: self.rendered_background,
 			hitbox_background: self.hitbox_background,
 			rendered_sprites: self.rendered_sprites,
 			hitbox_sprites: self.hitbox_sprites,
@@ -245,16 +243,11 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 	}
 
 	#[inline]
-	fn get_bg_pixel(&self, tilemap_x: i16, tilemap_y: i16, _: &Ppu) -> Option<NesColour>
+	fn get_bg_pixel(&self, _: i16, _: i16, _: &Ppu) -> Option<NesColour>
 	where
 		Self: Sized,
 	{
-		unsafe { unsafe_assert!((0..512).contains(&tilemap_x)) };
-		unsafe { unsafe_assert!((0..240).contains(&tilemap_y)) };
-		let tilemap = (tilemap_x >= 256) as usize;
-		let tilemap_x = tilemap_x as usize % 256;
-		let tilemap_y = tilemap_y as usize;
-		self.rendered_background[tilemap][tilemap_x][tilemap_y]
+		panic!("This function is to be removed!")
 	}
 
 	#[inline]
