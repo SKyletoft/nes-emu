@@ -58,16 +58,6 @@ impl NROM256 {
 				let mut prg_rom = Box::new([0; _]);
 				let mut chr_rom = Box::new([0; _]);
 				let mut parsed_graphics = Box::new([[[[0; _]; _]; _]; _]);
-				let mut mapper = NROM256 {
-					framebuffer: crate::frame::NoFramebuffer,
-					prg_ram: [0; _],
-					prg_rom: &[0; _],
-					chr_rom: &[0; _],
-					parsed_graphics: &[[[[0; _]; _]; _]; _],
-					hitbox_background: [[[false; _]; _]; _],
-					rendered_sprites: [[None; _]; _],
-					hitbox_sprites: [[false; _]; _],
-				};
 				prg_rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
 				chr_rom.copy_from_slice(&buffer[chr_offset..chr_offset + 8 * 1024]);
 
@@ -96,11 +86,17 @@ impl NROM256 {
 						}
 					}
 				}
-				mapper.parsed_graphics = Box::leak(parsed_graphics);
-				mapper.chr_rom = Box::leak(chr_rom);
-				mapper.prg_rom = Box::leak(prg_rom);
 
-				Ok(mapper)
+				Ok(NROM256 {
+					framebuffer: crate::frame::NoFramebuffer,
+					prg_ram: [0; _],
+					prg_rom: Box::leak(prg_rom),
+					chr_rom: Box::leak(chr_rom),
+					parsed_graphics: Box::leak(parsed_graphics),
+					hitbox_background: [[[false; _]; _]; _],
+					rendered_sprites: [[None; _]; _],
+					hitbox_sprites: [[false; _]; _],
+				})
 			}
 			0 => bail!("Wrong amount of prg_roms for an NROM"),
 			_ => bail!("Unknown mapper type {mapper_type}"),
