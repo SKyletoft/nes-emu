@@ -299,10 +299,8 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 		if new.attr.palette() != old.attr.palette() || new.tile != old.tile {
 			self.rerender_sprite(ppu, idx);
 		}
-		if new.attr.flip_h() != old.attr.flip_h() || new.attr.flip_v() != old.attr.flip_v() {
-			self.framebuffer()
-				.set_mirroring(idx, new.attr.flip_h(), new.attr.flip_v());
-		}
+		self.framebuffer()
+			.set_mirroring(idx, new.attr.flip_h(), new.attr.flip_v());
 	}
 }
 
