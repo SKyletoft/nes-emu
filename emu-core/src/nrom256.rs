@@ -340,7 +340,17 @@ impl<F: NesFramebuffer> NROM256<F> {
 
 		let sprite_data = SWIZZLE_ORDER_2D.iter().copied().map(|(x, y)| {
 			let ret = calc(x, y);
-			let pixel_idx = y * 8 + x;
+			let pixel_idx = {
+				let (flipped_x, flipped_y) = match (idx, sprite.attr.flip_h(), sprite.attr.flip_v())
+				{
+					(0, true, false) => (7 - y, x),
+					(0, false, true) => (y, 7 - x),
+					(0, true, true) => (7 - y, 7 - x),
+					_ => (y, x),
+				};
+
+				flipped_y * 8 + flipped_x
+			};
 			unsafe { unsafe_assert!(idx < 64) };
 			unsafe { unsafe_assert!(pixel_idx < 64) };
 			self.hitbox_sprites[idx][pixel_idx] = ret.is_some();
