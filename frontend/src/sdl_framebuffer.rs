@@ -54,7 +54,7 @@ impl<'tc> SdlFramebuffer<'tc> {
 			let mut tex = tc
 				.create_texture_streaming(PixelFormatEnum::ARGB8888, TILE_SIZE, TILE_SIZE)
 				.unwrap();
-			tex.set_blend_mode(BlendMode::Blend);
+			tex.set_blend_mode(BlendMode::BLEND);
 			(tex, false, false)
 		});
 
