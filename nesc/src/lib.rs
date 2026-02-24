@@ -216,7 +216,6 @@ fn parse_ines(buffer: &[u8]) -> (Mappers, proc_macro2::TokenStream) {
 						std::mem::transmute::<[u8; 32768], [[[[u8; 8]; 8]; 256]; 2]>(*#lit4)
 					},
 					hitbox_background: [[[false;_];_];_],
-					rendered_sprites: [[None; _]; _],
 					hitbox_sprites: [[false;_];_],
 				};
 			};

@@ -37,7 +37,6 @@ pub struct NROM256<F: NesFramebuffer = crate::frame::NoFramebuffer> {
 	/// `this[pattern table][tile][y][x]`
 	pub parsed_graphics: &'static [[[[u8; 8]; 8]; 256]; 2],
 	pub hitbox_background: [[[bool; 240]; 256]; 2],
-	pub rendered_sprites: [[Option<NesColour>; 64]; 64],
 	pub hitbox_sprites: [[bool; 64]; 64],
 }
 
@@ -113,7 +112,6 @@ impl NROM256 {
 					chr_rom: Box::leak(chr_rom),
 					parsed_graphics: Box::leak(parsed_graphics),
 					hitbox_background: [[[false; _]; _]; _],
-					rendered_sprites: [[None; _]; _],
 					hitbox_sprites: [[false; _]; _],
 				})
 			}
@@ -130,7 +128,6 @@ impl NROM256 {
 			chr_rom: self.chr_rom,
 			parsed_graphics: self.parsed_graphics,
 			hitbox_background: self.hitbox_background,
-			rendered_sprites: self.rendered_sprites,
 			hitbox_sprites: self.hitbox_sprites,
 		}
 	}
@@ -284,18 +281,14 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 	}
 
 	#[inline]
-	fn get_sprite_pixels(
-		&self,
-		sprite_idx: usize,
-		_: &Ppu,
-	) -> impl Iterator<Item = Option<NesColour>> {
-		unsafe { unsafe_assert!(sprite_idx < self.rendered_sprites.len()) };
-		self.rendered_sprites[sprite_idx].into_iter()
+	fn get_sprite_pixels(&self, _: usize, _: &Ppu) -> impl Iterator<Item = Option<NesColour>> {
+		panic!("Deprecated");
+		[None; 64].into_iter() // Make codegen still assume 64 items
 	}
 
 	#[inline]
 	fn get_sprite_visible(&self, sprite_idx: usize, _: &Ppu) -> impl Iterator<Item = bool> {
-		unsafe { unsafe_assert!(sprite_idx < self.rendered_sprites.len()) };
+		unsafe { unsafe_assert!(sprite_idx < self.hitbox_sprites.len()) };
 		self.hitbox_sprites[sprite_idx].into_iter()
 	}
 
