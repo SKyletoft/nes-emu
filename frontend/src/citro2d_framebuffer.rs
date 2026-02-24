@@ -42,10 +42,9 @@ impl<'a> Citro2DFramebuffer<'a> {
 		bg2.set_depth(0.5);
 
 		let sprites = std::array::from_fn(|_| {
-			let mut s = Sprite::from_tex(Tex::new(8, 8, ColourFormat::Rgba5551));
-			s.set_size((8., 8.));
-			s.set_mirroring(Mirroring::MirrorXY);
-			s
+			Sprite::from_tex(Tex::new(8, 8, ColourFormat::Rgba5551))
+				.with_size((8., 8.))
+				.with_mirroring(Mirroring::MirrorXY)
 		});
 
 		let hide_left = true;
