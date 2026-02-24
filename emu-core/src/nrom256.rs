@@ -341,48 +341,15 @@ impl<F: NesFramebuffer> NROM256<F> {
 			Some(col)
 		};
 
-		let colour_data: &mut [[Option<NesColour>; 8]; 8] =
-			unsafe { std::mem::transmute(&mut self.rendered_sprites[idx]) };
-
-		match (sprite.attr.flip_h(), sprite.attr.flip_v()) {
-			(false, false) => {
-				for (y, row) in colour_data.iter_mut().enumerate() {
-					for (x, col) in row.iter_mut().enumerate() {
-						*col = calc(y as u8, x as u8);
-					}
-				}
-			}
-			(false, true) => {
-				for (y, row) in colour_data.iter_mut().rev().enumerate() {
-					for (x, col) in row.iter_mut().enumerate() {
-						*col = calc(y as u8, x as u8);
-					}
-				}
-			}
-			(true, false) => {
-				for (y, row) in colour_data.iter_mut().enumerate() {
-					for (x, col) in row.iter_mut().rev().enumerate() {
-						*col = calc(y as u8, x as u8);
-					}
-				}
-			}
-			(true, true) => {
-				for (y, row) in colour_data.iter_mut().rev().enumerate() {
-					for (x, col) in row.iter_mut().rev().enumerate() {
-						*col = calc(y as u8, x as u8);
-					}
-				}
-			}
-		}
-
-		self.hitbox_sprites[idx] = self.rendered_sprites[idx].map(|c| c.is_some());
-
-		let sprite_data = SWIZZLE_ORDER_2D.iter().copied().map(|(y, x)| {
-			let offset = y * 8 + x;
-			unsafe { unsafe_assert!(idx < self.rendered_sprites.len()) };
-			unsafe { unsafe_assert!(offset < 64) };
-			self.rendered_sprites[idx][offset]
+		let sprite_data = SWIZZLE_ORDER_2D.iter().copied().map(|(x, y)| {
+			let ret = calc(x, y);
+			let pixel_idx = y * 8 + x;
+			unsafe { unsafe_assert!(idx < 64) };
+			unsafe { unsafe_assert!(pixel_idx < 64) };
+			self.hitbox_sprites[idx][pixel_idx] = ret.is_some();
+			ret
 		});
+
 		self.framebuffer.update_sprite(sprite_data, idx);
 	}
 
