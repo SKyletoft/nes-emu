@@ -315,11 +315,12 @@ impl<F: NesFramebuffer> NROM256<F> {
 		unsafe { unsafe_assert!(idx < ppu.oam.len()) };
 
 		let sprite = ppu.oam[idx];
-		let calc = |y, x| {
+		let calc = |y: usize, x: usize| {
 			let palette_index = {
 				unsafe { unsafe_assert!(y < 8 && x < 8) };
-				self.parsed_graphics[ppu.ctrl.sprite_pattern_table() as usize][sprite.tile as usize]
-					[y as usize][x as usize]
+				let pattern_table = ppu.ctrl.sprite_pattern_table() as usize;
+				let tile = sprite.tile as usize;
+				self.parsed_graphics[pattern_table][tile][y][x]
 			};
 			if palette_index == 0 {
 				return None;
