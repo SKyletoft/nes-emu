@@ -83,8 +83,8 @@ pub trait Mapper {
 		colour_data.into_iter()
 	}
 
-	fn get_sprite_visible(&self, sprite_idx: usize, ppu: &Ppu) -> impl Iterator<Item = bool> {
-		self.get_sprite_pixels(sprite_idx, ppu).map(|o| o.is_some())
+	fn get_sprite_0_visible(&self, ppu: &Ppu) -> impl Iterator<Item = bool> {
+		self.get_sprite_pixels(0, ppu).map(|o| o.is_some())
 	}
 
 	fn get_bg_pixels(

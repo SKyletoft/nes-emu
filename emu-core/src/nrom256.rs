@@ -37,7 +37,7 @@ pub struct NROM256<F: NesFramebuffer = crate::frame::NoFramebuffer> {
 	/// `this[pattern table][tile][y][x]`
 	pub parsed_graphics: &'static [[[[u8; 8]; 8]; 256]; 2],
 	pub hitbox_background: [[[bool; 240]; 256]; 2],
-	pub hitbox_sprites: [[bool; 64]; 64],
+	pub hitbox_sprite_0: [bool; 64],
 }
 
 impl NROM256 {
@@ -112,7 +112,7 @@ impl NROM256 {
 					chr_rom: Box::leak(chr_rom),
 					parsed_graphics: Box::leak(parsed_graphics),
 					hitbox_background: [[[false; _]; _]; _],
-					hitbox_sprites: [[false; _]; _],
+					hitbox_sprite_0: [false; _],
 				})
 			}
 			0 => bail!("Wrong amount of prg_roms for an NROM"),
@@ -128,7 +128,7 @@ impl NROM256 {
 			chr_rom: self.chr_rom,
 			parsed_graphics: self.parsed_graphics,
 			hitbox_background: self.hitbox_background,
-			hitbox_sprites: self.hitbox_sprites,
+			hitbox_sprite_0: self.hitbox_sprite_0,
 		}
 	}
 }
@@ -287,9 +287,8 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 	}
 
 	#[inline]
-	fn get_sprite_visible(&self, sprite_idx: usize, _: &Ppu) -> impl Iterator<Item = bool> {
-		unsafe { unsafe_assert!(sprite_idx < self.hitbox_sprites.len()) };
-		self.hitbox_sprites[sprite_idx].into_iter()
+	fn get_sprite_0_visible(&self, _: &Ppu) -> impl Iterator<Item = bool> {
+		self.hitbox_sprite_0.into_iter()
 	}
 
 	#[inline]
@@ -340,20 +339,18 @@ impl<F: NesFramebuffer> NROM256<F> {
 
 		let sprite_data = SWIZZLE_ORDER_2D.iter().copied().map(|(x, y)| {
 			let ret = calc(x, y);
-			let pixel_idx = {
-				let (flipped_x, flipped_y) = match (idx, sprite.attr.flip_h(), sprite.attr.flip_v())
-				{
-					(0, true, false) => (7 - y, x),
-					(0, false, true) => (y, 7 - x),
-					(0, true, true) => (7 - y, 7 - x),
-					_ => (y, x),
+			if idx == 0 {
+				let (flipped_x, flipped_y) = match (sprite.attr.flip_h(), sprite.attr.flip_v()) {
+					(true, false) => (7 - x, y),
+					(false, true) => (x, 7 - y),
+					(true, true) => (7 - x, 7 - y),
+					_ => (x, y),
 				};
+				let pixel_idx = flipped_y * 8 + flipped_x;
 
-				flipped_y * 8 + flipped_x
-			};
-			unsafe { unsafe_assert!(idx < 64) };
-			unsafe { unsafe_assert!(pixel_idx < 64) };
-			self.hitbox_sprites[idx][pixel_idx] = ret.is_some();
+				unsafe { unsafe_assert!(pixel_idx < 64) };
+				self.hitbox_sprite_0[pixel_idx] = ret.is_some();
+			}
 			ret
 		});
 
