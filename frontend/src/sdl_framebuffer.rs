@@ -147,7 +147,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 						(right - left) as u32,
 						(bottom - top) as u32,
 					);
-					let _ = canvas.copy(sprite, None, Some(sprite_dst));
+					canvas.copy(sprite, None, Some(sprite_dst)).unwrap();
 				}
 			}
 		}
@@ -169,7 +169,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 
 				let x1 = {
 					let base = dst_x as i64 - (x_offset as i64 * scale_num_x) / SCALE_DENOM_X;
-					let min_x = dst_x as i64 - (WIDTH as i64 * scale_num_x) / SCALE_DENOM_X;
+					let min_x = dst_x as i64 - (WIDTH * scale_num_x) / SCALE_DENOM_X;
 					if base < min_x {
 						base + (512 * scale_num_x) / SCALE_DENOM_X
 					} else {
@@ -183,12 +183,12 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 					((BG_SIZE as i64 * scale_num_x) / SCALE_DENOM_X) as u32,
 					(bottom - top) as u32,
 				);
-				let _ = canvas.copy(&self.bg1, Some(src_rect), Some(dst_rect));
+				canvas.copy(&self.bg1, Some(src_rect), Some(dst_rect)).unwrap();
 
 				let x2 = {
-					let base = dst_x as i64 + (WIDTH as i64 * scale_num_x) / SCALE_DENOM_X
+					let base = dst_x as i64 + (WIDTH * scale_num_x) / SCALE_DENOM_X
 						- (x_offset as i64 * scale_num_x) / SCALE_DENOM_X;
-					let min_x = dst_x as i64 - (WIDTH as i64 * scale_num_x) / SCALE_DENOM_X;
+					let min_x = dst_x as i64 - (WIDTH * scale_num_x) / SCALE_DENOM_X;
 					if base < min_x {
 						base + (512 * scale_num_x) / SCALE_DENOM_X
 					} else {
@@ -201,7 +201,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 					((BG_SIZE as i64 * scale_num_x) / SCALE_DENOM_X) as u32,
 					(bottom - top) as u32,
 				);
-				let _ = canvas.copy(&self.bg2, Some(src_rect), Some(dst_rect));
+				canvas.copy(&self.bg2, Some(src_rect), Some(dst_rect)).unwrap();
 			}
 		}
 
@@ -222,7 +222,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 						(right - left) as u32,
 						(bottom - top) as u32,
 					);
-					let _ = canvas.copy(sprite, None, Some(sprite_dst));
+					canvas.copy(sprite, None, Some(sprite_dst)).unwrap();
 				}
 			}
 		}
