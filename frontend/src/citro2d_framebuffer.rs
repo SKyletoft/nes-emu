@@ -96,6 +96,16 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 		}
 	}
 
+	fn set_mirroring(&mut self, sprite_idx: usize, horizontal: bool, vertical: bool) {
+		unsafe { unsafe_assert!(sprite_idx < 64) };
+		self.sprites[sprite_idx].set_mirroring(match (horizontal, vertical) {
+			(false, false) => Mirroring::Normal,
+			(true, false) => Mirroring::MirrorX,
+			(false, true) => Mirroring::MirrorY,
+			(true, true) => Mirroring::MirrorXY,
+		});
+	}
+
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
 		for (idx, sprite) in self.sprites.iter_mut().enumerate() {
 			sprite.set_depth(if ppu.oam[idx].attr.priority() {

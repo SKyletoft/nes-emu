@@ -12,6 +12,8 @@ pub trait NesFramebuffer {
 	);
 
 	fn update_sprite(&mut self, sprite_data: impl Iterator<Item = Option<NesColour>>, idx: usize);
+
+	fn set_mirroring(&mut self, sprite_idx: usize, horizontal: bool, vertical: bool);
 }
 
 #[derive(Clone, Debug)]
@@ -30,4 +32,6 @@ impl NesFramebuffer for NoFramebuffer {
 	}
 
 	fn update_sprite(&mut self, _: impl Iterator<Item = Option<NesColour>>, _: usize) {}
+
+	fn set_mirroring(&mut self, _: usize, _: bool, _: bool) {}
 }

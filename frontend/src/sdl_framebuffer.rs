@@ -29,7 +29,7 @@ const SWIZZLE_ORDER: [usize; 64] = [
 pub struct SdlFramebuffer<'tc> {
 	bg1: Texture<'tc>,
 	bg2: Texture<'tc>,
-	sprites: [Texture<'tc>; 64],
+	sprites: [(Texture<'tc>, bool, bool); 64],
 	canvas: &'tc mut Canvas<Window>,
 	pub hide_left: bool,
 	pub hide_right: bool,
@@ -54,8 +54,8 @@ impl<'tc> SdlFramebuffer<'tc> {
 			let mut tex = tc
 				.create_texture_streaming(PixelFormatEnum::ARGB8888, TILE_SIZE, TILE_SIZE)
 				.unwrap();
-			tex.set_blend_mode(BlendMode::BLEND);
-			tex
+			tex.set_blend_mode(BlendMode::Blend);
+			(tex, false, false)
 		});
 
 		Ok(Self {
@@ -102,7 +102,16 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		}
 
 		let byte_buffer: &[u8] = bytemuck::cast_slice(&buffer);
-		self.sprites[idx].update(None, byte_buffer, 8 * 4).unwrap();
+		self.sprites[idx]
+			.0
+			.update(None, byte_buffer, 8 * 4)
+			.unwrap();
+	}
+
+	fn set_mirroring(&mut self, sprite_idx: usize, horizontal: bool, vertical: bool) {
+		unsafe { unsafe_assert!(sprite_idx < 64) };
+		self.sprites[sprite_idx].1 = horizontal;
+		self.sprites[sprite_idx].2 = vertical;
 	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
@@ -147,7 +156,17 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 						(right - left) as u32,
 						(bottom - top) as u32,
 					);
-					canvas.copy(sprite, None, Some(sprite_dst)).unwrap();
+					canvas
+						.copy_ex(
+							&sprite.0,
+							None,
+							Some(sprite_dst),
+							0.0,
+							None,
+							sprite.1,
+							sprite.2,
+						)
+						.unwrap();
 				}
 			}
 		}
@@ -226,7 +245,17 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 						(right - left) as u32,
 						(bottom - top) as u32,
 					);
-					canvas.copy(sprite, None, Some(sprite_dst)).unwrap();
+					canvas
+						.copy_ex(
+							&sprite.0,
+							None,
+							Some(sprite_dst),
+							0.0,
+							None,
+							sprite.1,
+							sprite.2,
+						)
+						.unwrap();
 				}
 			}
 		}
