@@ -183,7 +183,9 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 					((BG_SIZE as i64 * scale_num_x) / SCALE_DENOM_X) as u32,
 					(bottom - top) as u32,
 				);
-				canvas.copy(&self.bg1, Some(src_rect), Some(dst_rect)).unwrap();
+				canvas
+					.copy(&self.bg1, Some(src_rect), Some(dst_rect))
+					.unwrap();
 
 				let x2 = {
 					let base = dst_x as i64 + (WIDTH * scale_num_x) / SCALE_DENOM_X
@@ -201,7 +203,9 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 					((BG_SIZE as i64 * scale_num_x) / SCALE_DENOM_X) as u32,
 					(bottom - top) as u32,
 				);
-				canvas.copy(&self.bg2, Some(src_rect), Some(dst_rect)).unwrap();
+				canvas
+					.copy(&self.bg2, Some(src_rect), Some(dst_rect))
+					.unwrap();
 			}
 		}
 

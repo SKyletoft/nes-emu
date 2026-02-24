@@ -98,9 +98,18 @@ fn main() {
 			})
 		};
 
-		sprite.texture_mut().unwrap().swizzle_and_update_tile(data2.clone(), 0, 0);
-		sprite.texture_mut().unwrap().swizzle_and_update_tile(data2.clone(), 1, 1);
-		sprite.texture_mut().unwrap().swizzle_and_update_tile(data2.clone(), 3, 3);
+		sprite
+			.texture_mut()
+			.unwrap()
+			.swizzle_and_update_tile(data2.clone(), 0, 0);
+		sprite
+			.texture_mut()
+			.unwrap()
+			.swizzle_and_update_tile(data2.clone(), 1, 1);
+		sprite
+			.texture_mut()
+			.unwrap()
+			.swizzle_and_update_tile(data2.clone(), 3, 3);
 
 		sprite
 	});
