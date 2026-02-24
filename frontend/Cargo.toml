@@ -8,7 +8,8 @@ emu-core = { path = "../emu-core" }
 bytemuck = { version = "1.23", features = [ "derive" ] }
 
 [target.'cfg(not(target_os = "horizon"))'.dependencies]
-sdl2 = { version = "0.38", features = [ "use-pkgconfig" ] }
+# sdl2 = { version = "0.38", features = [ "use-pkgconfig" ] }
+sdl2 = { git = "https://github.com/Rust-SDL2/rust-sdl2", features = [ "use-pkgconfig" ] } # Mirroring fix from master, use release when 0.39 or 0.38.1
 
 [target.'cfg(target_os = "horizon")'.dependencies]
 ctru-rs = { git = "https://github.com/rust3ds/ctru-rs" }

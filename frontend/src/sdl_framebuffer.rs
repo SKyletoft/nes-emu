@@ -43,18 +43,18 @@ impl<'tc> SdlFramebuffer<'tc> {
 		let mut bg1 = tc
 			.create_texture_streaming(PixelFormatEnum::ARGB8888, BG_SIZE, BG_SIZE)
 			.map_err(|e| e.to_string())?;
-		bg1.set_blend_mode(BlendMode::Blend);
+		bg1.set_blend_mode(BlendMode::BLEND);
 
 		let mut bg2 = tc
 			.create_texture_streaming(PixelFormatEnum::ARGB8888, BG_SIZE, BG_SIZE)
 			.map_err(|e| e.to_string())?;
-		bg2.set_blend_mode(BlendMode::Blend);
+		bg2.set_blend_mode(BlendMode::BLEND);
 
 		let sprites = std::array::from_fn(|_| {
 			let mut tex = tc
 				.create_texture_streaming(PixelFormatEnum::ARGB8888, TILE_SIZE, TILE_SIZE)
 				.unwrap();
-			tex.set_blend_mode(BlendMode::Blend);
+			tex.set_blend_mode(BlendMode::BLEND);
 			tex
 		});
 
