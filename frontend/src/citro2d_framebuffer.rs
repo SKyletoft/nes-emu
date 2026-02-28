@@ -97,12 +97,21 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 
 	fn set_mirroring(&mut self, sprite_idx: usize, horizontal: bool, vertical: bool) {
 		unsafe { unsafe_assert!(sprite_idx < 64) };
-		self.sprites[sprite_idx].set_mirroring(match (horizontal, vertical) {
-			(false, false) => Mirroring::Normal,
-			(true, false) => Mirroring::MirrorX,
-			(false, true) => Mirroring::MirrorY,
-			(true, true) => Mirroring::MirrorXY,
+		let (left_right, top_bottom, angle, centre) = match (horizontal, vertical) {
+			(false, false) => (0., 1., 0., (0., 0.)),
+			(true, false) => (1., 1., 0., (0., 0.)),
+			(false, true) => (1., 1., (180. as f32).to_radians(), (8., 8.)),
+			(true, true) => (0., 0., (90. as f32).to_radians(), (0., 8.)),
+		};
+		let sprite = &mut self.sprites[sprite_idx];
+		sprite.set_mirroring(Mirroring::Custom {
+			left: left_right,
+			right: 1. - left_right,
+			top: top_bottom,
+			bottom: 1. - top_bottom,
 		});
+		sprite.set_angle(angle);
+		sprite.set_centre(centre);
 	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
