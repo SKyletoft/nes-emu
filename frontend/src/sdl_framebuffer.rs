@@ -250,7 +250,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 						};
 
 						for (bg, x) in [(&self.bg1, x1), (&self.bg2, x2)].into_iter() {
-							for offset in [-512i64, 0, 512].into_iter() {
+							for offset in [-512, 0, 512].into_iter() {
 								let dst_rect = Rect::new(
 									(x + offset * scale_num_x / SCALE_DENOM_X) as i32,
 									top as i32,
