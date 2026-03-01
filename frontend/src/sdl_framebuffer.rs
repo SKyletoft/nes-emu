@@ -6,7 +6,7 @@ use emu_core::{
 use sdl2::{
 	pixels::{Color, PixelFormatEnum},
 	rect::{FPoint, Rect},
-	render::{BlendMode, Canvas, Texture, TextureCreator, Vertex},
+	render::{BlendMode, Canvas, Texture, TextureAccess, TextureCreator, Vertex},
 	video::{Window, WindowContext},
 };
 
@@ -30,6 +30,8 @@ pub struct SdlFramebuffer<'tc> {
 	bg1: Texture<'tc>,
 	bg2: Texture<'tc>,
 	sprites: [(Texture<'tc>, bool, bool); 64],
+	framebuffer_texture: Texture<'tc>,
+	texture_creator: &'tc TextureCreator<WindowContext>,
 	canvas: &'tc mut Canvas<Window>,
 	pub hide_left: bool,
 	pub hide_right: bool,
@@ -40,6 +42,8 @@ impl<'tc> SdlFramebuffer<'tc> {
 		tc: &'tc TextureCreator<WindowContext>,
 		canvas: &'tc mut Canvas<Window>,
 	) -> Result<Self, String> {
+		let (win_w, win_h) = canvas.window().size();
+
 		let mut bg1 = tc
 			.create_texture_streaming(PixelFormatEnum::ARGB8888, BG_SIZE, BG_SIZE)
 			.map_err(|e| e.to_string())?;
@@ -58,10 +62,22 @@ impl<'tc> SdlFramebuffer<'tc> {
 			(tex, false, false)
 		});
 
+		let mut framebuffer_texture = tc
+			.create_texture(
+				PixelFormatEnum::ARGB8888,
+				TextureAccess::Target,
+				win_w,
+				win_h,
+			)
+			.map_err(|e| e.to_string())?;
+		framebuffer_texture.set_blend_mode(BlendMode::BLEND);
+
 		Ok(Self {
 			bg1,
 			bg2,
 			sprites,
+			framebuffer_texture,
+			texture_creator: tc,
 			canvas,
 			hide_left: true,
 			hide_right: true,
@@ -124,142 +140,175 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 			bg_colour.blue,
 			bg_colour.alpha,
 		));
-		canvas.clear();
 
 		let (win_w, win_h) = canvas.window().size();
-		let size = win_w.min(win_h);
+		let tex_query = self.framebuffer_texture.query();
+		if (win_w, win_h) != (tex_query.width, tex_query.height) {
+			self.framebuffer_texture = self
+				.texture_creator
+				.create_texture(
+					PixelFormatEnum::ARGB8888,
+					TextureAccess::Target,
+					win_w,
+					win_h,
+				)
+				.unwrap();
+			self.framebuffer_texture.set_blend_mode(BlendMode::BLEND);
+		}
+
+		canvas
+			.with_texture_canvas(&mut self.framebuffer_texture, |tex_canvas| {
+				tex_canvas.set_draw_color(Color::RGBA(
+					bg_colour.red,
+					bg_colour.green,
+					bg_colour.blue,
+					bg_colour.alpha,
+				));
+				tex_canvas.clear();
+
+				let (tex_w, tex_h) = (win_w, win_h);
+				let size = tex_w.min(tex_h);
+				let dst_x = ((tex_w - size) / 2) as i32;
+				let dst_y = ((tex_h - size) / 2) as i32;
+				let dst_w = size as i32;
+				let dst_h = size as i32;
+
+				let scale_num_x = dst_w as i64;
+				let scale_num_y = dst_h as i64;
+				const WIDTH: i64 = 256;
+				const SCALE_DENOM_X: i64 = 256;
+				const SCALE_DENOM_Y: i64 = 240;
+
+				if ppu.mask.show_spr() {
+					for (idx, sprite) in self.sprites.iter().enumerate() {
+						if ppu.oam[idx].attr.priority() && ppu.oam[idx].is_visible() {
+							let nes_x = ppu.oam[idx].x as i64;
+							let nes_y = ppu.oam[idx].y as i64 + 1;
+							let left = dst_x as i64 + (nes_x * scale_num_x) / SCALE_DENOM_X;
+							let right = dst_x as i64
+								+ ((nes_x + TILE_SIZE as i64) * scale_num_x) / SCALE_DENOM_X;
+							let top = dst_y as i64 + (nes_y * scale_num_y) / SCALE_DENOM_Y;
+							let bottom = dst_y as i64
+								+ ((nes_y + TILE_SIZE as i64) * scale_num_y) / SCALE_DENOM_Y;
+							let sprite_dst = Rect::new(
+								left as i32,
+								top as i32,
+								(right - left) as u32,
+								(bottom - top) as u32,
+							);
+							tex_canvas
+								.copy_ex(
+									&sprite.0,
+									None,
+									Some(sprite_dst),
+									0.0,
+									None,
+									sprite.1,
+									sprite.2,
+								)
+								.unwrap();
+						}
+					}
+				}
+
+				if ppu.mask.show_bg() {
+					let background_slices = lines
+						.chunk_by(|l, r| l.0 == r.0 && l.1 + 1 == r.1)
+						.scan(0, |acc, curr| {
+							let old_acc = *acc;
+							*acc += curr.len();
+							Some((curr[0].0, curr[0].1, old_acc, curr.len() as i16))
+						});
+					for (x_offset, y_offset, y_start, height) in background_slices {
+						let top = dst_y as i64 + (y_start as i64 * scale_num_y) / SCALE_DENOM_Y;
+						let bottom = dst_y as i64
+							+ ((y_start as i64 + height as i64) * scale_num_y) / SCALE_DENOM_Y;
+						let src_y = (y_offset as u32) % BG_SIZE;
+
+						let x1 = {
+							let base =
+								dst_x as i64 - (x_offset as i64 * scale_num_x) / SCALE_DENOM_X;
+							let min_x = dst_x as i64 - (WIDTH * scale_num_x) / SCALE_DENOM_X;
+							if base < min_x {
+								base + (512 * scale_num_x) / SCALE_DENOM_X
+							} else {
+								base
+							}
+						};
+						let src_rect = Rect::new(0, src_y as i32, BG_SIZE, height as u32);
+						let dst_rect = Rect::new(
+							x1 as i32,
+							top as i32,
+							((BG_SIZE as i64 * scale_num_x) / SCALE_DENOM_X) as u32,
+							(bottom - top) as u32,
+						);
+						tex_canvas
+							.copy(&self.bg1, Some(src_rect), Some(dst_rect))
+							.unwrap();
+
+						let x2 = {
+							let base = dst_x as i64 + (WIDTH * scale_num_x) / SCALE_DENOM_X
+								- (x_offset as i64 * scale_num_x) / SCALE_DENOM_X;
+							let min_x = dst_x as i64 - (WIDTH * scale_num_x) / SCALE_DENOM_X;
+							if base < min_x {
+								base + (512 * scale_num_x) / SCALE_DENOM_X
+							} else {
+								base
+							}
+						};
+						let dst_rect = Rect::new(
+							x2 as i32,
+							top as i32,
+							((BG_SIZE as i64 * scale_num_x) / SCALE_DENOM_X) as u32,
+							(bottom - top) as u32,
+						);
+						tex_canvas
+							.copy(&self.bg2, Some(src_rect), Some(dst_rect))
+							.unwrap();
+					}
+				}
+
+				if ppu.mask.show_spr() {
+					for (idx, sprite) in self.sprites.iter().enumerate() {
+						if !ppu.oam[idx].attr.priority() && ppu.oam[idx].is_visible() {
+							let nes_x = ppu.oam[idx].x as i64;
+							let nes_y = ppu.oam[idx].y as i64 + 1;
+							let left = dst_x as i64 + (nes_x * scale_num_x) / SCALE_DENOM_X;
+							let right = dst_x as i64
+								+ ((nes_x + TILE_SIZE as i64) * scale_num_x) / SCALE_DENOM_X;
+							let top = dst_y as i64 + (nes_y * scale_num_y) / SCALE_DENOM_Y;
+							let bottom = dst_y as i64
+								+ ((nes_y + TILE_SIZE as i64) * scale_num_y) / SCALE_DENOM_Y;
+							let sprite_dst = Rect::new(
+								left as i32,
+								top as i32,
+								(right - left) as u32,
+								(bottom - top) as u32,
+							);
+							tex_canvas
+								.copy_ex(
+									&sprite.0,
+									None,
+									Some(sprite_dst),
+									0.0,
+									None,
+									sprite.1,
+									sprite.2,
+								)
+								.unwrap();
+						}
+					}
+				}
+			})
+			.unwrap();
+
+		canvas.copy(&self.framebuffer_texture, None, None).unwrap();
+
+		let size = win_h.min(win_w);
 		let dst_x = ((win_w - size) / 2) as i32;
 		let dst_y = ((win_h - size) / 2) as i32;
 		let dst_w = size as i32;
 		let dst_h = size as i32;
-
-		let scale_num_x = dst_w as i64;
-		let scale_num_y = dst_h as i64;
-		const WIDTH: i64 = 256;
-		const SCALE_DENOM_X: i64 = 256;
-		const SCALE_DENOM_Y: i64 = 240;
-
-		if ppu.mask.show_spr() {
-			for (idx, sprite) in self.sprites.iter().enumerate() {
-				if ppu.oam[idx].attr.priority() && ppu.oam[idx].is_visible() {
-					let nes_x = ppu.oam[idx].x as i64;
-					let nes_y = ppu.oam[idx].y as i64 + 1;
-					let left = dst_x as i64 + (nes_x * scale_num_x) / SCALE_DENOM_X;
-					let right =
-						dst_x as i64 + ((nes_x + TILE_SIZE as i64) * scale_num_x) / SCALE_DENOM_X;
-					let top = dst_y as i64 + (nes_y * scale_num_y) / SCALE_DENOM_Y;
-					let bottom =
-						dst_y as i64 + ((nes_y + TILE_SIZE as i64) * scale_num_y) / SCALE_DENOM_Y;
-					let sprite_dst = Rect::new(
-						left as i32,
-						top as i32,
-						(right - left) as u32,
-						(bottom - top) as u32,
-					);
-					canvas
-						.copy_ex(
-							&sprite.0,
-							None,
-							Some(sprite_dst),
-							0.0,
-							None,
-							sprite.1,
-							sprite.2,
-						)
-						.unwrap();
-				}
-			}
-		}
-
-		if ppu.mask.show_bg() {
-			let background_slices =
-				lines
-					.chunk_by(|l, r| l.0 == r.0 && l.1 + 1 == r.1)
-					.scan(0, |acc, curr| {
-						let old_acc = *acc;
-						*acc += curr.len();
-						Some((curr[0].0, curr[0].1, old_acc, curr.len() as i16))
-					});
-			for (x_offset, y_offset, y_start, height) in background_slices {
-				let top = dst_y as i64 + (y_start as i64 * scale_num_y) / SCALE_DENOM_Y;
-				let bottom =
-					dst_y as i64 + ((y_start as i64 + height as i64) * scale_num_y) / SCALE_DENOM_Y;
-				let src_y = (y_offset as u32) % BG_SIZE;
-
-				let x1 = {
-					let base = dst_x as i64 - (x_offset as i64 * scale_num_x) / SCALE_DENOM_X;
-					let min_x = dst_x as i64 - (WIDTH * scale_num_x) / SCALE_DENOM_X;
-					if base < min_x {
-						base + (512 * scale_num_x) / SCALE_DENOM_X
-					} else {
-						base
-					}
-				};
-				let src_rect = Rect::new(0, src_y as i32, BG_SIZE, height as u32);
-				let dst_rect = Rect::new(
-					x1 as i32,
-					top as i32,
-					((BG_SIZE as i64 * scale_num_x) / SCALE_DENOM_X) as u32,
-					(bottom - top) as u32,
-				);
-				canvas
-					.copy(&self.bg1, Some(src_rect), Some(dst_rect))
-					.unwrap();
-
-				let x2 = {
-					let base = dst_x as i64 + (WIDTH * scale_num_x) / SCALE_DENOM_X
-						- (x_offset as i64 * scale_num_x) / SCALE_DENOM_X;
-					let min_x = dst_x as i64 - (WIDTH * scale_num_x) / SCALE_DENOM_X;
-					if base < min_x {
-						base + (512 * scale_num_x) / SCALE_DENOM_X
-					} else {
-						base
-					}
-				};
-				let dst_rect = Rect::new(
-					x2 as i32,
-					top as i32,
-					((BG_SIZE as i64 * scale_num_x) / SCALE_DENOM_X) as u32,
-					(bottom - top) as u32,
-				);
-				canvas
-					.copy(&self.bg2, Some(src_rect), Some(dst_rect))
-					.unwrap();
-			}
-		}
-
-		if ppu.mask.show_spr() {
-			for (idx, sprite) in self.sprites.iter().enumerate() {
-				if !ppu.oam[idx].attr.priority() && ppu.oam[idx].is_visible() {
-					let nes_x = ppu.oam[idx].x as i64;
-					let nes_y = ppu.oam[idx].y as i64 + 1;
-					let left = dst_x as i64 + (nes_x * scale_num_x) / SCALE_DENOM_X;
-					let right =
-						dst_x as i64 + ((nes_x + TILE_SIZE as i64) * scale_num_x) / SCALE_DENOM_X;
-					let top = dst_y as i64 + (nes_y * scale_num_y) / SCALE_DENOM_Y;
-					let bottom =
-						dst_y as i64 + ((nes_y + TILE_SIZE as i64) * scale_num_y) / SCALE_DENOM_Y;
-					let sprite_dst = Rect::new(
-						left as i32,
-						top as i32,
-						(right - left) as u32,
-						(bottom - top) as u32,
-					);
-					canvas
-						.copy_ex(
-							&sprite.0,
-							None,
-							Some(sprite_dst),
-							0.0,
-							None,
-							sprite.1,
-							sprite.2,
-						)
-						.unwrap();
-				}
-			}
-		}
-
 		let left_width = dst_x;
 		let right_width = win_w as i32 - (dst_x + dst_w);
 		let top_height = dst_y;
