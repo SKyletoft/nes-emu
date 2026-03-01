@@ -149,6 +149,13 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 					self.bg1.set_size((256., height as f32));
 					self.bg2.set_size((256., height as f32));
 
+					let mirroring = Mirroring::Custom {
+						left: 1.,
+						right: 0.,
+						top: y_offset as f32 / 256.,
+						bottom: (y_offset + height) as f32 / 256.,
+					};
+
 					let x1 = {
 						let base = X_OFFSET - x_offset as f32;
 						if base < X_OFFSET - 256. {
@@ -157,14 +164,6 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 							base
 						}
 					};
-					self.bg1.set_pos((x1, y as f32));
-					self.bg1.set_mirroring(Mirroring::Custom {
-						left: 1.,
-						right: 0.,
-						top: y_offset as f32 / 256.,
-						bottom: (y_offset + height) as f32 / 256.,
-					});
-
 					let x2 = {
 						let base = X_OFFSET + 256. - x_offset as f32;
 						if base < X_OFFSET - 256. {
@@ -173,16 +172,14 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 							base
 						}
 					};
-					self.bg2.set_pos((x2, y as f32));
-					self.bg2.set_mirroring(Mirroring::Custom {
-						left: 1.,
-						right: 0.,
-						top: y_offset as f32 / 256.,
-						bottom: (y_offset + height) as f32 / 256.,
-					});
 
-					t.render_2d_shape(&self.bg1);
-					t.render_2d_shape(&self.bg2);
+					for (bg, x) in [(&mut self.bg1, x1), (&mut self.bg2, x2)].into_iter() {
+						for offset in [-512., 0., 512.].into_iter() {
+							bg.set_pos((x + offset, y as f32));
+							bg.set_mirroring(mirroring.clone());
+							t.render_2d_shape(bg);
+						}
+					}
 				}
 			}
 
