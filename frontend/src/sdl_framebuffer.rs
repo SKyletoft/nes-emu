@@ -126,8 +126,8 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 
 	fn set_mirroring(&mut self, sprite_idx: usize, horizontal: bool, vertical: bool) {
 		unsafe { unsafe_assert!(sprite_idx < 64) };
-		self.sprites[sprite_idx].1 = horizontal;
-		self.sprites[sprite_idx].2 = vertical;
+		self.sprites[sprite_idx].2 = !horizontal;
+		self.sprites[sprite_idx].1 = vertical;
 	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
@@ -201,7 +201,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 									&sprite.0,
 									None,
 									Some(sprite_dst),
-									0.0,
+									90.0,
 									None,
 									sprite.1,
 									sprite.2,
@@ -290,7 +290,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 									&sprite.0,
 									None,
 									Some(sprite_dst),
-									0.0,
+									90.0,
 									None,
 									sprite.1,
 									sprite.2,
