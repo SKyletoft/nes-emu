@@ -509,14 +509,12 @@ impl<M: Mapper> State<M> {
 		self.rest.ppu.dot = 0;
 
 		match self.rest.ppu.scanline {
+			#[cfg(test)]
 			-1 if (self.rest.ppu.mask.show_bg() || self.rest.ppu.mask.show_spr())
 				&& self.rest.ppu.frame & 1 != 0 =>
 			{
-				#[cfg(test)]
-				{
-					// Dot crawl
-					self.rest.ppu.cycles -= 1;
-				}
+				// Dot crawl
+				self.rest.ppu.cycles -= 1;
 			}
 			0 if self.rest.ppu.status.vblank() => {
 				self.rest.ppu.status.set_vblank(false);
