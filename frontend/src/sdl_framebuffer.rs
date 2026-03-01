@@ -224,6 +224,9 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 						let bottom = dst_y as i64
 							+ ((y_start as i64 + height as i64) * scale_num_y) / SCALE_DENOM_Y;
 						let src_y = (y_offset as u32) % BG_SIZE;
+						let src_rect = Rect::new(0, src_y as i32, BG_SIZE, height as u32);
+						let dst_w = ((BG_SIZE as i64 * scale_num_x) / SCALE_DENOM_X) as u32;
+						let dst_h = (bottom - top) as u32;
 
 						let x1 = {
 							let base =
@@ -235,17 +238,6 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 								base
 							}
 						};
-						let src_rect = Rect::new(0, src_y as i32, BG_SIZE, height as u32);
-						let dst_rect = Rect::new(
-							x1 as i32,
-							top as i32,
-							((BG_SIZE as i64 * scale_num_x) / SCALE_DENOM_X) as u32,
-							(bottom - top) as u32,
-						);
-						tex_canvas
-							.copy(&self.bg1, Some(src_rect), Some(dst_rect))
-							.unwrap();
-
 						let x2 = {
 							let base = dst_x as i64 + (WIDTH * scale_num_x) / SCALE_DENOM_X
 								- (x_offset as i64 * scale_num_x) / SCALE_DENOM_X;
@@ -256,15 +248,18 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 								base
 							}
 						};
-						let dst_rect = Rect::new(
-							x2 as i32,
-							top as i32,
-							((BG_SIZE as i64 * scale_num_x) / SCALE_DENOM_X) as u32,
-							(bottom - top) as u32,
-						);
-						tex_canvas
-							.copy(&self.bg2, Some(src_rect), Some(dst_rect))
-							.unwrap();
+
+						for (bg, x) in [(&self.bg1, x1), (&self.bg2, x2)].into_iter() {
+							for offset in [-512i64, 0, 512].into_iter() {
+								let dst_rect = Rect::new(
+									(x + offset * scale_num_x / SCALE_DENOM_X) as i32,
+									top as i32,
+									dst_w,
+									dst_h,
+								);
+								tex_canvas.copy(bg, Some(src_rect), Some(dst_rect)).unwrap();
+							}
+						}
 					}
 				}
 
