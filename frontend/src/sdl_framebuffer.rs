@@ -142,15 +142,17 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		));
 
 		let (win_w, win_h) = canvas.window().size();
+		let tex_w = std::cmp::max(256, 240 * win_w / win_h);
+		let tex_h = 240u32;
 		let tex_query = self.framebuffer_texture.query();
-		if (win_w, win_h) != (tex_query.width, tex_query.height) {
+		if (tex_w, tex_h) != (tex_query.width, tex_query.height) {
 			self.framebuffer_texture = self
 				.texture_creator
 				.create_texture(
 					PixelFormatEnum::ARGB8888,
 					TextureAccess::Target,
-					win_w,
-					win_h,
+					tex_w,
+					tex_h,
 				)
 				.unwrap();
 			self.framebuffer_texture.set_blend_mode(BlendMode::BLEND);
@@ -166,12 +168,10 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 				));
 				tex_canvas.clear();
 
-				let (tex_w, tex_h) = (win_w, win_h);
-				let size = tex_w.min(tex_h);
-				let dst_x = ((tex_w - size) / 2) as i32;
-				let dst_y = ((tex_h - size) / 2) as i32;
-				let dst_w = size as i32;
-				let dst_h = size as i32;
+				let dst_x = ((tex_w - 256) / 2) as i32;
+				let dst_y = 0;
+				let dst_w = 256;
+				let dst_h = 240;
 
 				let scale_num_x = dst_w as i64;
 				let scale_num_y = dst_h as i64;
@@ -307,12 +307,10 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		let size = win_h.min(win_w);
 		let dst_x = ((win_w - size) / 2) as i32;
 		let dst_y = ((win_h - size) / 2) as i32;
-		let dst_w = size as i32;
-		let dst_h = size as i32;
 		let left_width = dst_x;
-		let right_width = win_w as i32 - (dst_x + dst_w);
+		let right_width = win_w as i32 - (dst_x + size as i32);
 		let top_height = dst_y;
-		let bottom_height = win_h as i32 - (dst_y + dst_h);
+		let bottom_height = win_h as i32 - (dst_y + size as i32);
 
 		if self.hide_left {
 			draw_horizontal_gradient(canvas, 0.0, left_width as f32, win_h as f32, 64, 0);
@@ -320,7 +318,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		if self.hide_right {
 			draw_horizontal_gradient(
 				canvas,
-				(dst_x + dst_w) as f32,
+				(dst_x + size as i32) as f32,
 				right_width as f32,
 				win_h as f32,
 				0,
@@ -330,7 +328,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		draw_vertical_gradient(canvas, 0.0, top_height as f32, win_w as f32, 64, 0);
 		draw_vertical_gradient(
 			canvas,
-			(dst_y + dst_h) as f32,
+			(dst_y + size as i32) as f32,
 			bottom_height as f32,
 			win_w as f32,
 			0,
