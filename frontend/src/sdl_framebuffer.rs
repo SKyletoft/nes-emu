@@ -298,7 +298,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 			.unwrap();
 
 		let content_height = (15 * (win_w as i64) / 16) as i32;
-		let original_content_width = (((win_h as i64) * 16 / 15) as i32).max(win_w as i32);
+		let original_content_width = (((win_h as i64) * 16 / 15) as i32).min(win_w as i32);
 		let left_width = (win_w as i32 - original_content_width) / 2;
 		let top_height = (win_h as i32 - content_height) / 2;
 		let dst =
