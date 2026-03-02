@@ -2,7 +2,7 @@ use bitfields::bitfield;
 
 use crate::{
 	frame::NesFramebuffer,
-	ppu::{NesColour, Ppu, Sprite},
+	ppu::{Ppu, Sprite},
 	unsafe_assert, unsafe_unreachable,
 };
 
