@@ -29,14 +29,10 @@ pub fn main() {
 
 	let mut event_pump = sdl_context.event_pump().unwrap();
 
-	for controller in (0..controller_subsystem.num_joysticks().unwrap()).filter_map(|i| {
-		if controller_subsystem.is_game_controller(i) {
-			controller_subsystem.open(i).ok()
-		} else {
-			None
+	for controller in 0..controller_subsystem.num_joysticks().unwrap() {
+		if controller_subsystem.is_game_controller(controller) {
+			std::mem::forget(controller_subsystem.open(controller));
 		}
-	}) {
-		std::mem::forget(controller);
 	}
 	let mut controller_state = ControllerState::new();
 
