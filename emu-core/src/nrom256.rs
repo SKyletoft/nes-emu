@@ -136,6 +136,7 @@ impl NROM256 {
 impl<F: NesFramebuffer> Mapper for NROM256<F> {
 	type Framebuffer = F;
 
+	#[inline]
 	fn framebuffer(&mut self) -> &mut Self::Framebuffer {
 		&mut self.framebuffer
 	}
@@ -260,14 +261,6 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 	}
 
 	#[inline]
-	fn get_bg_pixel(&self, _: i16, _: i16, _: &Ppu) -> Option<NesColour>
-	where
-		Self: Sized,
-	{
-		panic!("This function is to be removed!")
-	}
-
-	#[inline]
 	fn get_bg_visible(&self, tilemap_x: i16, tilemap_y: i16, _: &Ppu) -> bool
 	where
 		Self: Sized,
@@ -278,12 +271,6 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 		let tilemap_x = tilemap_x as usize % 256;
 		let tilemap_y = tilemap_y as usize;
 		self.hitbox_background[tilemap][tilemap_x][tilemap_y]
-	}
-
-	#[inline]
-	fn get_sprite_pixels(&self, _: usize, _: &Ppu) -> impl Iterator<Item = Option<NesColour>> {
-		panic!("Deprecated");
-		[None; 64].into_iter() // Make codegen still assume 64 items
 	}
 
 	#[inline]
