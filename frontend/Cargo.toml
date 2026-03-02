@@ -17,7 +17,3 @@ citro2d = { path = "../citro3d-rs/citro2d" }
 
 [package.metadata.cargo-3ds]
 romfs_dir = "romfs"
-
-[[bin]]
-name = "frontend"
-path = "src/main.rs"
