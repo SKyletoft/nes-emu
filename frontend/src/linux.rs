@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use emu_core::{controller::ControllerState, mapper::Mapper};
+use emu_core::{controller::ControllerState, interpret::State, mapper::Mapper, nrom256::NROM256};
 use sdl2::{controller::Button, event::Event, keyboard::Keycode};
 
 use crate::sdl_framebuffer::SdlFramebuffer;
@@ -36,11 +36,11 @@ pub fn main() {
 	}
 	let mut controller_state = ControllerState::new();
 
-	let game = emu_core::nrom256::NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes"))
+	let game = NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes"))
 		.map_err(|e| e.to_string())
 		.unwrap()
 		.with_framebuffer(framebuffer);
-	let mut system_state = emu_core::interpret::State::new(game);
+	let mut system_state = State::new(game);
 
 	const FRAME_DURATION: Duration = Duration::from_nanos(1_000_000_000 / 60);
 
@@ -70,7 +70,7 @@ pub fn main() {
 fn handle_events(
 	event_pump: &mut sdl2::EventPump,
 	controller_state: &mut ControllerState,
-	system_state: &mut emu_core::interpret::State<emu_core::nrom256::NROM256<SdlFramebuffer<'_>>>,
+	system_state: &mut State<NROM256<SdlFramebuffer<'_>>>,
 ) -> bool {
 	for event in event_pump.poll_iter() {
 		match event {
