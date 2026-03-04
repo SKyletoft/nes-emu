@@ -107,7 +107,6 @@ pub struct Apu {
 impl Apu {
 	pub fn registers_as_raw_bytes_mut(&mut self) -> &mut [u8; 0x14] {
 		const _: () = {
-			assert!(0x14 < 0x18);
 			assert!(size_of::<Apu>() == 0x18);
 		};
 		let full_thing: &mut [u8; 0x18] = bytemuck::cast_mut(self);
