@@ -100,8 +100,8 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 		let (left_right, top_bottom, angle, centre) = match (horizontal, vertical) {
 			(false, false) => (0., 1., 0., (0., 0.)),
 			(true, false) => (1., 1., 0., (0., 0.)),
-			(false, true) => (1., 1., (180. as f32).to_radians(), (8., 8.)),
-			(true, true) => (0., 0., (90. as f32).to_radians(), (0., 8.)),
+			(false, true) => (1., 1., (180_f32).to_radians(), (8., 8.)),
+			(true, true) => (0., 0., (90_f32).to_radians(), (0., 8.)),
 		};
 		let sprite = &mut self.sprites[sprite_idx];
 		sprite.set_mirroring(Mirroring::Custom {
