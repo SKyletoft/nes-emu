@@ -27,6 +27,7 @@
 					cargo-expand
 					cargo-show-asm
 					cargo-flamegraph
+					cargo-fuzz
 
 					devkitARM
 
