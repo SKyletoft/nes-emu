@@ -95,17 +95,6 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 		let Some((_, pc, ..)) = func.first() else {
 			panic!()
 		};
-		let Some((_, _, _, end)) = func.last() else {
-			panic!()
-		};
-		let end = match end {
-			End::Goto(adr) => {
-				let next = syn::Ident::new(&format!("b_{adr:04x}"), proc_macro2::Span::call_site());
-				quote! { return #next(state); }
-			}
-			End::Break => quote! { state },
-			End::Continue => quote! { state },
-		};
 
 		let insts = func
 			.iter()
@@ -124,7 +113,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 		fns.push(quote! {
 			fn #ident<M: emu_core::mapper::Mapper>(mut state: State<M>) -> State<M> {
 				#(#insts)*
-				#end
+				state
 			}
 		});
 	}
