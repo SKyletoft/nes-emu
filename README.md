@@ -4,7 +4,8 @@ compile time. Only supports NROM games at the moment.
 Also has a 3DS build (`cargo 3ds run -r -p frontend`).
 
 ## Demo
-[![Youtube video](https://i3.ytimg.com/vi/RqFTMtwv6ao/maxresdefault.jpg)](https://www.youtube.com/watch?v=RqFTMtwv6ao)
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/RqFTMtwv6ao?si=219cC0v_6--k4CSl" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 # Usage
 
