@@ -368,7 +368,7 @@ impl<M: Mapper> State<M> {
 
 		let current_runahead = self.rest.ppu_runahead;
 
-		self.rest.ppu_runahead += if self.rest.ppu.scanline > 241 {
+		self.rest.ppu_runahead += if self.rest.ppu.scanline >= 241 {
 			341 * (262 - self.rest.ppu.scanline) as usize
 		} else {
 			341 * (241 - self.rest.ppu.scanline) as usize
