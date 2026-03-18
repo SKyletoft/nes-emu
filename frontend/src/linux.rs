@@ -36,10 +36,15 @@ pub fn main() {
 	}
 	let mut controller_state = ControllerState::new();
 
+	#[cfg(feature = "compiled-game")]
+	let game = game::MAPPER.clone().with_framebuffer(framebuffer);
+
+	#[cfg(not(feature = "compiled-game"))]
 	let game = NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes"))
 		.map_err(|e| e.to_string())
 		.unwrap()
 		.with_framebuffer(framebuffer);
+
 	let mut system_state = State::new(game);
 
 	const FRAME_DURATION: Duration = Duration::from_nanos(1_000_000_000 / 60);
@@ -56,6 +61,10 @@ pub fn main() {
 			*system_state.rest.controller1.state_mut() = controller_state.into_bits();
 
 			while system_state.rest.ppu_runahead <= 341 {
+				#[cfg(feature = "compiled-game")]
+				game::nes_game(&mut system_state);
+
+				#[cfg(not(feature = "compiled-game"))]
 				system_state.next();
 			}
 			system_state.catch_up_ppu();

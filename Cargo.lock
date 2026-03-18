@@ -398,6 +398,7 @@ dependencies = [
  "citro2d",
  "ctru-rs",
  "emu-core",
+ "game",
  "sdl2",
 ]
 

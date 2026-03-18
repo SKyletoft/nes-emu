@@ -3,9 +3,14 @@ name = "frontend"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = []
+compiled-game = ["dep:game"]
+
 [dependencies]
 emu-core = { path = "../emu-core" }
 bytemuck = { version = "1.23", features = [ "derive" ] }
+game = { path = "../game", optional = true }
 
 [target.'cfg(not(target_os = "horizon"))'.dependencies]
 # sdl2 = { version = "0.38", features = [ "use-pkgconfig" ] }

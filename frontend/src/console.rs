@@ -13,12 +13,15 @@ pub fn main() {
 	println!(" FRAME   CPU   PPU  FPS  ACTUAL");
 
 	let framebuffer = Citro2DFramebuffer::new(&gfx).unwrap();
-	// let game = game::MAPPER
-	//	.clone()
-	//	.with_framebuffer(framebuffer);
+
+	#[cfg(feature = "compiled-game")]
+	let game = game::MAPPER.clone().with_framebuffer(framebuffer);
+
+	#[cfg(not(feature = "compiled-game"))]
 	let game = emu_core::nrom256::NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes"))
 		.unwrap()
 		.with_framebuffer(framebuffer);
+
 	let mut system_state = State::new(game);
 
 	let mut last_frame = 0;
@@ -30,7 +33,10 @@ pub fn main() {
 		while last_frame == system_state.rest.ppu.frame {
 			let before = Instant::now();
 			while system_state.rest.ppu_runahead <= 341 {
-				// game::nes_game(&mut system_state);
+				#[cfg(feature = "compiled-game")]
+				game::nes_game(&mut system_state);
+
+				#[cfg(not(feature = "compiled-game"))]
 				system_state.next();
 			}
 			let after = Instant::now();
