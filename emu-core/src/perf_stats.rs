@@ -144,9 +144,7 @@ pub fn get_and_reset_frame_stats() -> FrameStats {
 	let cpu_us = PERF_STATS.cpu_time_us.swap(0, Ordering::Relaxed);
 	let ppu_us = PERF_STATS.ppu_time_us.swap(0, Ordering::Relaxed);
 	let gpu_us = PERF_STATS.gpu_time_us.swap(0, Ordering::Relaxed);
-	let frame_start = PERF_STATS
-		.frame_start_us
-		.swap(get_time_us(), Ordering::Relaxed);
+	let frame_start = PERF_STATS.frame_start_us.swap(now_us, Ordering::Relaxed);
 	let total_us = now_us.saturating_sub(frame_start);
 
 	FrameStats {
