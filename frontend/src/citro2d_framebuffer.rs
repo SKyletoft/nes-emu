@@ -9,6 +9,7 @@ use citro2d::{
 use ctru::prelude::*;
 use emu_core::{
 	frame::NesFramebuffer,
+	perf_stats,
 	ppu::{Colour, NesColour, Ppu},
 	unsafe_assert,
 };
@@ -132,7 +133,10 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 					*acc += curr.len();
 					Some((curr[0].0, curr[0].1, old_acc, curr.len() as i16))
 				});
+
 		self.instance.render_target(&mut self.target, |_, t| {
+			perf_stats::start_gpu();
+
 			let Colour {
 				blue, green, red, ..
 			} = Colour::from_const(ppu.palettes[0][0]);
@@ -227,6 +231,8 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 					},
 				});
 			}
+
+			perf_stats::stop_gpu();
 		});
 	}
 }

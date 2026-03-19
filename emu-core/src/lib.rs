@@ -9,6 +9,7 @@ pub mod mapper;
 // pub mod mmc3;
 pub mod nrom128;
 pub mod nrom256;
+pub mod perf_stats;
 pub mod ppu;
 
 #[cfg(test)]

@@ -1,7 +1,5 @@
-use std::time::{Duration, Instant};
-
 use ctru::prelude::*;
-use emu_core::{controller::ControllerState, interpret::State, mapper::Mapper};
+use emu_core::{controller::ControllerState, interpret::State, mapper::Mapper, perf_stats};
 
 use crate::citro2d_framebuffer::Citro2DFramebuffer;
 
@@ -10,7 +8,7 @@ pub fn main() {
 	let mut hid = Hid::new().unwrap();
 	let gfx = Gfx::new().unwrap();
 	let _console = Console::new(gfx.bottom_screen.borrow_mut());
-	println!(" FRAME   CPU   PPU  FPS  ACTUAL");
+	println!(" FRAME   CPU   PPU   GPU  FPS  ACTUAL");
 
 	let framebuffer = Citro2DFramebuffer::new(&gfx).unwrap();
 
@@ -26,12 +24,8 @@ pub fn main() {
 
 	let mut last_frame = 0;
 
-	let mut cpu_dur = Duration::new(0, 0);
-	let mut ppu_dur = Duration::new(0, 0);
-	let mut frame_time = Instant::now();
 	while apt.main_loop() {
 		while last_frame == system_state.rest.ppu.frame {
-			let before = Instant::now();
 			while system_state.rest.ppu_runahead <= 341 {
 				#[cfg(feature = "compiled-game")]
 				game::nes_game(&mut system_state);
@@ -39,27 +33,14 @@ pub fn main() {
 				#[cfg(not(feature = "compiled-game"))]
 				system_state.next();
 			}
-			let after = Instant::now();
-			cpu_dur += after - before;
 
-			let before_ppu = Instant::now();
 			system_state.catch_up_ppu();
-			let after_ppu = Instant::now();
-			ppu_dur += after_ppu - before_ppu;
 		}
 		last_frame = system_state.rest.ppu.frame;
 
 		let frame_count = system_state.rest.ppu.frame;
-
-		let done = Instant::now();
-		let cpu_time = cpu_dur.as_millis();
-		let ppu_time = ppu_dur.as_millis();
-		let fps = 1.0 / (cpu_dur + ppu_dur).as_secs_f32();
-		let frame_time_dur = (done - frame_time).as_millis();
-		println!("{frame_count:5}: {cpu_time:3}ms {ppu_time:3}ms {fps:.02} {frame_time_dur:3}ms");
-		frame_time = done;
-		cpu_dur = Duration::new(0, 0);
-		ppu_dur = Duration::new(0, 0);
+		let stats = perf_stats::get_and_reset_frame_stats();
+		println!("{frame_count:5}: {stats}");
 
 		hid.scan_input();
 

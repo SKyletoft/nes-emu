@@ -1,5 +1,6 @@
 use emu_core::{
 	frame::NesFramebuffer,
+	perf_stats,
 	ppu::{Colour, NesColour, Ppu},
 	unsafe_assert,
 };
@@ -329,6 +330,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		);
 
 		canvas.present();
+		perf_stats::stop_gpu();
 	}
 }
 

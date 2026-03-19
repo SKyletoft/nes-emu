@@ -5,6 +5,7 @@ use crate::{
 	frame::NesFramebuffer,
 	inst::Inst,
 	mapper::Mapper,
+	perf_stats,
 	ppu::{DoubleWriter, NesColour, Ppu, Scroll, Sprite},
 	unsafe_assert, unsafe_assert_eq, unsafe_unreachable,
 };
@@ -85,15 +86,20 @@ impl<M: Mapper> State<M> {
 	}
 
 	pub fn next_step(mut self) -> Self {
+		perf_stats::start_cpu();
 		let inst = self.next_inst();
-		inst.evaluate(self)
+		let result = inst.evaluate(self);
+		perf_stats::stop_cpu();
+		result
 	}
 
 	pub fn next(&mut self) {
+		perf_stats::start_cpu();
 		let inst = self.next_inst();
 		unsafe {
 			(&raw mut *self).write(inst.evaluate((&raw mut *self).read()));
 		}
+		perf_stats::stop_cpu();
 	}
 
 	pub fn next_inst(&mut self) -> Inst {
@@ -486,6 +492,7 @@ impl<M: Mapper> State<M> {
 	const WORKING_RANGE: std::ops::Range<i16> = 0..341;
 
 	pub fn catch_up_ppu(&mut self) {
+		perf_stats::start_ppu();
 		unsafe { unsafe_assert_eq!(self.rest.ppu.dot, 0) };
 		while self.rest.ppu_runahead > 341 {
 			self.step_ppu_scanline();
@@ -494,6 +501,7 @@ impl<M: Mapper> State<M> {
 		}
 
 		self.check_interrupt();
+		perf_stats::stop_ppu();
 	}
 
 	pub fn step_ppu_scanline(&mut self) {
@@ -523,10 +531,12 @@ impl<M: Mapper> State<M> {
 			// know. Again, matching Mesen's behaviour.
 			240 => {
 				self.rest.ppu.frame += 1;
+				perf_stats::stop_ppu();
 				self.rest
 					.rom
 					.framebuffer()
 					.render(&self.rest.ppu, &self.rest.lines);
+				perf_stats::start_ppu();
 			}
 			241 => {
 				self.rest.interrupt_requested = InterruptTiming::Ready;
