@@ -60,6 +60,7 @@ pub fn main() {
 
 			*system_state.rest.controller1.state_mut() = controller_state.into_bits();
 
+			emu_core::perf_stats::start_cpu();
 			while system_state.rest.ppu_runahead <= 341 {
 				#[cfg(feature = "compiled-game")]
 				game::nes_game(&mut system_state);
@@ -67,6 +68,7 @@ pub fn main() {
 				#[cfg(not(feature = "compiled-game"))]
 				system_state.next();
 			}
+			emu_core::perf_stats::stop_cpu();
 			system_state.catch_up_ppu();
 		}
 

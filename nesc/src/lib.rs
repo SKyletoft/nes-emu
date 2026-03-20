@@ -138,7 +138,6 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 		fn b_ffff<M: emu_core::mapper::Mapper>(state: State<M>) -> State<M> { state }
 
 		pub fn nes_game<M: emu_core::mapper::Mapper>(state: &mut State<M>) {
-			emu_core::perf_stats::start_cpu();
 			unsafe {
 				let mut local: State<M> = (&raw mut *state).read();
 				(&raw mut *state).write(
@@ -148,7 +147,6 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 					}(local)
 				)
 			}
-			emu_core::perf_stats::stop_cpu();
 		}
 
 		#constants

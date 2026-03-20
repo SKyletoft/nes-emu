@@ -26,6 +26,7 @@ pub fn main() {
 
 	while apt.main_loop() {
 		while last_frame == system_state.rest.ppu.frame {
+			emu_core::perf_stats::start_cpu();
 			while system_state.rest.ppu_runahead <= 341 {
 				#[cfg(feature = "compiled-game")]
 				game::nes_game(&mut system_state);
@@ -33,6 +34,7 @@ pub fn main() {
 				#[cfg(not(feature = "compiled-game"))]
 				system_state.next();
 			}
+			emu_core::perf_stats::stop_cpu();
 
 			system_state.catch_up_ppu();
 		}

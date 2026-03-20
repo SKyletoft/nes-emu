@@ -86,20 +86,15 @@ impl<M: Mapper> State<M> {
 	}
 
 	pub fn next_step(mut self) -> Self {
-		perf_stats::start_cpu();
 		let inst = self.next_inst();
-		let result = inst.evaluate(self);
-		perf_stats::stop_cpu();
-		result
+		inst.evaluate(self)
 	}
 
 	pub fn next(&mut self) {
-		perf_stats::start_cpu();
 		let inst = self.next_inst();
 		unsafe {
 			(&raw mut *self).write(inst.evaluate((&raw mut *self).read()));
 		}
-		perf_stats::stop_cpu();
 	}
 
 	pub fn next_inst(&mut self) -> Inst {
