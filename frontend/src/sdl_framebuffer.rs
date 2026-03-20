@@ -22,6 +22,16 @@ pub enum BackgroundView {
 	Bg2Only,
 }
 
+impl BackgroundView {
+	pub fn next(self) -> Self {
+		match self {
+			BackgroundView::Both => BackgroundView::Bg2Only,
+			BackgroundView::Bg1Only => BackgroundView::Both,
+			BackgroundView::Bg2Only => BackgroundView::Bg1Only,
+		}
+	}
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DebugMode {
 	Disabled,

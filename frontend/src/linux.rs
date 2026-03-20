@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 use emu_core::{controller::ControllerState, interpret::State, mapper::Mapper, nrom256::NROM256};
 use sdl2::{controller::Button, event::Event, keyboard::Keycode};
 
-use crate::sdl_framebuffer::SdlFramebuffer;
+use crate::sdl_framebuffer::{BackgroundView, DebugMode, SdlFramebuffer};
 
 pub fn main() {
 	let sdl_context = sdl2::init().unwrap();
@@ -83,6 +83,7 @@ fn handle_events(
 	controller_state: &mut ControllerState,
 	system_state: &mut State<NROM256<SdlFramebuffer<'_>>>,
 ) -> bool {
+	let fb = system_state.rest.rom.framebuffer();
 	for event in event_pump.poll_iter() {
 		match event {
 			Event::Quit { .. }
@@ -97,9 +98,17 @@ fn handle_events(
 			| Event::ControllerButtonDown {
 				button: Button::DPadLeft,
 				..
-			} => {
-				controller_state.set_left(true);
-			}
+			} => match fb.debug_mode {
+				DebugMode::Disabled => {
+					controller_state.set_left(true);
+				}
+				DebugMode::Backgrounds(view) => {
+					fb.debug_mode = DebugMode::Backgrounds(view.next());
+				}
+				DebugMode::Sprites(idx) => {
+					fb.debug_mode = DebugMode::Sprites(if idx == 0 { 63 } else { idx - 1 });
+				}
+			},
 			Event::KeyUp {
 				keycode: Some(Keycode::Left),
 				..
@@ -117,9 +126,21 @@ fn handle_events(
 			| Event::ControllerButtonDown {
 				button: Button::DPadRight,
 				..
-			} => {
-				controller_state.set_right(true);
-			}
+			} => match fb.debug_mode {
+				DebugMode::Disabled => {
+					controller_state.set_right(true);
+				}
+				DebugMode::Backgrounds(view) => {
+					fb.debug_mode = DebugMode::Backgrounds(match view {
+						BackgroundView::Both => BackgroundView::Bg1Only,
+						BackgroundView::Bg1Only => BackgroundView::Bg2Only,
+						BackgroundView::Bg2Only => BackgroundView::Both,
+					});
+				}
+				DebugMode::Sprites(idx) => {
+					fb.debug_mode = DebugMode::Sprites(if idx == 63 { 0 } else { idx + 1 });
+				}
+			},
 			Event::KeyUp {
 				keycode: Some(Keycode::Right),
 				..
@@ -137,9 +158,17 @@ fn handle_events(
 			| Event::ControllerButtonDown {
 				button: Button::DPadUp,
 				..
-			} => {
-				controller_state.set_up(true);
-			}
+			} => match fb.debug_mode {
+				DebugMode::Disabled => {
+					controller_state.set_up(true);
+				}
+				DebugMode::Backgrounds(_) => {
+					fb.debug_mode = DebugMode::Sprites(0);
+				}
+				DebugMode::Sprites(_) => {
+					fb.debug_mode = DebugMode::Backgrounds(BackgroundView::Both);
+				}
+			},
 			Event::KeyUp {
 				keycode: Some(Keycode::Up),
 				..
@@ -157,9 +186,17 @@ fn handle_events(
 			| Event::ControllerButtonDown {
 				button: Button::DPadDown,
 				..
-			} => {
-				controller_state.set_down(true);
-			}
+			} => match fb.debug_mode {
+				DebugMode::Disabled => {
+					controller_state.set_down(true);
+				}
+				DebugMode::Backgrounds(_) => {
+					fb.debug_mode = DebugMode::Sprites(0);
+				}
+				DebugMode::Sprites(_) => {
+					fb.debug_mode = DebugMode::Backgrounds(BackgroundView::Both);
+				}
+			},
 			Event::KeyUp {
 				keycode: Some(Keycode::Down),
 				..
@@ -176,9 +213,14 @@ fn handle_events(
 			}
 			| Event::ControllerButtonDown {
 				button: Button::A, ..
-			} => {
-				controller_state.set_a(true);
-			}
+			} => match fb.debug_mode {
+				DebugMode::Disabled => {
+					controller_state.set_a(true);
+				}
+				DebugMode::Backgrounds(_) | DebugMode::Sprites(_) => {
+					fb.debug_background_mode = fb.debug_background_mode.next();
+				}
+			},
 			Event::KeyUp {
 				keycode: Some(Keycode::Z),
 				..
@@ -251,16 +293,26 @@ fn handle_events(
 			Event::ControllerButtonDown {
 				button: Button::LeftShoulder,
 				..
-			} => {
-				system_state.rest.rom.framebuffer().hide_left =
-					!system_state.rest.rom.framebuffer().hide_left;
+			} if fb.debug_mode == DebugMode::Disabled => {
+				fb.hide_left = !fb.hide_left;
 			}
 			Event::ControllerButtonDown {
 				button: Button::RightShoulder,
 				..
+			} if fb.debug_mode == DebugMode::Disabled => {
+				fb.hide_right = !fb.hide_right;
+			}
+			Event::KeyDown {
+				keycode: Some(Keycode::D),
+				..
+			}
+			| Event::ControllerButtonDown {
+				button: Button::Y, ..
 			} => {
-				system_state.rest.rom.framebuffer().hide_right =
-					!system_state.rest.rom.framebuffer().hide_right;
+				fb.debug_mode = match fb.debug_mode {
+					DebugMode::Disabled => DebugMode::Backgrounds(BackgroundView::Both),
+					_ => DebugMode::Disabled,
+				};
 			}
 			_ => {}
 		}
