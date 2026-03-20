@@ -15,6 +15,39 @@ const TILE_SIZE: u32 = 8;
 const BG_TILES: u32 = 32;
 const BG_SIZE: u32 = TILE_SIZE * BG_TILES;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackgroundView {
+	Both,
+	Bg1Only,
+	Bg2Only,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DebugMode {
+	Disabled,
+	Backgrounds(BackgroundView),
+	Sprites(u8 /* is 0..64 */),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DebugBackgroundMode {
+	Black,
+	White,
+	Checkerboard,
+	Palette0,
+}
+
+impl DebugBackgroundMode {
+	pub fn next(self) -> Self {
+		match self {
+			Self::Black => Self::White,
+			Self::White => Self::Checkerboard,
+			Self::Checkerboard => Self::Palette0,
+			Self::Palette0 => Self::Black,
+		}
+	}
+}
+
 #[rustfmt::skip]
 const SWIZZLE_ORDER: [usize; 64] = [
 	 0,  8,  1,  9, 16, 24, 17, 25,
@@ -36,6 +69,8 @@ pub struct SdlFramebuffer<'tc> {
 	canvas: &'tc mut Canvas<Window>,
 	pub hide_left: bool,
 	pub hide_right: bool,
+	pub debug_mode: DebugMode,
+	pub debug_background_mode: DebugBackgroundMode,
 }
 
 impl<'tc> SdlFramebuffer<'tc> {
@@ -82,6 +117,8 @@ impl<'tc> SdlFramebuffer<'tc> {
 			canvas,
 			hide_left: true,
 			hide_right: true,
+			debug_mode: DebugMode::Disabled,
+			debug_background_mode: DebugBackgroundMode::Checkerboard,
 		})
 	}
 }
@@ -132,6 +169,24 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
+		match self.debug_mode {
+			DebugMode::Disabled => self.render_nes_frame(ppu, lines),
+			DebugMode::Backgrounds(view) => {
+				draw_debug_background(&mut *self.canvas, self.debug_background_mode, ppu);
+				render_backgrounds_debug(self.canvas, &self.bg1, &self.bg2, view);
+			}
+			DebugMode::Sprites(idx) => {
+				draw_debug_background(&mut *self.canvas, self.debug_background_mode, ppu);
+				render_sprite_debug(self.canvas, &self.sprites[idx as usize].0, idx);
+			}
+		}
+		perf_stats::stop_gpu();
+		self.canvas.present();
+	}
+}
+
+impl SdlFramebuffer<'_> {
+	fn render_nes_frame(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
 		let canvas = &mut *self.canvas;
 
 		let bg_colour = Colour::from_const(ppu.palettes[0][0]);
@@ -328,10 +383,154 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 			0,
 			64,
 		);
-
-		canvas.present();
-		perf_stats::stop_gpu();
 	}
+}
+
+fn draw_debug_background(canvas: &mut Canvas<Window>, mode: DebugBackgroundMode, ppu: &Ppu) {
+	let (win_w, win_h) = canvas.window().size();
+
+	match mode {
+		DebugBackgroundMode::Black => {
+			canvas.set_draw_color(Color::RGB(0, 0, 0));
+			canvas.clear();
+		}
+		DebugBackgroundMode::White => {
+			canvas.set_draw_color(Color::RGB(255, 255, 255));
+			canvas.clear();
+		}
+		DebugBackgroundMode::Checkerboard => {
+			let tile_size = 16;
+
+			for y in (0..win_h).step_by(tile_size as usize) {
+				for x in (0..win_w).step_by(tile_size as usize) {
+					// Alternate between white and light grey
+					let is_white = ((x / tile_size) + (y / tile_size)) % 2 == 0;
+					let colour = if is_white {
+						Color::RGB(255, 255, 255)
+					} else {
+						Color::RGB(200, 200, 200)
+					};
+
+					canvas.set_draw_color(colour);
+					canvas
+						.fill_rect(Rect::new(
+							x as i32,
+							y as i32,
+							tile_size.min(win_w - x),
+							tile_size.min(win_h - y),
+						))
+						.ok();
+				}
+			}
+		}
+		DebugBackgroundMode::Palette0 => {
+			let bg_colour = Colour::from_const(ppu.palettes[0][0]);
+			canvas.set_draw_color(Color::RGB(bg_colour.red, bg_colour.green, bg_colour.blue));
+			canvas.clear();
+		}
+	}
+}
+
+fn render_backgrounds_debug(
+	canvas: &mut Canvas<Window>,
+	bg1: &Texture,
+	bg2: &Texture,
+	view: BackgroundView,
+) {
+	let (win_w, win_h) = canvas.window().size();
+
+	match view {
+		BackgroundView::Both => {
+			let content_w = 512.0;
+			let content_h = 256.0;
+			let scale = ((win_w as f32 / content_w).min(win_h as f32 / content_h)).max(1.0);
+			let scaled_w = content_w * scale;
+			let scaled_h = content_h * scale;
+			let x_offset = ((win_w as f32 - scaled_w) / 2.0) as i32;
+			let y_offset = ((win_h as f32 - scaled_h) / 2.0) as i32;
+
+			canvas
+				.copy(
+					bg1,
+					None,
+					Rect::new(
+						x_offset,
+						y_offset,
+						(256.0 * scale) as u32,
+						(256.0 * scale) as u32,
+					),
+				)
+				.unwrap();
+
+			canvas
+				.copy(
+					bg2,
+					None,
+					Rect::new(
+						x_offset + (256.0 * scale) as i32,
+						y_offset,
+						(256.0 * scale) as u32,
+						(256.0 * scale) as u32,
+					),
+				)
+				.unwrap();
+		}
+		BackgroundView::Bg1Only => {
+			let content_w = 256.0;
+			let content_h = 256.0;
+			let scale = ((win_w as f32 / content_w).min(win_h as f32 / content_h)).max(1.0);
+			let scaled_w = content_w * scale;
+			let scaled_h = content_h * scale;
+			let x_offset = ((win_w as f32 - scaled_w) / 2.0) as i32;
+			let y_offset = ((win_h as f32 - scaled_h) / 2.0) as i32;
+
+			canvas
+				.copy(
+					bg1,
+					None,
+					Rect::new(x_offset, y_offset, scaled_w as u32, scaled_h as u32),
+				)
+				.unwrap();
+		}
+		BackgroundView::Bg2Only => {
+			let content_w = 256.0;
+			let content_h = 256.0;
+			let scale = ((win_w as f32 / content_w).min(win_h as f32 / content_h)).max(1.0);
+			let scaled_w = content_w * scale;
+			let scaled_h = content_h * scale;
+			let x_offset = ((win_w as f32 - scaled_w) / 2.0) as i32;
+			let y_offset = ((win_h as f32 - scaled_h) / 2.0) as i32;
+
+			canvas
+				.copy(
+					bg2,
+					None,
+					Rect::new(x_offset, y_offset, scaled_w as u32, scaled_h as u32),
+				)
+				.unwrap();
+		}
+	}
+}
+
+fn render_sprite_debug(canvas: &mut Canvas<Window>, sprite_tex: &Texture, sprite_idx: u8) {
+	let (win_w, win_h) = canvas.window().size();
+
+	let base_size = 8.0;
+	let min_scale = 32.0;
+	let scale = ((win_w as f32 / base_size).min(win_h as f32 / base_size) * 0.5).max(min_scale);
+	let scaled_size = base_size * scale;
+	let x_offset = ((win_w as f32 - scaled_size) / 2.0) as i32;
+	let y_offset = ((win_h as f32 - scaled_size) / 2.0) as i32;
+
+	canvas
+		.copy(
+			sprite_tex,
+			None,
+			Rect::new(x_offset, y_offset, scaled_size as u32, scaled_size as u32),
+		)
+		.unwrap();
+
+	println!("Sprite {} / 64", sprite_idx);
 }
 
 fn nes_colour_to_argb8888(value: Option<NesColour>) -> u32 {
