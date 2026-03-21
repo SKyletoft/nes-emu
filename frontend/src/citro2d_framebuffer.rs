@@ -17,6 +17,8 @@ use emu_core::{
 use crate::debug_mode::{BackgroundView, DebugBackgroundMode, DebugMode};
 
 const X_OFFSET: f32 = (400. - 256.) / 2.;
+const TOP_SCREEN_W: f32 = 400.;
+const TOP_SCREEN_H: f32 = 240.;
 
 pub struct Citro2DFramebuffer<'a> {
 	instance: Instance,
@@ -129,6 +131,20 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
+		match self.debug_mode {
+			DebugMode::Disabled => self.render_nes_frame(ppu, lines),
+			DebugMode::Backgrounds(view) => {
+				self.render_backgrounds_debug(view, self.debug_background_mode, ppu)
+			}
+			DebugMode::Sprites(idx) => {
+				self.render_sprite_debug(idx, ppu, self.debug_background_mode)
+			}
+		}
+	}
+}
+
+impl Citro2DFramebuffer<'_> {
+	fn render_nes_frame(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
 		for (idx, sprite) in self.sprites.iter_mut().enumerate() {
 			sprite.set_depth(if ppu.oam[idx].attr.priority() {
 				0.1
@@ -247,6 +263,178 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 
 			perf_stats::stop_gpu();
 		});
+	}
+
+	fn render_backgrounds_debug(
+		&mut self,
+		view: BackgroundView,
+		mode: DebugBackgroundMode,
+		ppu: &Ppu,
+	) {
+		self.instance.render_target(&mut self.target, |_, t| {
+			perf_stats::start_gpu();
+
+			render_background(mode, ppu, t);
+
+			match view {
+				BackgroundView::Both => {
+					let content_w = 512.;
+					let content_h = 256.;
+					let scale = ((TOP_SCREEN_W / content_w).min(TOP_SCREEN_H / content_h)).max(1.);
+					let scaled_w = 256. * scale;
+					let scaled_h = 256. * scale;
+					let x_offset = (TOP_SCREEN_W - scaled_w * 2.) / 2.;
+					let y_offset = (TOP_SCREEN_H - scaled_h) / 2.;
+
+					self.bg1.set_size((scaled_w, scaled_h));
+					self.bg2.set_size((scaled_w, scaled_h));
+					self.bg1.set_pos((x_offset, y_offset));
+					self.bg2.set_pos((x_offset + scaled_w, y_offset));
+					self.bg1.set_mirroring(Mirroring::Custom {
+						left: 0.,
+						right: 1.,
+						top: 0.,
+						bottom: 1.,
+					});
+					self.bg2.set_mirroring(Mirroring::Custom {
+						left: 0.,
+						right: 1.,
+						top: 0.,
+						bottom: 1.,
+					});
+
+					t.render_2d_shape(&self.bg1);
+					t.render_2d_shape(&self.bg2);
+				}
+				BackgroundView::Bg1Only | BackgroundView::Bg2Only => {
+					let content_w = 256.;
+					let content_h = 256.;
+					let scale = ((TOP_SCREEN_W / content_w).min(TOP_SCREEN_H / content_h)).max(1.);
+					let scaled_w = content_w * scale;
+					let scaled_h = content_h * scale;
+					let x_offset = (TOP_SCREEN_W - scaled_w) / 2.;
+					let y_offset = (TOP_SCREEN_H - scaled_h) / 2.;
+
+					let bg = if view == BackgroundView::Bg1Only {
+						&mut self.bg1
+					} else {
+						&mut self.bg2
+					};
+					bg.set_size((scaled_w, scaled_h));
+					bg.set_pos((x_offset, y_offset));
+					bg.set_mirroring(Mirroring::Custom {
+						left: 0.,
+						right: 1.,
+						top: 0.,
+						bottom: 1.,
+					});
+
+					t.render_2d_shape(bg);
+				}
+			}
+
+			perf_stats::stop_gpu();
+		});
+	}
+
+	fn render_sprite_debug(&mut self, sprite_idx: u8, ppu: &Ppu, mode: DebugBackgroundMode) {
+		let sprite = &ppu.oam[sprite_idx as usize];
+		let tile_idx = sprite.tile;
+
+		let base_size = 8.;
+		let min_scale = 16.;
+		let scale = ((TOP_SCREEN_W / base_size).min(TOP_SCREEN_H / base_size) * 0.5).max(min_scale);
+		let scaled_size = base_size * scale;
+		let x_offset = (TOP_SCREEN_W - scaled_size) / 2.;
+		let y_offset = (TOP_SCREEN_H - scaled_size) / 2.;
+
+		let sp = &mut self.sprites[sprite_idx as usize];
+		sp.set_size((scaled_size, scaled_size));
+		sp.set_pos((x_offset, y_offset));
+		sp.set_mirroring(Mirroring::Custom {
+			left: 0.,
+			right: 1.,
+			top: 0.,
+			bottom: 1.,
+		});
+
+		self.instance.render_target(&mut self.target, |_, t| {
+			perf_stats::start_gpu();
+
+			render_background(mode, ppu, t);
+
+			t.render_2d_shape(&self.sprites[sprite_idx as usize]);
+
+			// for offset in 0..3 {
+			//	t.render_2d_shape(&Rectangle {
+			//		point: Point {
+			//			x: x_offset - 1. + offset as f32,
+			//			y: y_offset - 1. + offset as f32,
+			//			z: 1.,
+			//		},
+			//		size: Size {
+			//			width: scaled_size + 2. - (offset as f32 * 2.),
+			//			height: scaled_size + 2. - (offset as f32 * 2.),
+			//		},
+			//		multi_color: MultiColor {
+			//			top_left: citro2d::render::Colour::new(255, 0, 0),
+			//			top_right: citro2d::render::Colour::new(255, 0, 0),
+			//			bottom_left: citro2d::render::Colour::new(255, 0, 0),
+			//			bottom_right: citro2d::render::Colour::new(255, 0, 0),
+			//		},
+			//	});
+			// }
+
+			perf_stats::stop_gpu();
+		});
+
+		println!("Sprite {} / 64 - Tile {}", sprite_idx, tile_idx);
+	}
+}
+
+fn render_background(mode: DebugBackgroundMode, ppu: &Ppu, t: &mut Target<'_>) {
+	match mode {
+		DebugBackgroundMode::Black => {
+			t.clear(citro2d::render::Colour::new(0, 0, 0));
+		}
+		DebugBackgroundMode::White => {
+			t.clear(citro2d::render::Colour::new(255, 255, 255));
+		}
+		DebugBackgroundMode::Checkerboard => {
+			t.clear(citro2d::render::Colour::new(200, 200, 200));
+			let tile_size: f32 = 16.;
+			let mut y = 0.;
+			while y < TOP_SCREEN_H {
+				let mut x = if (y / tile_size) as i32 % 2 == 0 {
+					0.
+				} else {
+					tile_size
+				};
+				while x < TOP_SCREEN_W {
+					t.render_2d_shape(&Rectangle {
+						point: Point { x, y, z: 1. },
+						size: Size {
+							width: tile_size,
+							height: tile_size,
+						},
+						multi_color: MultiColor {
+							top_left: citro2d::render::Colour::new(255, 255, 255),
+							top_right: citro2d::render::Colour::new(255, 255, 255),
+							bottom_left: citro2d::render::Colour::new(255, 255, 255),
+							bottom_right: citro2d::render::Colour::new(255, 255, 255),
+						},
+					});
+					x += tile_size * 2.;
+				}
+				y += tile_size;
+			}
+		}
+		DebugBackgroundMode::Palette0 => {
+			let Colour {
+				red, green, blue, ..
+			} = Colour::from_const(ppu.palettes[0][0]);
+			t.clear(citro2d::render::Colour::new(red, green, blue));
+		}
 	}
 }
 
