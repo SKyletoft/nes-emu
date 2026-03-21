@@ -14,6 +14,7 @@ use sdl2::{
 const TILE_SIZE: u32 = 8;
 const BG_TILES: u32 = 32;
 const BG_SIZE: u32 = TILE_SIZE * BG_TILES;
+const PATTERN_TABLE_SIZE: u32 = 128; // 16 tiles × 8 pixels
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BackgroundView {
@@ -70,10 +71,17 @@ const SWIZZLE_ORDER: [usize; 64] = [
 	38, 46, 39, 47, 54, 62, 55, 63,
 ];
 
+struct SdlSprite<'tc> {
+	texture: Texture<'tc>,
+	flip_horizontal: bool,
+	flip_vertical: bool,
+	uvs: Rect,
+}
+
 pub struct SdlFramebuffer<'tc> {
 	bg1: Texture<'tc>,
 	bg2: Texture<'tc>,
-	sprites: [(Texture<'tc>, bool, bool); 64],
+	sprites: [SdlSprite<'tc>; 64],
 	framebuffer_texture: Texture<'tc>,
 	texture_creator: &'tc TextureCreator<WindowContext>,
 	canvas: &'tc mut Canvas<Window>,
@@ -102,10 +110,19 @@ impl<'tc> SdlFramebuffer<'tc> {
 
 		let sprites = std::array::from_fn(|_| {
 			let mut tex = tc
-				.create_texture_streaming(PixelFormatEnum::ARGB8888, TILE_SIZE, TILE_SIZE)
+				.create_texture_streaming(
+					PixelFormatEnum::ARGB8888,
+					PATTERN_TABLE_SIZE,
+					PATTERN_TABLE_SIZE,
+				)
 				.unwrap();
 			tex.set_blend_mode(BlendMode::BLEND);
-			(tex, false, false)
+			SdlSprite {
+				texture: tex,
+				flip_horizontal: false,
+				flip_vertical: false,
+				uvs: Rect::new(0, 0, TILE_SIZE, TILE_SIZE),
+			}
 		});
 
 		let mut framebuffer_texture = tc
@@ -158,29 +175,59 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		bg.update(rect, byte_buffer, 8 * 4).unwrap();
 	}
 
-		let mut buffer = [0u32; 64];
-		for (col, i) in sprite_data.zip(SWIZZLE_ORDER.iter().copied()) {
-			unsafe { unsafe_assert!(i < 64) };
-			buffer[i] = nes_colour_to_argb8888(col);
 	fn update_sprite(
 		&mut self,
 		sprite_data: impl Iterator<Item = Option<NesColour>>,
 		sprite_idx: usize,
 		tile_idx: u8,
 	) {
+		let mut buffer = [0u32; PATTERN_TABLE_SIZE as usize * PATTERN_TABLE_SIZE as usize];
+
+		let mut sprite_data = sprite_data;
+
+		const TILE_COUNT: usize = 256usize.isqrt();
+
+		for tile_row in 0..TILE_COUNT {
+			for tile_col in 0..TILE_COUNT {
+				for swizzle_idx in SWIZZLE_ORDER.iter().copied() {
+					let pixel_x_in_tile = swizzle_idx % 8;
+					let pixel_y_in_tile = swizzle_idx / 8;
+
+					let pixel_x = tile_col * 8 + pixel_x_in_tile;
+					let pixel_y = tile_row * 8 + pixel_y_in_tile;
+					let buffer_idx = pixel_y * PATTERN_TABLE_SIZE as usize + pixel_x;
+
+					unsafe { unsafe_assert!(buffer_idx < buffer.len()) };
+
+					let col = sprite_data.next().unwrap_or(None);
+					buffer[buffer_idx] = nes_colour_to_argb8888(col);
+				}
+			}
 		}
 
 		let byte_buffer: &[u8] = bytemuck::cast_slice(&buffer);
-		self.sprites[idx]
-			.0
-			.update(None, byte_buffer, 8 * 4)
+		self.sprites[sprite_idx]
+			.texture
+			.update(None, byte_buffer, PATTERN_TABLE_SIZE as usize * 4)
 			.unwrap();
+
+		unsafe { unsafe_assert!(sprite_idx < 64) };
+		let tile_x = (tile_idx % 16) as i32;
+		let tile_y = (tile_idx / 16) as i32;
+
+		let src_rect = Rect::new(
+			tile_x * TILE_SIZE as i32,
+			tile_y * TILE_SIZE as i32,
+			TILE_SIZE,
+			TILE_SIZE,
+		);
+		self.sprites[sprite_idx].uvs = src_rect;
 	}
 
 	fn set_mirroring(&mut self, sprite_idx: usize, horizontal: bool, vertical: bool) {
 		unsafe { unsafe_assert!(sprite_idx < 64) };
-		self.sprites[sprite_idx].2 = !horizontal;
-		self.sprites[sprite_idx].1 = vertical;
+		self.sprites[sprite_idx].flip_horizontal = horizontal;
+		self.sprites[sprite_idx].flip_vertical = vertical;
 	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
@@ -192,7 +239,13 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 			}
 			DebugMode::Sprites(idx) => {
 				draw_debug_background(&mut *self.canvas, self.debug_background_mode, ppu);
-				render_sprite_debug(self.canvas, &self.sprites[idx as usize].0, idx);
+				let sprite_uv = self.sprites[idx as usize].uvs;
+				render_sprite_debug(
+					self.canvas,
+					&self.sprites[idx as usize].texture,
+					sprite_uv,
+					idx,
+				);
 			}
 		}
 		perf_stats::stop_gpu();
@@ -269,13 +322,13 @@ impl SdlFramebuffer<'_> {
 							);
 							tex_canvas
 								.copy_ex(
-									&sprite.0,
-									None,
+									&sprite.texture,
+									Some(sprite.uvs),
 									Some(sprite_dst),
-									90.0,
+									0.0,
 									None,
-									sprite.1,
-									sprite.2,
+									sprite.flip_horizontal,
+									sprite.flip_vertical,
 								)
 								.unwrap();
 						}
@@ -353,13 +406,13 @@ impl SdlFramebuffer<'_> {
 							);
 							tex_canvas
 								.copy_ex(
-									&sprite.0,
-									None,
+									&sprite.texture,
+									Some(sprite.uvs),
 									Some(sprite_dst),
-									90.0,
+									0.0,
 									None,
-									sprite.1,
-									sprite.2,
+									sprite.flip_horizontal,
+									sprite.flip_vertical,
 								)
 								.unwrap();
 						}
@@ -527,11 +580,16 @@ fn render_backgrounds_debug(
 	}
 }
 
-fn render_sprite_debug(canvas: &mut Canvas<Window>, sprite_tex: &Texture, sprite_idx: u8) {
+fn render_sprite_debug(
+	canvas: &mut Canvas<Window>,
+	sprite_tex: &Texture,
+	sprite_uv: Rect,
+	sprite_idx: u8,
+) {
 	let (win_w, win_h) = canvas.window().size();
 
-	let base_size = 8.0;
-	let min_scale = 32.0;
+	let base_size = PATTERN_TABLE_SIZE as f32;
+	let min_scale = 4.0;
 	let scale = ((win_w as f32 / base_size).min(win_h as f32 / base_size) * 0.5).max(min_scale);
 	let scaled_size = base_size * scale;
 	let x_offset = ((win_w as f32 - scaled_size) / 2.0) as i32;
@@ -545,7 +603,25 @@ fn render_sprite_debug(canvas: &mut Canvas<Window>, sprite_tex: &Texture, sprite
 		)
 		.unwrap();
 
-	println!("Sprite {} / 64", sprite_idx);
+	let rect_x = x_offset + (sprite_uv.x() as f32 * scale) as i32;
+	let rect_y = y_offset + (sprite_uv.y() as f32 * scale) as i32;
+	let rect_w = (sprite_uv.width() as f32 * scale) as u32;
+	let rect_h = (sprite_uv.height() as f32 * scale) as u32;
+
+	canvas.set_draw_color(Color::RGB(255, 0, 0));
+
+	for offset in 0..3 {
+		let rect = Rect::new(
+			rect_x - 1 + offset,
+			rect_y - 1 + offset,
+			rect_w + 2 - (offset as u32 * 2),
+			rect_h + 2 - (offset as u32 * 2),
+		);
+		canvas.draw_rect(rect).unwrap();
+	}
+
+	let tile_idx = (sprite_uv.x() / TILE_SIZE as i32) + (sprite_uv.y() / TILE_SIZE as i32) * 16;
+	println!("Sprite {} / 64 - Tile {}", sprite_idx, tile_idx);
 }
 
 fn nes_colour_to_argb8888(value: Option<NesColour>) -> u32 {
