@@ -8,6 +8,14 @@ pub enum BackgroundView {
 impl BackgroundView {
 	pub fn next(self) -> Self {
 		match self {
+			BackgroundView::Both => BackgroundView::Bg1Only,
+			BackgroundView::Bg1Only => BackgroundView::Bg2Only,
+			BackgroundView::Bg2Only => BackgroundView::Both,
+		}
+	}
+
+	pub fn prev(self) -> Self {
+		match self {
 			BackgroundView::Both => BackgroundView::Bg2Only,
 			BackgroundView::Bg1Only => BackgroundView::Both,
 			BackgroundView::Bg2Only => BackgroundView::Bg1Only,

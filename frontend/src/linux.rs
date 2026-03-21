@@ -106,7 +106,7 @@ fn handle_events(
 					controller_state.set_left(true);
 				}
 				DebugMode::Backgrounds(view) => {
-					fb.debug_mode = DebugMode::Backgrounds(view.next());
+					fb.debug_mode = DebugMode::Backgrounds(view.prev());
 				}
 				DebugMode::Sprites(idx) => {
 					fb.debug_mode = DebugMode::Sprites(if idx == 0 { 63 } else { idx - 1 });
@@ -134,11 +134,7 @@ fn handle_events(
 					controller_state.set_right(true);
 				}
 				DebugMode::Backgrounds(view) => {
-					fb.debug_mode = DebugMode::Backgrounds(match view {
-						BackgroundView::Both => BackgroundView::Bg1Only,
-						BackgroundView::Bg1Only => BackgroundView::Bg2Only,
-						BackgroundView::Bg2Only => BackgroundView::Both,
-					});
+					fb.debug_mode = DebugMode::Backgrounds(view.next());
 				}
 				DebugMode::Sprites(idx) => {
 					fb.debug_mode = DebugMode::Sprites(if idx == 63 { 0 } else { idx + 1 });
