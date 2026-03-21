@@ -1,5 +1,7 @@
 #![feature(const_array, const_trait_impl)]
 
+pub mod debug_mode;
+
 #[cfg(not(target_os = "horizon"))]
 pub mod linux;
 #[cfg(not(target_os = "horizon"))]

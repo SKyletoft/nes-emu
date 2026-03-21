@@ -3,7 +3,10 @@ use std::time::{Duration, Instant};
 use emu_core::{controller::ControllerState, interpret::State, mapper::Mapper, nrom256::NROM256};
 use sdl2::{controller::Button, event::Event, keyboard::Keycode};
 
-use crate::sdl_framebuffer::{BackgroundView, DebugMode, SdlFramebuffer};
+use crate::{
+	debug_mode::{BackgroundView, DebugMode},
+	sdl_framebuffer::SdlFramebuffer,
+};
 
 pub fn main() {
 	let sdl_context = sdl2::init().unwrap();

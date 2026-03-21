@@ -11,53 +11,12 @@ use sdl2::{
 	video::{Window, WindowContext},
 };
 
+use crate::debug_mode::{BackgroundView, DebugBackgroundMode, DebugMode};
+
 const TILE_SIZE: u32 = 8;
 const BG_TILES: u32 = 32;
 const BG_SIZE: u32 = TILE_SIZE * BG_TILES;
 const PATTERN_TABLE_SIZE: u32 = 128; // 16 tiles × 8 pixels
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum BackgroundView {
-	Both,
-	Bg1Only,
-	Bg2Only,
-}
-
-impl BackgroundView {
-	pub fn next(self) -> Self {
-		match self {
-			BackgroundView::Both => BackgroundView::Bg2Only,
-			BackgroundView::Bg1Only => BackgroundView::Both,
-			BackgroundView::Bg2Only => BackgroundView::Bg1Only,
-		}
-	}
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DebugMode {
-	Disabled,
-	Backgrounds(BackgroundView),
-	Sprites(u8 /* is 0..64 */),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DebugBackgroundMode {
-	Black,
-	White,
-	Checkerboard,
-	Palette0,
-}
-
-impl DebugBackgroundMode {
-	pub fn next(self) -> Self {
-		match self {
-			Self::Black => Self::White,
-			Self::White => Self::Checkerboard,
-			Self::Checkerboard => Self::Palette0,
-			Self::Palette0 => Self::Black,
-		}
-	}
-}
 
 #[rustfmt::skip]
 const SWIZZLE_ORDER: [usize; 64] = [
