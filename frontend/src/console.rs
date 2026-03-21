@@ -1,7 +1,10 @@
 use ctru::prelude::*;
 use emu_core::{controller::ControllerState, interpret::State, mapper::Mapper, perf_stats};
 
-use crate::citro2d_framebuffer::Citro2DFramebuffer;
+use crate::{
+	citro2d_framebuffer::Citro2DFramebuffer,
+	debug_mode::{BackgroundView, DebugMode},
+};
 
 pub fn main() {
 	let apt = Apt::new().unwrap();
@@ -45,26 +48,62 @@ pub fn main() {
 		println!("{frame_count:5}: {stats}");
 
 		hid.scan_input();
-
 		let mut c = ControllerState::new();
-		c.set_a(hid.keys_held().contains(KeyPad::A));
-		c.set_b(hid.keys_held().contains(KeyPad::B) || hid.keys_held().contains(KeyPad::X));
-		c.set_start(hid.keys_held().contains(KeyPad::START));
-		c.set_select(hid.keys_held().contains(KeyPad::SELECT));
-		c.set_up(hid.keys_held().contains(KeyPad::DPAD_UP));
-		c.set_down(hid.keys_held().contains(KeyPad::DPAD_DOWN));
-		c.set_left(hid.keys_held().contains(KeyPad::DPAD_LEFT));
-		c.set_right(hid.keys_held().contains(KeyPad::DPAD_RIGHT));
-		*system_state.rest.controller1.state_mut() = c.into_bits();
 
-		if hid.keys_down().contains(KeyPad::L) {
-			system_state.rest.rom.framebuffer().hide_left =
-				!system_state.rest.rom.framebuffer().hide_left;
+		let fb = system_state.rest.rom.framebuffer();
+
+		if hid.keys_down().contains(KeyPad::Y) {
+			fb.debug_mode = match fb.debug_mode {
+				DebugMode::Disabled => DebugMode::Backgrounds(BackgroundView::Both),
+				_ => DebugMode::Disabled,
+			};
 		}
-		if hid.keys_down().contains(KeyPad::R) {
-			system_state.rest.rom.framebuffer().hide_right =
-				!system_state.rest.rom.framebuffer().hide_right;
+
+		match fb.debug_mode {
+			DebugMode::Disabled => {
+				c.set_a(hid.keys_held().contains(KeyPad::A));
+				c.set_b(hid.keys_held().contains(KeyPad::B) || hid.keys_held().contains(KeyPad::X));
+				c.set_start(hid.keys_held().contains(KeyPad::START));
+				c.set_select(hid.keys_held().contains(KeyPad::SELECT));
+				c.set_up(hid.keys_held().contains(KeyPad::DPAD_UP));
+				c.set_down(hid.keys_held().contains(KeyPad::DPAD_DOWN));
+				c.set_left(hid.keys_held().contains(KeyPad::DPAD_LEFT));
+				c.set_right(hid.keys_held().contains(KeyPad::DPAD_RIGHT));
+			}
+			DebugMode::Backgrounds(view) => {
+				if hid.keys_down().contains(KeyPad::DPAD_UP)
+					|| hid.keys_down().contains(KeyPad::DPAD_DOWN)
+				{
+					fb.debug_mode = DebugMode::Sprites(0);
+				}
+				if hid.keys_down().contains(KeyPad::DPAD_LEFT) {
+					fb.debug_mode = DebugMode::Backgrounds(view.prev());
+				}
+				if hid.keys_down().contains(KeyPad::DPAD_RIGHT) {
+					fb.debug_mode = DebugMode::Backgrounds(view.next());
+				}
+				if hid.keys_down().contains(KeyPad::A) {
+					fb.debug_background_mode = fb.debug_background_mode.next();
+				}
+			}
+			DebugMode::Sprites(idx) => {
+				if hid.keys_down().contains(KeyPad::DPAD_UP)
+					|| hid.keys_down().contains(KeyPad::DPAD_DOWN)
+				{
+					fb.debug_mode = DebugMode::Backgrounds(BackgroundView::Both);
+				}
+				if hid.keys_down().contains(KeyPad::DPAD_LEFT) {
+					fb.debug_mode = DebugMode::Sprites(if idx == 0 { 63 } else { idx - 1 });
+				}
+				if hid.keys_down().contains(KeyPad::DPAD_RIGHT) {
+					fb.debug_mode = DebugMode::Sprites(if idx == 63 { 0 } else { idx + 1 });
+				}
+				if hid.keys_down().contains(KeyPad::A) {
+					fb.debug_background_mode = fb.debug_background_mode.next();
+				}
+			}
 		}
+		*system_state.rest.controller1.state_mut() = c.into_bits();
 
 		if hid.keys_down().contains(KeyPad::SELECT) {
 			break;

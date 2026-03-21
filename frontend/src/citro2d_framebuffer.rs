@@ -14,6 +14,8 @@ use emu_core::{
 	unsafe_assert,
 };
 
+use crate::debug_mode::{BackgroundView, DebugBackgroundMode, DebugMode};
+
 const X_OFFSET: f32 = (400. - 256.) / 2.;
 
 pub struct Citro2DFramebuffer<'a> {
@@ -26,6 +28,8 @@ pub struct Citro2DFramebuffer<'a> {
 
 	pub hide_left: bool,
 	pub hide_right: bool,
+	pub debug_mode: DebugMode,
+	pub debug_background_mode: DebugBackgroundMode,
 }
 
 impl<'a> Citro2DFramebuffer<'a> {
@@ -50,6 +54,8 @@ impl<'a> Citro2DFramebuffer<'a> {
 
 		let hide_left = true;
 		let hide_right = true;
+		let debug_mode = DebugMode::Disabled;
+		let debug_background_mode = DebugBackgroundMode::Checkerboard;
 
 		Ok(Self {
 			instance,
@@ -59,6 +65,8 @@ impl<'a> Citro2DFramebuffer<'a> {
 			sprites,
 			hide_left,
 			hide_right,
+			debug_mode,
+			debug_background_mode,
 		})
 	}
 }
