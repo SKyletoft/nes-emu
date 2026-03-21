@@ -93,9 +93,14 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 		}
 	}
 
-	fn update_sprite(&mut self, sprite_data: impl Iterator<Item = Option<NesColour>>, idx: usize, _tile_idx: u8) {
-		unsafe { unsafe_assert!(idx < 64) };
-		let tile = self.sprites[idx]
+	fn update_sprite(
+		&mut self,
+		sprite_data: impl Iterator<Item = Option<NesColour>>,
+		sprite_idx: usize,
+		_tile_idx: u8,
+	) {
+		unsafe { unsafe_assert!(sprite_idx < 64) };
+		let tile = self.sprites[sprite_idx]
 			.texture_mut()
 			.unwrap()
 			.raw_flat_tile::<Rgba5551>(0, 0);
