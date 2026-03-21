@@ -158,11 +158,16 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		bg.update(rect, byte_buffer, 8 * 4).unwrap();
 	}
 
-	fn update_sprite(&mut self, sprite_data: impl Iterator<Item = Option<NesColour>>, idx: usize) {
 		let mut buffer = [0u32; 64];
 		for (col, i) in sprite_data.zip(SWIZZLE_ORDER.iter().copied()) {
 			unsafe { unsafe_assert!(i < 64) };
 			buffer[i] = nes_colour_to_argb8888(col);
+	fn update_sprite(
+		&mut self,
+		sprite_data: impl Iterator<Item = Option<NesColour>>,
+		sprite_idx: usize,
+		tile_idx: u8,
+	) {
 		}
 
 		let byte_buffer: &[u8] = bytemuck::cast_slice(&buffer);
