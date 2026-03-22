@@ -51,7 +51,7 @@ impl<'a> Citro2DFramebuffer<'a> {
 		let sprites = std::array::from_fn(|_| {
 			Sprite::from_tex(Tex::new(8, 8, ColourFormat::Rgba5551))
 				.with_size((8., 8.))
-				.with_mirroring(Mirroring::MirrorXY)
+				.with_mirroring(Mirroring::Normal)
 		});
 
 		let hide_left = true;
@@ -290,18 +290,8 @@ impl Citro2DFramebuffer<'_> {
 					self.bg2.set_size((scaled_w, scaled_h));
 					self.bg1.set_pos((x_offset, y_offset));
 					self.bg2.set_pos((x_offset + scaled_w, y_offset));
-					self.bg1.set_mirroring(Mirroring::Custom {
-						left: 0.,
-						right: 1.,
-						top: 0.,
-						bottom: 1.,
-					});
-					self.bg2.set_mirroring(Mirroring::Custom {
-						left: 0.,
-						right: 1.,
-						top: 0.,
-						bottom: 1.,
-					});
+					self.bg1.set_mirroring(Mirroring::Normal);
+					self.bg2.set_mirroring(Mirroring::Normal);
 
 					t.render_2d_shape(&self.bg1);
 					t.render_2d_shape(&self.bg2);
@@ -322,12 +312,7 @@ impl Citro2DFramebuffer<'_> {
 					};
 					bg.set_size((scaled_w, scaled_h));
 					bg.set_pos((x_offset, y_offset));
-					bg.set_mirroring(Mirroring::Custom {
-						left: 0.,
-						right: 1.,
-						top: 0.,
-						bottom: 1.,
-					});
+					bg.set_mirroring(Mirroring::Normal);
 
 					t.render_2d_shape(bg);
 				}
@@ -351,12 +336,7 @@ impl Citro2DFramebuffer<'_> {
 		let sp = &mut self.sprites[sprite_idx as usize];
 		sp.set_size((scaled_size, scaled_size));
 		sp.set_pos((x_offset, y_offset));
-		sp.set_mirroring(Mirroring::Custom {
-			left: 0.,
-			right: 1.,
-			top: 0.,
-			bottom: 1.,
-		});
+		sp.set_mirroring(Mirroring::Normal);
 
 		self.instance.render_target(&mut self.target, |_, t| {
 			perf_stats::start_gpu();
@@ -412,7 +392,7 @@ fn render_background(mode: DebugBackgroundMode, ppu: &Ppu, t: &mut Target<'_>) {
 				};
 				while x < TOP_SCREEN_W {
 					t.render_2d_shape(&Rectangle {
-						point: Point { x, y, z: 1. },
+						point: Point { x, y, z: 0. },
 						size: Size {
 							width: tile_size,
 							height: tile_size,
