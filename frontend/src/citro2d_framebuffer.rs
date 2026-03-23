@@ -89,7 +89,7 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 		let tile = bg
 			.texture_mut()
 			.unwrap()
-			.raw_flat_tile::<Rgba5551>(y as _, x as _);
+			.raw_flat_tile::<Rgba5551>(x as _, y as _);
 		for (col, pixel) in tile_data.zip(tile.iter_mut()) {
 			*pixel = nes_colour_to_rgba5551(col);
 		}
@@ -158,9 +158,8 @@ impl Citro2DFramebuffer<'_> {
 			lines
 				.chunk_by(|l, r| l.0 == r.0 && l.1 + 1 == r.1)
 				.scan(0, |acc, curr| {
-					let old_acc = *acc;
-					*acc += curr.len();
-					Some((curr[0].0, curr[0].1, old_acc, curr.len() as i16))
+					*acc += curr.len() as i16;
+					Some((curr[0].0, curr[0].1, *acc))
 				});
 
 		self.instance.render_target(&mut self.target, |_, t| {
@@ -178,15 +177,16 @@ impl Citro2DFramebuffer<'_> {
 			}
 
 			if ppu.mask.show_bg() {
-				for (x_offset, y_offset, y, height) in background_slices {
-					self.bg1.set_size((256., height as f32));
-					self.bg2.set_size((256., height as f32));
+				for (x_offset, y_start, y_end) in background_slices {
+					let height = (y_end - y_start) as f32;
+					self.bg1.set_size((256., height));
+					self.bg2.set_size((256., height));
 
 					let mirroring = Mirroring::Custom {
-						left: 1.,
-						right: 0.,
-						top: y_offset as f32 / 256.,
-						bottom: (y_offset + height) as f32 / 256.,
+						left: 0.,
+						right: 1.,
+						bottom: (256 - y_end) as f32 / 256.,
+						top: (256 - y_start) as f32 / 256.,
 					};
 
 					let x1 = {
@@ -208,7 +208,7 @@ impl Citro2DFramebuffer<'_> {
 
 					for (bg, x) in [(&mut self.bg1, x1), (&mut self.bg2, x2)].into_iter() {
 						for offset in [-512., 0., 512.].into_iter() {
-							bg.set_pos((x + offset, y as f32));
+							bg.set_pos((x + offset, y_start as f32));
 							bg.set_mirroring(mirroring.clone());
 							t.render_2d_shape(bg);
 						}
@@ -280,7 +280,7 @@ impl Citro2DFramebuffer<'_> {
 				BackgroundView::Both => {
 					let content_w = 512.;
 					let content_h = 256.;
-					let scale = ((TOP_SCREEN_W / content_w).min(TOP_SCREEN_H / content_h)).max(1.);
+					let scale = (TOP_SCREEN_W / content_w).min(TOP_SCREEN_H / content_h);
 					let scaled_w = 256. * scale;
 					let scaled_h = 256. * scale;
 					let x_offset = (TOP_SCREEN_W - scaled_w * 2.) / 2.;
@@ -297,21 +297,13 @@ impl Citro2DFramebuffer<'_> {
 					t.render_2d_shape(&self.bg2);
 				}
 				BackgroundView::Bg1Only | BackgroundView::Bg2Only => {
-					let content_w = 256.;
-					let content_h = 256.;
-					let scale = ((TOP_SCREEN_W / content_w).min(TOP_SCREEN_H / content_h)).max(1.);
-					let scaled_w = content_w * scale;
-					let scaled_h = content_h * scale;
-					let x_offset = (TOP_SCREEN_W - scaled_w) / 2.;
-					let y_offset = (TOP_SCREEN_H - scaled_h) / 2.;
-
 					let bg = if view == BackgroundView::Bg1Only {
 						&mut self.bg1
 					} else {
 						&mut self.bg2
 					};
-					bg.set_size((scaled_w, scaled_h));
-					bg.set_pos((x_offset, y_offset));
+					bg.set_size((256., 256.));
+					bg.set_pos(((TOP_SCREEN_W - 256.) / 2., 0.));
 					bg.set_mirroring(Mirroring::Normal);
 
 					t.render_2d_shape(bg);
