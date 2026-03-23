@@ -2,7 +2,7 @@ use citro2d::{
 	Instance, Point, Size,
 	pixel_type::Rgba5551,
 	render::Target,
-	shapes::{MultiColor, Rectangle},
+	shapes::{MultiColor, Rectangle, RectangleSolid},
 	sprites::{Mirroring, Sprite},
 	texture::{ColourFormat, Tex},
 };
@@ -146,6 +146,7 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 impl Citro2DFramebuffer<'_> {
 	fn render_nes_frame(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
 		for (idx, sprite) in self.sprites.iter_mut().enumerate() {
+			sprite.set_size((8., 8.));
 			sprite.set_depth(if ppu.oam[idx].attr.priority() {
 				0.1
 			} else {
@@ -318,17 +319,20 @@ impl Citro2DFramebuffer<'_> {
 		let sprite = &ppu.oam[sprite_idx as usize];
 		let tile_idx = sprite.tile;
 
-		let base_size = 8.;
-		let min_scale = 16.;
-		let scale = ((TOP_SCREEN_W / base_size).min(TOP_SCREEN_H / base_size) * 0.5).max(min_scale);
-		let scaled_size = base_size * scale;
-		let x_offset = (TOP_SCREEN_W - scaled_size) / 2.;
-		let y_offset = (TOP_SCREEN_H - scaled_size) / 2.;
+		const SPRITE_SIZE: f32 = 128.;
+		let sprite_pos = (
+			(TOP_SCREEN_W - SPRITE_SIZE) / 2.,
+			(TOP_SCREEN_H - SPRITE_SIZE) / 2.,
+		);
 
 		let sp = &mut self.sprites[sprite_idx as usize];
-		sp.set_size((scaled_size, scaled_size));
-		sp.set_pos((x_offset, y_offset));
+		sp.set_size((SPRITE_SIZE, SPRITE_SIZE));
+		sp.set_pos(sprite_pos);
 		sp.set_mirroring(Mirroring::Normal);
+
+		let tile_x = ((tile_idx % 16) as f32) * 8.;
+		let tile_y = ((tile_idx / 16) as f32) * 8.;
+		const TILE_SIZE: f32 = 8.;
 
 		self.instance.render_target(&mut self.target, |_, t| {
 			perf_stats::start_gpu();
@@ -337,25 +341,23 @@ impl Citro2DFramebuffer<'_> {
 
 			t.render_2d_shape(&self.sprites[sprite_idx as usize]);
 
-			// for offset in 0..3 {
-			//	t.render_2d_shape(&Rectangle {
-			//		point: Point {
-			//			x: x_offset - 1. + offset as f32,
-			//			y: y_offset - 1. + offset as f32,
-			//			z: 1.,
-			//		},
-			//		size: Size {
-			//			width: scaled_size + 2. - (offset as f32 * 2.),
-			//			height: scaled_size + 2. - (offset as f32 * 2.),
-			//		},
-			//		multi_color: MultiColor {
-			//			top_left: citro2d::render::Colour::new(255, 0, 0),
-			//			top_right: citro2d::render::Colour::new(255, 0, 0),
-			//			bottom_left: citro2d::render::Colour::new(255, 0, 0),
-			//			bottom_right: citro2d::render::Colour::new(255, 0, 0),
-			//		},
-			//	});
-			// }
+			let sides = [
+				(TILE_SIZE + 2., 1., -1., -1.),
+				(TILE_SIZE + 2., 1., -1., TILE_SIZE),
+				(1., TILE_SIZE + 2., -1., -1.),
+				(1., TILE_SIZE + 2., TILE_SIZE, -1.),
+			];
+			for (width, height, x_off, y_off) in sides {
+				t.render_2d_shape(&RectangleSolid {
+					point: Point {
+						x: sprite_pos.0 + x_off + tile_x,
+						y: sprite_pos.1 + y_off + tile_y,
+						z: 1.,
+					},
+					size: Size { width, height },
+					color: citro2d::render::Colour::new(255, 0, 0),
+				});
+			}
 
 			perf_stats::stop_gpu();
 		});
@@ -383,18 +385,13 @@ fn render_background(mode: DebugBackgroundMode, ppu: &Ppu, t: &mut Target<'_>) {
 					tile_size
 				};
 				while x < TOP_SCREEN_W {
-					t.render_2d_shape(&Rectangle {
+					t.render_2d_shape(&RectangleSolid {
 						point: Point { x, y, z: 0. },
 						size: Size {
 							width: tile_size,
 							height: tile_size,
 						},
-						multi_color: MultiColor {
-							top_left: citro2d::render::Colour::new(255, 255, 255),
-							top_right: citro2d::render::Colour::new(255, 255, 255),
-							bottom_left: citro2d::render::Colour::new(255, 255, 255),
-							bottom_right: citro2d::render::Colour::new(255, 255, 255),
-						},
+						color: citro2d::render::Colour::new(255, 255, 255),
 					});
 					x += tile_size * 2.;
 				}
