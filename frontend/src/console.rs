@@ -69,6 +69,12 @@ pub fn main() {
 				c.set_down(hid.keys_held().contains(KeyPad::DPAD_DOWN));
 				c.set_left(hid.keys_held().contains(KeyPad::DPAD_LEFT));
 				c.set_right(hid.keys_held().contains(KeyPad::DPAD_RIGHT));
+				if hid.keys_down().contains(KeyPad::L) {
+					fb.hide_left = !fb.hide_left;
+				}
+				if hid.keys_down().contains(KeyPad::R) {
+					fb.hide_right = !fb.hide_right;
+				}
 			}
 			DebugMode::Backgrounds(view) => {
 				if hid.keys_down().contains(KeyPad::DPAD_UP)
