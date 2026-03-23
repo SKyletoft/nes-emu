@@ -101,17 +101,20 @@ fn handle_events(
 			| Event::ControllerButtonDown {
 				button: Button::DPadLeft,
 				..
-			} => match fb.debug_mode {
-				DebugMode::Disabled => {
+			} => {
+				if !fb.debug_mode_enabled {
 					controller_state.set_left(true);
+				} else {
+					match fb.debug_mode {
+						DebugMode::Backgrounds(view) => {
+							fb.debug_mode = DebugMode::Backgrounds(view.prev());
+						}
+						DebugMode::Sprites(idx) => {
+							fb.debug_mode = DebugMode::Sprites(if idx == 0 { 63 } else { idx - 1 });
+						}
+					}
 				}
-				DebugMode::Backgrounds(view) => {
-					fb.debug_mode = DebugMode::Backgrounds(view.prev());
-				}
-				DebugMode::Sprites(idx) => {
-					fb.debug_mode = DebugMode::Sprites(if idx == 0 { 63 } else { idx - 1 });
-				}
-			},
+			}
 			Event::KeyUp {
 				keycode: Some(Keycode::Left),
 				..
@@ -129,17 +132,20 @@ fn handle_events(
 			| Event::ControllerButtonDown {
 				button: Button::DPadRight,
 				..
-			} => match fb.debug_mode {
-				DebugMode::Disabled => {
+			} => {
+				if !fb.debug_mode_enabled {
 					controller_state.set_right(true);
+				} else {
+					match fb.debug_mode {
+						DebugMode::Backgrounds(view) => {
+							fb.debug_mode = DebugMode::Backgrounds(view.next());
+						}
+						DebugMode::Sprites(idx) => {
+							fb.debug_mode = DebugMode::Sprites(if idx == 63 { 0 } else { idx + 1 });
+						}
+					}
 				}
-				DebugMode::Backgrounds(view) => {
-					fb.debug_mode = DebugMode::Backgrounds(view.next());
-				}
-				DebugMode::Sprites(idx) => {
-					fb.debug_mode = DebugMode::Sprites(if idx == 63 { 0 } else { idx + 1 });
-				}
-			},
+			}
 			Event::KeyUp {
 				keycode: Some(Keycode::Right),
 				..
@@ -157,17 +163,20 @@ fn handle_events(
 			| Event::ControllerButtonDown {
 				button: Button::DPadUp,
 				..
-			} => match fb.debug_mode {
-				DebugMode::Disabled => {
+			} => {
+				if !fb.debug_mode_enabled {
 					controller_state.set_up(true);
+				} else {
+					match fb.debug_mode {
+						DebugMode::Backgrounds(_) => {
+							fb.debug_mode = DebugMode::Sprites(0);
+						}
+						DebugMode::Sprites(_) => {
+							fb.debug_mode = DebugMode::Backgrounds(BackgroundView::Both);
+						}
+					}
 				}
-				DebugMode::Backgrounds(_) => {
-					fb.debug_mode = DebugMode::Sprites(0);
-				}
-				DebugMode::Sprites(_) => {
-					fb.debug_mode = DebugMode::Backgrounds(BackgroundView::Both);
-				}
-			},
+			}
 			Event::KeyUp {
 				keycode: Some(Keycode::Up),
 				..
@@ -185,17 +194,20 @@ fn handle_events(
 			| Event::ControllerButtonDown {
 				button: Button::DPadDown,
 				..
-			} => match fb.debug_mode {
-				DebugMode::Disabled => {
+			} => {
+				if !fb.debug_mode_enabled {
 					controller_state.set_down(true);
+				} else {
+					match fb.debug_mode {
+						DebugMode::Backgrounds(_) => {
+							fb.debug_mode = DebugMode::Sprites(0);
+						}
+						DebugMode::Sprites(_) => {
+							fb.debug_mode = DebugMode::Backgrounds(BackgroundView::Both);
+						}
+					}
 				}
-				DebugMode::Backgrounds(_) => {
-					fb.debug_mode = DebugMode::Sprites(0);
-				}
-				DebugMode::Sprites(_) => {
-					fb.debug_mode = DebugMode::Backgrounds(BackgroundView::Both);
-				}
-			},
+			}
 			Event::KeyUp {
 				keycode: Some(Keycode::Down),
 				..
@@ -212,14 +224,13 @@ fn handle_events(
 			}
 			| Event::ControllerButtonDown {
 				button: Button::A, ..
-			} => match fb.debug_mode {
-				DebugMode::Disabled => {
+			} => {
+				if !fb.debug_mode_enabled {
 					controller_state.set_a(true);
-				}
-				DebugMode::Backgrounds(_) | DebugMode::Sprites(_) => {
+				} else {
 					fb.debug_background_mode = fb.debug_background_mode.next();
 				}
-			},
+			}
 			Event::KeyUp {
 				keycode: Some(Keycode::Z),
 				..
@@ -292,13 +303,13 @@ fn handle_events(
 			Event::ControllerButtonDown {
 				button: Button::LeftShoulder,
 				..
-			} if fb.debug_mode == DebugMode::Disabled => {
+			} if !fb.debug_mode_enabled => {
 				fb.hide_left = !fb.hide_left;
 			}
 			Event::ControllerButtonDown {
 				button: Button::RightShoulder,
 				..
-			} if fb.debug_mode == DebugMode::Disabled => {
+			} if !fb.debug_mode_enabled => {
 				fb.hide_right = !fb.hide_right;
 			}
 			Event::KeyDown {
@@ -308,10 +319,7 @@ fn handle_events(
 			| Event::ControllerButtonDown {
 				button: Button::Y, ..
 			} => {
-				fb.debug_mode = match fb.debug_mode {
-					DebugMode::Disabled => DebugMode::Backgrounds(BackgroundView::Both),
-					_ => DebugMode::Disabled,
-				};
+				fb.debug_mode_enabled = !fb.debug_mode_enabled;
 			}
 			_ => {}
 		}

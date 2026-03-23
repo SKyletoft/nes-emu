@@ -46,6 +46,7 @@ pub struct SdlFramebuffer<'tc> {
 	canvas: &'tc mut Canvas<Window>,
 	pub hide_left: bool,
 	pub hide_right: bool,
+	pub debug_mode_enabled: bool,
 	pub debug_mode: DebugMode,
 	pub debug_background_mode: DebugBackgroundMode,
 }
@@ -103,7 +104,8 @@ impl<'tc> SdlFramebuffer<'tc> {
 			canvas,
 			hide_left: true,
 			hide_right: true,
-			debug_mode: DebugMode::Disabled,
+			debug_mode_enabled: false,
+			debug_mode: DebugMode::Backgrounds(BackgroundView::Both),
 			debug_background_mode: DebugBackgroundMode::Checkerboard,
 		})
 	}
@@ -190,21 +192,24 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
-		match self.debug_mode {
-			DebugMode::Disabled => self.render_nes_frame(ppu, lines),
-			DebugMode::Backgrounds(view) => {
-				draw_debug_background(&mut *self.canvas, self.debug_background_mode, ppu);
-				render_backgrounds_debug(self.canvas, &self.bg1, &self.bg2, view);
-			}
-			DebugMode::Sprites(idx) => {
-				draw_debug_background(&mut *self.canvas, self.debug_background_mode, ppu);
-				let sprite_uv = self.sprites[idx as usize].uvs;
-				render_sprite_debug(
-					self.canvas,
-					&self.sprites[idx as usize].texture,
-					sprite_uv,
-					idx,
-				);
+		if !self.debug_mode_enabled {
+			self.render_nes_frame(ppu, lines);
+		} else {
+			match self.debug_mode {
+				DebugMode::Backgrounds(view) => {
+					draw_debug_background(&mut *self.canvas, self.debug_background_mode, ppu);
+					render_backgrounds_debug(self.canvas, &self.bg1, &self.bg2, view);
+				}
+				DebugMode::Sprites(idx) => {
+					draw_debug_background(&mut *self.canvas, self.debug_background_mode, ppu);
+					let sprite_uv = self.sprites[idx as usize].uvs;
+					render_sprite_debug(
+						self.canvas,
+						&self.sprites[idx as usize].texture,
+						sprite_uv,
+						idx,
+					);
+				}
 			}
 		}
 		perf_stats::stop_gpu();

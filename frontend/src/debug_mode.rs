@@ -25,7 +25,6 @@ impl BackgroundView {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DebugMode {
-	Disabled,
 	Backgrounds(BackgroundView),
 	Sprites(u8 /* is 0..64 */),
 }

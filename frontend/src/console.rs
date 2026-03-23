@@ -53,59 +53,57 @@ pub fn main() {
 		let fb = system_state.rest.rom.framebuffer();
 
 		if hid.keys_down().contains(KeyPad::Y) {
-			fb.debug_mode = match fb.debug_mode {
-				DebugMode::Disabled => DebugMode::Backgrounds(BackgroundView::Both),
-				_ => DebugMode::Disabled,
-			};
+			fb.debug_mode_enabled = !fb.debug_mode_enabled;
 		}
 
-		match fb.debug_mode {
-			DebugMode::Disabled => {
-				c.set_a(hid.keys_held().contains(KeyPad::A));
-				c.set_b(hid.keys_held().contains(KeyPad::B) || hid.keys_held().contains(KeyPad::X));
-				c.set_start(hid.keys_held().contains(KeyPad::START));
-				c.set_select(hid.keys_held().contains(KeyPad::SELECT));
-				c.set_up(hid.keys_held().contains(KeyPad::DPAD_UP));
-				c.set_down(hid.keys_held().contains(KeyPad::DPAD_DOWN));
-				c.set_left(hid.keys_held().contains(KeyPad::DPAD_LEFT));
-				c.set_right(hid.keys_held().contains(KeyPad::DPAD_RIGHT));
-				if hid.keys_down().contains(KeyPad::L) {
-					fb.hide_left = !fb.hide_left;
-				}
-				if hid.keys_down().contains(KeyPad::R) {
-					fb.hide_right = !fb.hide_right;
-				}
+		if !fb.debug_mode_enabled {
+			c.set_a(hid.keys_held().contains(KeyPad::A));
+			c.set_b(hid.keys_held().contains(KeyPad::B) || hid.keys_held().contains(KeyPad::X));
+			c.set_start(hid.keys_held().contains(KeyPad::START));
+			c.set_select(hid.keys_held().contains(KeyPad::SELECT));
+			c.set_up(hid.keys_held().contains(KeyPad::DPAD_UP));
+			c.set_down(hid.keys_held().contains(KeyPad::DPAD_DOWN));
+			c.set_left(hid.keys_held().contains(KeyPad::DPAD_LEFT));
+			c.set_right(hid.keys_held().contains(KeyPad::DPAD_RIGHT));
+			if hid.keys_down().contains(KeyPad::L) {
+				fb.hide_left = !fb.hide_left;
 			}
-			DebugMode::Backgrounds(view) => {
-				if hid.keys_down().contains(KeyPad::DPAD_UP)
-					|| hid.keys_down().contains(KeyPad::DPAD_DOWN)
-				{
-					fb.debug_mode = DebugMode::Sprites(0);
-				}
-				if hid.keys_down().contains(KeyPad::DPAD_LEFT) {
-					fb.debug_mode = DebugMode::Backgrounds(view.prev());
-				}
-				if hid.keys_down().contains(KeyPad::DPAD_RIGHT) {
-					fb.debug_mode = DebugMode::Backgrounds(view.next());
-				}
-				if hid.keys_down().contains(KeyPad::A) {
-					fb.debug_background_mode = fb.debug_background_mode.next();
-				}
+			if hid.keys_down().contains(KeyPad::R) {
+				fb.hide_right = !fb.hide_right;
 			}
-			DebugMode::Sprites(idx) => {
-				if hid.keys_down().contains(KeyPad::DPAD_UP)
-					|| hid.keys_down().contains(KeyPad::DPAD_DOWN)
-				{
-					fb.debug_mode = DebugMode::Backgrounds(BackgroundView::Both);
+		} else {
+			match fb.debug_mode {
+				DebugMode::Backgrounds(view) => {
+					if hid.keys_down().contains(KeyPad::DPAD_UP)
+						|| hid.keys_down().contains(KeyPad::DPAD_DOWN)
+					{
+						fb.debug_mode = DebugMode::Sprites(0);
+					}
+					if hid.keys_down().contains(KeyPad::DPAD_LEFT) {
+						fb.debug_mode = DebugMode::Backgrounds(view.prev());
+					}
+					if hid.keys_down().contains(KeyPad::DPAD_RIGHT) {
+						fb.debug_mode = DebugMode::Backgrounds(view.next());
+					}
+					if hid.keys_down().contains(KeyPad::A) {
+						fb.debug_background_mode = fb.debug_background_mode.next();
+					}
 				}
-				if hid.keys_down().contains(KeyPad::DPAD_LEFT) {
-					fb.debug_mode = DebugMode::Sprites(if idx == 0 { 63 } else { idx - 1 });
-				}
-				if hid.keys_down().contains(KeyPad::DPAD_RIGHT) {
-					fb.debug_mode = DebugMode::Sprites(if idx == 63 { 0 } else { idx + 1 });
-				}
-				if hid.keys_down().contains(KeyPad::A) {
-					fb.debug_background_mode = fb.debug_background_mode.next();
+				DebugMode::Sprites(idx) => {
+					if hid.keys_down().contains(KeyPad::DPAD_UP)
+						|| hid.keys_down().contains(KeyPad::DPAD_DOWN)
+					{
+						fb.debug_mode = DebugMode::Backgrounds(BackgroundView::Both);
+					}
+					if hid.keys_down().contains(KeyPad::DPAD_LEFT) {
+						fb.debug_mode = DebugMode::Sprites(if idx == 0 { 63 } else { idx - 1 });
+					}
+					if hid.keys_down().contains(KeyPad::DPAD_RIGHT) {
+						fb.debug_mode = DebugMode::Sprites(if idx == 63 { 0 } else { idx + 1 });
+					}
+					if hid.keys_down().contains(KeyPad::A) {
+						fb.debug_background_mode = fb.debug_background_mode.next();
+					}
 				}
 			}
 		}

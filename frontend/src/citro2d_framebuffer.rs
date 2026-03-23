@@ -30,6 +30,7 @@ pub struct Citro2DFramebuffer<'a> {
 
 	pub hide_left: bool,
 	pub hide_right: bool,
+	pub debug_mode_enabled: bool,
 	pub debug_mode: DebugMode,
 	pub debug_background_mode: DebugBackgroundMode,
 }
@@ -56,7 +57,8 @@ impl<'a> Citro2DFramebuffer<'a> {
 
 		let hide_left = true;
 		let hide_right = true;
-		let debug_mode = DebugMode::Disabled;
+		let debug_mode_enabled = false;
+		let debug_mode = DebugMode::Backgrounds(BackgroundView::Both);
 		let debug_background_mode = DebugBackgroundMode::Checkerboard;
 
 		Ok(Self {
@@ -67,6 +69,7 @@ impl<'a> Citro2DFramebuffer<'a> {
 			sprites,
 			hide_left,
 			hide_right,
+			debug_mode_enabled,
 			debug_mode,
 			debug_background_mode,
 		})
@@ -131,8 +134,12 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
+		if !self.debug_mode_enabled {
+			self.render_nes_frame(ppu, lines);
+			return;
+		}
+
 		match self.debug_mode {
-			DebugMode::Disabled => self.render_nes_frame(ppu, lines),
 			DebugMode::Backgrounds(view) => {
 				self.render_backgrounds_debug(view, self.debug_background_mode, ppu)
 			}
