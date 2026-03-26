@@ -1,9 +1,8 @@
-#![feature(const_array, const_trait_impl)]
-
 use citro2d::{
-	Instance,
+	Instance, Point, Size,
 	pixel_type::Rgb565,
 	render::{Colour, Target},
+	shapes::RectangleSolid,
 	sprites::{Mirroring, Sprite},
 	texture::Tex,
 };
@@ -14,29 +13,6 @@ const TEXTURE_SIZE: usize = 64;
 
 fn rgb565(r: u8, g: u8, b: u8) -> Rgb565 {
 	Rgb565::from_bits((((r as u16) >> 3) << 11) | (((g as u16) >> 2) << 5) | ((b as u16) >> 3))
-}
-
-fn clamp_uv(value: f32) -> f32 {
-	match value {
-		(..-0.1) => value + 0.1,
-		(-0.1..0.0) => 0.,
-		0.0..1.0 => value,
-		1.0..1.1 => 1.,
-		1.0.. => value - 0.1,
-		_ => unreachable!(),
-	}
-}
-
-fn clamp_angle(mut value: i32) -> f32 {
-	value = value.rem_euclid(360);
-	let angle = value % 45;
-	let offset = value / 45;
-	let clamped_angle = match angle {
-		..5 => 0.,
-		5..40 => (angle - 5) as f32 / 35. * 45.,
-		40.. => 45.,
-	};
-	clamped_angle + offset as f32 * 45.
 }
 
 fn main() {
@@ -50,7 +26,7 @@ fn main() {
 	let mut c2d = Instance::new().unwrap();
 	let mut target = Target::new(gfx.top_screen.borrow_mut()).unwrap();
 
-	let mut sprite = {
+	let tex = {
 		let mut tex = Tex::new(
 			TEXTURE_SIZE as u16,
 			TEXTURE_SIZE as u16,
@@ -68,34 +44,40 @@ fn main() {
 		tex.swizzle_and_upload::<Rgb565, TEXTURE_SIZE, TEXTURE_SIZE, { TEXTURE_SIZE * TEXTURE_SIZE }>(
 			&data,
 		);
-		let mut sprite = Sprite::from_tex(tex);
-		let (h, w) = sprite.size();
-		sprite.set_centre((h / 2., w / 2.));
-		sprite.set_pos((200., 120.));
 
 		let data2: [[Rgb565; 8]; 8] = std::array::from_fn(|i| {
 			std::array::from_fn(|j| rgb565((i * 255 / 8) as u8, (j * 255 / 8) as u8, 0))
 		});
 
-		sprite
-			.texture_mut()
-			.unwrap()
-			.swizzle_and_update_tile(data2.clone(), 0, 0);
-		sprite
-			.texture_mut()
-			.unwrap()
-			.swizzle_and_update_tile(data2.clone(), 1, 1);
-		sprite
-			.texture_mut()
-			.unwrap()
-			.swizzle_and_update_tile(data2.clone(), 3, 3);
+		tex.swizzle_and_update_tile(data2, 0, 0);
+		tex.swizzle_and_update_tile(data2, 1, 1);
+		tex.swizzle_and_update_tile(data2, 3, 3);
+		tex.swizzle_and_update_tile(data2, 6, 3);
+		tex.swizzle_and_update_tile(data2, 1, 7);
+		tex.swizzle_and_update_tile(data2, 7, 7);
 
-		sprite
+		std::rc::Rc::new(tex)
 	};
 
-	let (mut left, mut top, mut right, mut bottom) = Mirroring::Normal.into();
+	const SPRITE_SCALE: f32 = 3.0;
+	const SPRITE_SIZE: f32 = 64.0 * SPRITE_SCALE; // 192x192
 
-	let mut rotation = 0;
+	let mut sprite_left = Sprite::from_shared_tex(tex.clone())
+		.with_size((SPRITE_SIZE, SPRITE_SIZE))
+		.with_centre((SPRITE_SIZE / 2., SPRITE_SIZE / 2.))
+		.with_pos((100., 120.))
+		.with_mirroring(&Mirroring::Normal);
+
+	let mut sprite_right = Sprite::from_shared_tex(tex)
+		.with_size((SPRITE_SIZE, SPRITE_SIZE))
+		.with_centre((SPRITE_SIZE / 2., SPRITE_SIZE / 2.))
+		.with_pos((300., 120.));
+
+	let mut uv_offset_x = 0_i32;
+	let mut uv_offset_y = 0_i32;
+	let mut uv_width = 64_i32;
+	let mut uv_height = 64_i32;
+	let mut rotation = 0_i32;
 
 	while apt.main_loop() {
 		hid.scan_input();
@@ -105,56 +87,126 @@ fn main() {
 			break;
 		}
 
-		let keys_held = hid.keys_held();
-
-		if keys_held.contains(KeyPad::A) {
-			left -= 0.01;
-			right += 0.01;
+		if keys_down.contains(KeyPad::DPAD_UP) {
+			uv_offset_y -= 8;
 		}
-		if keys_held.contains(KeyPad::B) {
-			left += 0.01;
-			right -= 0.01;
+		if keys_down.contains(KeyPad::DPAD_DOWN) {
+			uv_offset_y += 8;
 		}
-		if keys_held.contains(KeyPad::X) {
-			top -= 0.01;
-			bottom += 0.01;
+		if keys_down.contains(KeyPad::DPAD_LEFT) {
+			uv_offset_x -= 8;
 		}
-		if keys_held.contains(KeyPad::Y) {
-			top += 0.01;
-			bottom -= 0.01;
+		if keys_down.contains(KeyPad::DPAD_RIGHT) {
+			uv_offset_x += 8;
 		}
 
-		if keys_held.contains(KeyPad::L) {
-			rotation -= 1;
+		if keys_down.contains(KeyPad::A) {
+			uv_offset_x -= 0;
+			uv_width += 8;
 		}
-		if keys_held.contains(KeyPad::R) {
-			rotation += 1;
+		if keys_down.contains(KeyPad::B) {
+			uv_offset_x += 0;
+			uv_width -= 8;
 		}
-		let rotation_clamped = clamp_angle(rotation);
+
+		if keys_down.contains(KeyPad::X) {
+			uv_offset_y -= 0;
+			uv_height += 8;
+		}
+		if keys_down.contains(KeyPad::Y) {
+			uv_offset_y += 0;
+			uv_height -= 8;
+		}
+
+		if keys_down.contains(KeyPad::L) {
+			rotation -= 45;
+		}
+		if keys_down.contains(KeyPad::R) {
+			rotation += 45;
+		}
+
+		let left = uv_offset_x as f32 / 64.0;
+		let right = (uv_offset_x + uv_width) as f32 / 64.0;
+		let top = 1.0 - (uv_offset_y as f32 / 64.0);
+		let bottom = 1.0 - ((uv_offset_y + uv_height) as f32 / 64.0);
+
+		let rotation_radians = (rotation as f32).to_radians();
 
 		println!("-------------------------");
-		println!("left: {left:0.2}, right: {right:0.2}, top: {top:0.2}, bottom: {bottom:0.2}");
+		println!(
+			"UV window: offset=({uv_offset_x}, {uv_offset_y}), size=({uv_width}, {uv_height})"
+		);
+		println!("UV coords: left={left:.2}, right={right:.2}, top={top:.2}, bottom={bottom:.2}");
+		println!("rotation: {rotation} deg");
 
-		let left = clamp_uv(left);
-		let right = clamp_uv(right);
-		let top = clamp_uv(top);
-		let bottom = clamp_uv(bottom);
-
-		let uv = Mirroring::Custom {
+		sprite_right.set_mirroring(&Mirroring::Custom {
 			left,
 			right,
 			top,
 			bottom,
-		};
-		sprite.set_mirroring(uv);
-		sprite.set_angle(rotation_clamped.to_radians());
+		});
+		sprite_right.set_angle(rotation_radians);
 
-		println!("left: {left:0.2}, right: {right:0.2}, top: {top:0.2}, bottom: {bottom:0.2}");
-		println!("rotation: {rotation_clamped:.2} rad");
+		let ref_sprite_pos = (100.0, 120.0);
+		let outline_left = ref_sprite_pos.0 - SPRITE_SIZE / 2.0 + uv_offset_x as f32 * SPRITE_SCALE;
+		let outline_top = ref_sprite_pos.1 - SPRITE_SIZE / 2.0 + uv_offset_y as f32 * SPRITE_SCALE;
+		let outline_width = uv_width as f32 * SPRITE_SCALE;
+		let outline_height = uv_height as f32 * SPRITE_SCALE;
 
 		c2d.render_target(&mut target, |_, t| {
 			t.clear(Colour::new(255, 255, 255));
-			t.render_2d_shape(&sprite);
+
+			t.render_2d_shape(&sprite_left);
+			t.render_2d_shape(&sprite_right);
+
+			let red = Colour::new(255, 0, 0);
+			let pink = Colour::new(255, 200, 200);
+
+			let wide = Size {
+				width: outline_width + 2.0,
+				height: 1.0,
+			};
+			let tall = Size {
+				width: 1.0,
+				height: outline_height + 2.0,
+			};
+
+			t.render_2d_shape(&RectangleSolid {
+				point: Point {
+					x: outline_left - 1.0,
+					y: outline_top - 1.0,
+					z: 1.0,
+				},
+				size: wide,
+				color: red,
+			});
+			t.render_2d_shape(&RectangleSolid {
+				point: Point {
+					x: outline_left - 1.0,
+					y: outline_top + outline_height,
+					z: 1.0,
+				},
+				size: wide,
+				color: pink,
+			});
+			t.render_2d_shape(&RectangleSolid {
+				point: Point {
+					x: outline_left - 1.0,
+					y: outline_top - 1.0,
+					z: 1.0,
+				},
+				size: tall,
+				color: red,
+			});
+			t.render_2d_shape(&RectangleSolid {
+				point: Point {
+					x: outline_left + outline_width,
+					y: outline_top - 1.0,
+					z: 1.0,
+				},
+				size: tall,
+				color: pink,
+			});
 		});
 	}
 }
