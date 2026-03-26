@@ -268,7 +268,7 @@ impl SdlFramebuffer<'_> {
 				const SCALE_DENOM_Y: i64 = 240;
 
 				if ppu.mask.show_spr() {
-					for (idx, sprite) in self.sprites.iter().enumerate() {
+					for (idx, sprite) in self.sprites.iter().enumerate().rev() {
 						if ppu.oam[idx].attr.priority() && ppu.oam[idx].is_visible() {
 							let nes_x = ppu.oam[idx].x as i64;
 							let nes_y = ppu.oam[idx].y as i64 + 1;
@@ -352,7 +352,7 @@ impl SdlFramebuffer<'_> {
 				}
 
 				if ppu.mask.show_spr() {
-					for (idx, sprite) in self.sprites.iter().enumerate() {
+					for (idx, sprite) in self.sprites.iter().enumerate().rev() {
 						if !ppu.oam[idx].attr.priority() && ppu.oam[idx].is_visible() {
 							let nes_x = ppu.oam[idx].x as i64;
 							let nes_y = ppu.oam[idx].y as i64 + 1;
