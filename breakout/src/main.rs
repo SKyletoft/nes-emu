@@ -62,7 +62,7 @@ fn main() {
 	const SPRITE_SCALE: f32 = 3.0;
 	const SPRITE_SIZE: f32 = 64.0 * SPRITE_SCALE; // 192x192
 
-	let mut sprite_left = Sprite::from_shared_tex(tex.clone())
+	let sprite_left = Sprite::from_shared_tex(tex.clone())
 		.with_size((SPRITE_SIZE, SPRITE_SIZE))
 		.with_centre((SPRITE_SIZE / 2., SPRITE_SIZE / 2.))
 		.with_pos((100., 120.))
@@ -178,7 +178,7 @@ fn main() {
 					z: 1.0,
 				},
 				size: wide,
-				color: red,
+				colour: red,
 			});
 			t.render_2d_shape(&RectangleSolid {
 				point: Point {
@@ -187,7 +187,7 @@ fn main() {
 					z: 1.0,
 				},
 				size: wide,
-				color: pink,
+				colour: pink,
 			});
 			t.render_2d_shape(&RectangleSolid {
 				point: Point {
@@ -196,7 +196,7 @@ fn main() {
 					z: 1.0,
 				},
 				size: tall,
-				color: red,
+				colour: red,
 			});
 			t.render_2d_shape(&RectangleSolid {
 				point: Point {
@@ -205,7 +205,7 @@ fn main() {
 					z: 1.0,
 				},
 				size: tall,
-				color: pink,
+				colour: pink,
 			});
 		});
 	}
