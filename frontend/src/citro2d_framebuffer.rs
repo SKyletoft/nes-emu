@@ -52,7 +52,7 @@ impl<'a> Citro2DFramebuffer<'a> {
 		let sprites = std::array::from_fn(|_| {
 			Sprite::from_tex(Tex::new(8, 8, ColourFormat::Rgba5551))
 				.with_size((8., 8.))
-				.with_mirroring(Mirroring::Normal)
+				.with_mirroring(&Mirroring::Normal)
 		});
 
 		let hide_left = true;
@@ -123,7 +123,7 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 			(true, true) => (0., 0., (90_f32).to_radians(), (0., 8.)),
 		};
 		let sprite = &mut self.sprites[sprite_idx];
-		sprite.set_mirroring(Mirroring::Custom {
+		sprite.set_mirroring(&Mirroring::Custom {
 			left: left_right,
 			right: 1. - left_right,
 			top: top_bottom,
@@ -217,7 +217,7 @@ impl Citro2DFramebuffer<'_> {
 					for (bg, x) in [(&mut self.bg1, x1), (&mut self.bg2, x2)].into_iter() {
 						for offset in [-512., 0., 512.].into_iter() {
 							bg.set_pos((x + offset, y_start as f32));
-							bg.set_mirroring(mirroring.clone());
+							bg.set_mirroring(&mirroring.clone());
 							t.render_2d_shape(bg);
 						}
 					}
@@ -241,7 +241,7 @@ impl Citro2DFramebuffer<'_> {
 						width: X_OFFSET,
 						height: 240.,
 					},
-					multi_color: MultiColor {
+					multi_colour: MultiColor {
 						top_left: citro2d::render::Colour::new(64, 64, 64),
 						top_right: citro2d::render::Colour::new(0, 0, 0),
 						bottom_left: citro2d::render::Colour::new(64, 64, 64),
@@ -260,7 +260,7 @@ impl Citro2DFramebuffer<'_> {
 						width: X_OFFSET,
 						height: 240.,
 					},
-					multi_color: MultiColor {
+					multi_colour: MultiColor {
 						top_left: citro2d::render::Colour::new(0, 0, 0),
 						top_right: citro2d::render::Colour::new(64, 64, 64),
 						bottom_left: citro2d::render::Colour::new(0, 0, 0),
@@ -298,8 +298,8 @@ impl Citro2DFramebuffer<'_> {
 					self.bg2.set_size((scaled_w, scaled_h));
 					self.bg1.set_pos((x_offset, y_offset));
 					self.bg2.set_pos((x_offset + scaled_w, y_offset));
-					self.bg1.set_mirroring(Mirroring::Normal);
-					self.bg2.set_mirroring(Mirroring::Normal);
+					self.bg1.set_mirroring(&Mirroring::Normal);
+					self.bg2.set_mirroring(&Mirroring::Normal);
 
 					t.render_2d_shape(&self.bg1);
 					t.render_2d_shape(&self.bg2);
@@ -312,7 +312,7 @@ impl Citro2DFramebuffer<'_> {
 					};
 					bg.set_size((256., 256.));
 					bg.set_pos(((TOP_SCREEN_W - 256.) / 2., 0.));
-					bg.set_mirroring(Mirroring::Normal);
+					bg.set_mirroring(&Mirroring::Normal);
 
 					t.render_2d_shape(bg);
 				}
@@ -335,7 +335,7 @@ impl Citro2DFramebuffer<'_> {
 		let sp = &mut self.sprites[sprite_idx as usize];
 		sp.set_size((SPRITE_SIZE, SPRITE_SIZE));
 		sp.set_pos(sprite_pos);
-		sp.set_mirroring(Mirroring::Normal);
+		sp.set_mirroring(&Mirroring::Normal);
 
 		let tile_x = ((tile_idx % 16) as f32) * 8.;
 		let tile_y = ((tile_idx / 16) as f32) * 8.;
@@ -362,7 +362,7 @@ impl Citro2DFramebuffer<'_> {
 						z: 1.,
 					},
 					size: Size { width, height },
-					color: citro2d::render::Colour::new(255, 0, 0),
+					colour: citro2d::render::Colour::new(255, 0, 0),
 				});
 			}
 
@@ -398,7 +398,7 @@ fn render_background(mode: DebugBackgroundMode, ppu: &Ppu, t: &mut Target<'_>) {
 							width: tile_size,
 							height: tile_size,
 						},
-						color: citro2d::render::Colour::new(255, 255, 255),
+						colour: citro2d::render::Colour::new(255, 255, 255),
 					});
 					x += tile_size * 2.;
 				}
