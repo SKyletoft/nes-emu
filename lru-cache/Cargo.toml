@@ -7,4 +7,5 @@ edition = "2024"
 
 [dev-dependencies]
 quickcheck = "1"
+quickcheck_macros = "1"
 uluru = "3"
