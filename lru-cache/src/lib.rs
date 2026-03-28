@@ -1,4 +1,6 @@
-use std::mem::MaybeUninit;
+#![cfg_attr(not(test), no_std)]
+
+use core::mem::MaybeUninit;
 
 pub struct Lru<K: PartialEq, V, const L: usize = 64> {
 	cache: MaybeUninit<[(K, V); L]>,
@@ -41,11 +43,11 @@ where
 			let active = self.active_cache_mut();
 			active[..=idx].rotate_right(1);
 			debug_assert!(active[0].0 == key);
-			let ret = std::mem::replace(&mut active[0], (key, value));
+			let ret = core::mem::replace(&mut active[0], (key, value));
 			Some(ret)
 		} else if self.is_full() {
 			let active = self.active_cache_mut();
-			let ret = std::mem::replace(&mut active[L - 1], (key, value));
+			let ret = core::mem::replace(&mut active[L - 1], (key, value));
 			active.rotate_right(1);
 			Some(ret)
 		} else {
@@ -86,7 +88,7 @@ impl<K: PartialEq, V, const L: usize> Drop for Lru<K, V, L> {
 			.iter_mut()
 			.map(|kv| kv as *mut (K, V))
 		{
-			unsafe { std::ptr::drop_in_place(kv) };
+			unsafe { core::ptr::drop_in_place(kv) };
 		}
 	}
 }
