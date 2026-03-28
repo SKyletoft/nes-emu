@@ -33,8 +33,7 @@ where
 	}
 
 	fn find(&self, key: &K) -> Option<usize> {
-		let active = self.active_cache();
-		active.iter().position(|(k, _)| k == key)
+		self.active_cache().iter().position(|(k, _)| k == key)
 	}
 
 	pub fn insert(&mut self, key: K, value: V) -> Option<(K, V)> {
@@ -44,20 +43,18 @@ where
 			debug_assert!(active[0].0 == key);
 			let ret = std::mem::replace(&mut active[0], (key, value));
 			Some(ret)
+		} else if self.is_full() {
+			let active = self.active_cache_mut();
+			let ret = std::mem::replace(&mut active[L - 1], (key, value));
+			active.rotate_right(1);
+			Some(ret)
 		} else {
-			if self.is_full() {
-				let active = self.active_cache_mut();
-				let ret = std::mem::replace(&mut active[L - 1], (key, value));
-				active.rotate_right(1);
-				Some(ret)
-			} else {
-				let last_idx = self.size;
-				self.size += 1;
-				let active = self.active_cache_mut();
-				unsafe { (&raw mut active[last_idx]).write((key, value)) };
-				active.rotate_right(1);
-				None
-			}
+			let last_idx = self.size;
+			self.size += 1;
+			let active = self.active_cache_mut();
+			unsafe { (&raw mut active[last_idx]).write((key, value)) };
+			active.rotate_right(1);
+			None
 		}
 	}
 
@@ -109,7 +106,11 @@ mod tests {
 		Insert(K, V),
 	}
 
-	impl<K: Arbitrary, V: Arbitrary> Arbitrary for LruOp<K, V> {
+	impl<K, V> Arbitrary for LruOp<K, V>
+	where
+		K: Arbitrary,
+		V: Arbitrary,
+	{
 		fn arbitrary(g: &mut Gen) -> Self {
 			let variant = u8::arbitrary(g) % 3;
 			match variant {
