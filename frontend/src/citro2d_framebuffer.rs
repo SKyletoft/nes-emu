@@ -2,7 +2,7 @@ use citro2d::{
 	Instance, Point, Size,
 	pixel_type::Rgba5551,
 	render::Target,
-	shapes::{MultiColor, Rectangle, RectangleSolid},
+	shapes::{MultiColour, Rectangle, RectangleSolid},
 	sprites::{Mirroring, Sprite as Citro2dSprite},
 	texture::{ColourFormat, Tex},
 };
@@ -290,7 +290,7 @@ impl Citro2DFramebuffer<'_> {
 						width: X_OFFSET,
 						height: 240.,
 					},
-					multi_colour: MultiColor {
+					multi_colour: MultiColour {
 						top_left: citro2d::render::Colour::new(64, 64, 64),
 						top_right: citro2d::render::Colour::new(0, 0, 0),
 						bottom_left: citro2d::render::Colour::new(64, 64, 64),
@@ -309,7 +309,7 @@ impl Citro2DFramebuffer<'_> {
 						width: X_OFFSET,
 						height: 240.,
 					},
-					multi_colour: MultiColor {
+					multi_colour: MultiColour {
 						top_left: citro2d::render::Colour::new(0, 0, 0),
 						top_right: citro2d::render::Colour::new(64, 64, 64),
 						bottom_left: citro2d::render::Colour::new(0, 0, 0),
