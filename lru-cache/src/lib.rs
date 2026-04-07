@@ -10,10 +10,7 @@ pub struct Lru<K: PartialEq, V, const L: usize = 64> {
 	size: usize,
 }
 
-impl<K, V, const L: usize> Lru<K, V, L>
-where
-	K: PartialEq,
-{
+impl<K: PartialEq, V, const L: usize> Lru<K, V, L> {
 	pub fn new() -> Self {
 		assert_ne!(
 			L, 0,
@@ -77,10 +74,7 @@ where
 	}
 }
 
-impl<K, V, const L: usize> Default for Lru<K, V, L>
-where
-	K: PartialEq,
-{
+impl<K: PartialEq, V, const L: usize> Default for Lru<K, V, L> {
 	fn default() -> Self {
 		Self::new()
 	}
