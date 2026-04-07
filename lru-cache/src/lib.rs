@@ -6,7 +6,7 @@ mod tests;
 use core::mem::MaybeUninit;
 
 pub struct Lru<K: PartialEq, V, const L: usize = 64> {
-	cache: MaybeUninit<[(K, V); L]>,
+	cache: [MaybeUninit<(K, V)>; L],
 	size: usize,
 }
 
@@ -20,17 +20,19 @@ where
 			"LRU cannot have size 0. This should be promoted to a type error when const generics are more stable"
 		);
 		Self {
-			cache: MaybeUninit::uninit(),
+			cache: core::array::from_fn(|_| MaybeUninit::uninit()),
 			size: 0,
 		}
 	}
 
 	fn active_cache(&self) -> &[(K, V)] {
-		unsafe { &self.cache.assume_init_ref()[..self.size] }
+		let slice = &self.cache[..self.size];
+		unsafe { core::mem::transmute::<&[MaybeUninit<(K, V)>], &[(K, V)]>(slice) }
 	}
 
 	fn active_cache_mut(&mut self) -> &mut [(K, V)] {
-		unsafe { &mut self.cache.assume_init_mut()[..self.size] }
+		let slice = &mut self.cache[..self.size];
+		unsafe { core::mem::transmute::<&mut [MaybeUninit<(K, V)>], &mut [(K, V)]>(slice) }
 	}
 
 	fn is_full(&self) -> bool {
