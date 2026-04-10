@@ -1,4 +1,4 @@
-use crate::ppu::{NesColour, Ppu};
+use crate::ppu::{NesColour, Palette, Ppu};
 
 pub trait NesFramebuffer {
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]);
@@ -13,7 +13,8 @@ pub trait NesFramebuffer {
 
 	fn update_sprite_pattern_table(
 		&mut self,
-		palette: u8, /* is 0..4 */
+		palette_idx: u8, /* is 0..4 */
+		palette: Palette,
 		tile_data: impl Iterator<Item = Option<NesColour>>,
 	);
 
@@ -45,6 +46,7 @@ impl NesFramebuffer for NoFramebuffer {
 	fn update_sprite_pattern_table(
 		&mut self,
 		_: u8, /* is 0..4 */
+		_: Palette,
 		_: impl Iterator<Item = Option<NesColour>>,
 	) {
 	}

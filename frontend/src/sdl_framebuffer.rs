@@ -146,7 +146,8 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 
 	fn update_sprite_pattern_table(
 		&mut self,
-		palette: u8, /* is 0..4 */
+		palette_idx: u8, /* is 0..4 */
+		palette: Palette,
 		mut pattern_table_data: impl Iterator<Item = Option<NesColour>>,
 	) {
 		let mut buffer = [0u32; PATTERN_TABLE_SIZE as usize * PATTERN_TABLE_SIZE as usize];
@@ -172,7 +173,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		}
 
 		let byte_buffer: &[u8] = bytemuck::cast_slice(&buffer);
-		self.pattern_tables[palette as usize]
+		self.pattern_tables[palette_idx as usize]
 			.update(None, byte_buffer, PATTERN_TABLE_SIZE as usize * 4)
 			.unwrap();
 	}

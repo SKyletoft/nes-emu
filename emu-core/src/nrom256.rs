@@ -339,8 +339,11 @@ impl<F: NesFramebuffer> NROM256<F> {
 			})
 		});
 
-		self.framebuffer
-			.update_sprite_pattern_table(sprite.attr.palette(), pattern_table_data);
+		self.framebuffer.update_sprite_pattern_table(
+			sprite.attr.palette(),
+			ppu.palettes[sprite.attr.palette() as usize],
+			pattern_table_data,
+		);
 
 		self.framebuffer.update_sprite(
 			idx,
