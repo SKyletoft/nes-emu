@@ -1,7 +1,7 @@
 use emu_core::{
 	frame::NesFramebuffer,
 	perf_stats,
-	ppu::{Colour, NesColour, Ppu},
+	ppu::{Colour, NesColour, Palette, Ppu},
 	unsafe_assert,
 };
 use sdl2::{
@@ -10,6 +10,7 @@ use sdl2::{
 	render::{BlendMode, Canvas, Texture, TextureAccess, TextureCreator, Vertex},
 	video::{Window, WindowContext},
 };
+use lru_cache::Lru;
 
 use crate::debug_mode::{BackgroundView, DebugBackgroundMode, DebugMode};
 
@@ -40,6 +41,7 @@ struct SdlSprite<'tc> {
 pub struct SdlFramebuffer<'tc> {
 	bg1: Texture<'tc>,
 	bg2: Texture<'tc>,
+	pattern_table_cache: Lru<Palette, Texture<'tc>>,
 	sprites: [SdlSprite<'tc>; 64],
 	framebuffer_texture: Texture<'tc>,
 	texture_creator: &'tc TextureCreator<WindowContext>,
@@ -95,10 +97,13 @@ impl<'tc> SdlFramebuffer<'tc> {
 			.map_err(|e| e.to_string())?;
 		framebuffer_texture.set_blend_mode(BlendMode::BLEND);
 
+		let pattern_table_cache = Lru::new();
+
 		Ok(Self {
 			bg1,
 			bg2,
 			sprites,
+			pattern_table_cache,
 			framebuffer_texture,
 			texture_creator: tc,
 			canvas,
