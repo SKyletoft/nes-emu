@@ -150,6 +150,18 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		palette: Palette,
 		mut pattern_table_data: impl Iterator<Item = Option<NesColour>>,
 	) {
+		if let Some(cached) = self.pattern_table_cache.get_mut(&palette) {
+			self.canvas
+				.with_texture_canvas(cached, |tex_canvas| {
+					tex_canvas.clear();
+					tex_canvas
+						.copy(&mut self.pattern_tables[palette_idx as usize], None, None)
+						.unwrap();
+				})
+				.unwrap();
+			return;
+		}
+
 		let mut buffer = [0u32; PATTERN_TABLE_SIZE as usize * PATTERN_TABLE_SIZE as usize];
 
 		const TILE_COUNT: usize = 256usize.isqrt();
