@@ -286,8 +286,13 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 		if new.attr.palette() != old.attr.palette() || new.tile != old.tile {
 			self.rerender_sprite(ppu, idx);
 		}
-		self.framebuffer()
-			.set_mirroring(idx, new.attr.flip_h(), new.attr.flip_v());
+		self.framebuffer().update_sprite(
+			idx,
+			new.tile,
+			new.attr.flip_h(),
+			new.attr.flip_v(),
+			new.attr.palette(),
+		);
 	}
 }
 
@@ -335,7 +340,15 @@ impl<F: NesFramebuffer> NROM256<F> {
 		});
 
 		self.framebuffer
-			.update_sprite(pattern_table_data, idx, sprite.tile);
+			.update_sprite_pattern_table(sprite.attr.palette(), pattern_table_data);
+
+		self.framebuffer.update_sprite(
+			idx,
+			sprite.tile,
+			sprite.attr.flip_h(),
+			sprite.attr.flip_v(),
+			sprite.attr.palette(),
+		);
 
 		if idx == 0 {
 			for (pixel_x, pixel_y) in SWIZZLE_ORDER_2D.iter().copied() {

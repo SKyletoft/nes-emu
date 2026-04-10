@@ -11,14 +11,20 @@ pub trait NesFramebuffer {
 		x_offset: usize,
 	);
 
-	fn update_sprite(
+	fn update_sprite_pattern_table(
 		&mut self,
-		sprite_data: impl Iterator<Item = Option<NesColour>>,
-		sprite_idx: usize,
-		tile_idx: u8,
+		palette: u8, /* is 0..4 */
+		tile_data: impl Iterator<Item = Option<NesColour>>,
 	);
 
-	fn set_mirroring(&mut self, sprite_idx: usize, horizontal: bool, vertical: bool);
+	fn update_sprite(
+		&mut self,
+		sprite_idx: usize,
+		tile_idx: u8,
+		horizontal: bool,
+		vertical: bool,
+		palette: u8, /* is 0..4 */
+	);
 }
 
 #[derive(Clone, Debug)]
@@ -36,7 +42,12 @@ impl NesFramebuffer for NoFramebuffer {
 	) {
 	}
 
-	fn update_sprite(&mut self, _: impl Iterator<Item = Option<NesColour>>, _: usize, _: u8) {}
+	fn update_sprite_pattern_table(
+		&mut self,
+		_: u8, /* is 0..4 */
+		_: impl Iterator<Item = Option<NesColour>>,
+	) {
+	}
 
-	fn set_mirroring(&mut self, _: usize, _: bool, _: bool) {}
+	fn update_sprite(&mut self, _: usize, _: u8, _: bool, _: bool, _: u8 /* is 0..4 */) {}
 }

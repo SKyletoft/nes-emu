@@ -4,13 +4,13 @@ use emu_core::{
 	ppu::{Colour, NesColour, Palette, Ppu},
 	unsafe_assert,
 };
+use lru_cache::Lru;
 use sdl2::{
 	pixels::{Color, PixelFormatEnum},
 	rect::{FPoint, Rect},
 	render::{BlendMode, Canvas, Texture, TextureAccess, TextureCreator, Vertex},
 	video::{Window, WindowContext},
 };
-use lru_cache::Lru;
 
 use crate::debug_mode::{BackgroundView, DebugBackgroundMode, DebugMode};
 
@@ -31,8 +31,8 @@ const SWIZZLE_ORDER: [usize; 64] = [
 	52, 53, 60, 61, 54, 55, 62, 63,
 ];
 
-struct SdlSprite<'tc> {
-	texture: Texture<'tc>,
+struct SdlSprite {
+	palette: u8, /* is 0..4 */
 	flip_horizontal: bool,
 	flip_vertical: bool,
 	uvs: Rect,
@@ -42,7 +42,8 @@ pub struct SdlFramebuffer<'tc> {
 	bg1: Texture<'tc>,
 	bg2: Texture<'tc>,
 	pattern_table_cache: Lru<Palette, Texture<'tc>>,
-	sprites: [SdlSprite<'tc>; 64],
+	pattern_tables: [Texture<'tc>; 4],
+	sprites: [SdlSprite; 64],
 	framebuffer_texture: Texture<'tc>,
 	texture_creator: &'tc TextureCreator<WindowContext>,
 	canvas: &'tc mut Canvas<Window>,
@@ -70,7 +71,13 @@ impl<'tc> SdlFramebuffer<'tc> {
 			.map_err(|e| e.to_string())?;
 		bg2.set_blend_mode(BlendMode::BLEND);
 
-		let sprites = std::array::from_fn(|_| {
+		let sprites = std::array::from_fn(|_| SdlSprite {
+			palette: 0,
+			flip_horizontal: false,
+			flip_vertical: false,
+			uvs: Rect::new(0, 0, TILE_SIZE, TILE_SIZE),
+		});
+		let pattern_tables = std::array::from_fn(|_| {
 			let mut tex = tc
 				.create_texture_streaming(
 					PixelFormatEnum::ARGB8888,
@@ -79,12 +86,7 @@ impl<'tc> SdlFramebuffer<'tc> {
 				)
 				.unwrap();
 			tex.set_blend_mode(BlendMode::BLEND);
-			SdlSprite {
-				texture: tex,
-				flip_horizontal: false,
-				flip_vertical: false,
-				uvs: Rect::new(0, 0, TILE_SIZE, TILE_SIZE),
-			}
+			tex
 		});
 
 		let mut framebuffer_texture = tc
@@ -104,6 +106,7 @@ impl<'tc> SdlFramebuffer<'tc> {
 			bg2,
 			sprites,
 			pattern_table_cache,
+			pattern_tables,
 			framebuffer_texture,
 			texture_creator: tc,
 			canvas,
@@ -141,15 +144,12 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		bg.update(rect, byte_buffer, 8 * 4).unwrap();
 	}
 
-	fn update_sprite(
+	fn update_sprite_pattern_table(
 		&mut self,
-		sprite_data: impl Iterator<Item = Option<NesColour>>,
-		sprite_idx: usize,
-		tile_idx: u8,
+		palette: u8, /* is 0..4 */
+		mut pattern_table_data: impl Iterator<Item = Option<NesColour>>,
 	) {
 		let mut buffer = [0u32; PATTERN_TABLE_SIZE as usize * PATTERN_TABLE_SIZE as usize];
-
-		let mut sprite_data = sprite_data;
 
 		const TILE_COUNT: usize = 256usize.isqrt();
 
@@ -165,19 +165,33 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 
 					unsafe { unsafe_assert!(buffer_idx < buffer.len()) };
 
-					let col = sprite_data.next().unwrap_or(None);
+					let col = pattern_table_data.next().unwrap_or(None);
 					buffer[buffer_idx] = nes_colour_to_argb8888(col);
 				}
 			}
 		}
 
 		let byte_buffer: &[u8] = bytemuck::cast_slice(&buffer);
-		self.sprites[sprite_idx]
-			.texture
+		self.pattern_tables[palette as usize]
 			.update(None, byte_buffer, PATTERN_TABLE_SIZE as usize * 4)
 			.unwrap();
+	}
 
+	fn update_sprite(
+		&mut self,
+		sprite_idx: usize,
+		tile_idx: u8,
+		horizontal: bool,
+		vertical: bool,
+		palette: u8, /* is 0..4 */
+	) {
 		unsafe { unsafe_assert!(sprite_idx < 64) };
+		unsafe { unsafe_assert!(palette < 4) };
+
+		self.sprites[sprite_idx].flip_horizontal = horizontal;
+		self.sprites[sprite_idx].flip_vertical = vertical;
+		self.sprites[sprite_idx].palette = palette;
+
 		let tile_x = (tile_idx % 16) as i32;
 		let tile_y = (tile_idx / 16) as i32;
 
@@ -188,12 +202,6 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 			TILE_SIZE,
 		);
 		self.sprites[sprite_idx].uvs = src_rect;
-	}
-
-	fn set_mirroring(&mut self, sprite_idx: usize, horizontal: bool, vertical: bool) {
-		unsafe { unsafe_assert!(sprite_idx < 64) };
-		self.sprites[sprite_idx].flip_horizontal = horizontal;
-		self.sprites[sprite_idx].flip_vertical = vertical;
 	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
@@ -208,9 +216,10 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 				DebugMode::Sprites(idx) => {
 					draw_debug_background(&mut *self.canvas, self.debug_background_mode, ppu);
 					let sprite_uv = self.sprites[idx as usize].uvs;
+					let palette = self.sprites[idx as usize].palette;
 					render_sprite_debug(
 						self.canvas,
-						&self.sprites[idx as usize].texture,
+						&self.pattern_tables[palette as usize],
 						sprite_uv,
 						idx,
 					);
@@ -289,9 +298,10 @@ impl SdlFramebuffer<'_> {
 								(right - left) as u32,
 								(bottom - top) as u32,
 							);
+							let palette = sprite.palette;
 							tex_canvas
 								.copy_ex(
-									&sprite.texture,
+									&self.pattern_tables[palette as usize],
 									Some(sprite.uvs),
 									Some(sprite_dst),
 									0.0,
@@ -373,9 +383,10 @@ impl SdlFramebuffer<'_> {
 								(right - left) as u32,
 								(bottom - top) as u32,
 							);
+							let palette = sprite.palette;
 							tex_canvas
 								.copy_ex(
-									&sprite.texture,
+									&self.pattern_tables[palette as usize],
 									Some(sprite.uvs),
 									Some(sprite_dst),
 									0.0,
