@@ -431,6 +431,7 @@ dependencies = [
  "ctru-rs",
  "emu-core",
  "game",
+ "lru-cache",
  "sdl2",
 ]
 

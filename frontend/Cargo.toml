@@ -11,6 +11,7 @@ compiled-game = ["dep:game"]
 emu-core = { path = "../emu-core" }
 bytemuck = { version = "1.23", features = [ "derive" ] }
 game = { path = "../game", optional = true }
+lru-cache = { path = "../lru-cache" }
 
 [target.'cfg(not(target_os = "horizon"))'.dependencies]
 # sdl2 = { version = "0.38", features = [ "use-pkgconfig" ] }
