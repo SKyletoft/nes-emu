@@ -162,6 +162,18 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 			return;
 		}
 
+
+		let mut new_pattern_table = self
+			.texture_creator
+			.create_texture(
+				PixelFormatEnum::ARGB8888,
+				TextureAccess::Target,
+				PATTERN_TABLE_SIZE,
+				PATTERN_TABLE_SIZE,
+			)
+			.unwrap();
+		new_pattern_table.set_blend_mode(BlendMode::BLEND);
+
 		let mut buffer = [0u32; PATTERN_TABLE_SIZE as usize * PATTERN_TABLE_SIZE as usize];
 
 		const TILE_COUNT: usize = 256usize.isqrt();
@@ -185,9 +197,15 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		}
 
 		let byte_buffer: &[u8] = bytemuck::cast_slice(&buffer);
+
 		self.pattern_tables[palette_idx as usize]
 			.update(None, byte_buffer, PATTERN_TABLE_SIZE as usize * 4)
 			.unwrap();
+
+		new_pattern_table
+			.update(None, byte_buffer, PATTERN_TABLE_SIZE as usize * 4)
+			.unwrap();
+		self.pattern_table_cache.insert(palette, new_pattern_table);
 	}
 
 	fn update_sprite(
