@@ -155,7 +155,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 				.with_texture_canvas(cached, |tex_canvas| {
 					tex_canvas.clear();
 					tex_canvas
-						.copy(&mut self.pattern_tables[palette_idx as usize], None, None)
+						.copy(&self.pattern_tables[palette_idx as usize], None, None)
 						.unwrap();
 				})
 				.unwrap();
