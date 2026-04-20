@@ -635,7 +635,7 @@ fn render_sprite_debug(
 	println!("Sprite {} / 64 - Tile {}", sprite_idx, tile_idx);
 }
 
-fn nes_colour_to_argb8888(value: Option<NesColour>) -> u32 {
+const fn nes_colour_to_argb8888(value: Option<NesColour>) -> u32 {
 	let Some(value) = value else {
 		return 0x00000000;
 	};
