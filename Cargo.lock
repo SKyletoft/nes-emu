@@ -930,10 +930,9 @@ dependencies = [
 [[package]]
 name = "sdl2"
 version = "0.38.0"
-source = "git+https://github.com/Rust-SDL2/rust-sdl2#de686d00ef91fe7db2df3144e716c0735fda3771"
+source = "git+https://github.com/SKyletoft/rust-sdl2#ee1da07bd321a3e2fdd23ea0edf749f1cce38bfd"
 dependencies = [
  "bitflags",
- "lazy_static",
  "libc",
  "sdl2-sys",
 ]
@@ -941,7 +940,7 @@ dependencies = [
 [[package]]
 name = "sdl2-sys"
 version = "0.38.0"
-source = "git+https://github.com/Rust-SDL2/rust-sdl2#de686d00ef91fe7db2df3144e716c0735fda3771"
+source = "git+https://github.com/SKyletoft/rust-sdl2#ee1da07bd321a3e2fdd23ea0edf749f1cce38bfd"
 dependencies = [
  "cfg-if",
  "libc",
