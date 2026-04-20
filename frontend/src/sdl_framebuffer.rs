@@ -162,7 +162,6 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 			return;
 		}
 
-
 		let mut new_pattern_table = self
 			.texture_creator
 			.create_texture(
@@ -223,15 +222,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		self.sprites[sprite_idx].flip_vertical = vertical;
 		self.sprites[sprite_idx].palette = palette;
 
-		let tile_x = (tile_idx % 16) as i32;
-		let tile_y = (tile_idx / 16) as i32;
-
-		let src_rect = Rect::new(
-			tile_x * TILE_SIZE as i32,
-			tile_y * TILE_SIZE as i32,
-			TILE_SIZE,
-			TILE_SIZE,
-		);
+		let src_rect = calculate_uv(tile_idx);
 		self.sprites[sprite_idx].uvs = src_rect;
 	}
 
@@ -633,6 +624,22 @@ fn render_sprite_debug(
 
 	let tile_idx = (sprite_uv.x() / TILE_SIZE as i32) + (sprite_uv.y() / TILE_SIZE as i32) * 16;
 	println!("Sprite {} / 64 - Tile {}", sprite_idx, tile_idx);
+}
+
+const fn calculate_uv(tile_idx: u8) -> Rect {
+	const fn calculate(tile_idx: usize) -> Rect {
+		let tile_x = (tile_idx % 16) as i32;
+		let tile_y = (tile_idx / 16) as i32;
+
+		Rect::new(
+			tile_x * TILE_SIZE as i32,
+			tile_y * TILE_SIZE as i32,
+			TILE_SIZE,
+			TILE_SIZE,
+		)
+	}
+	const LOOKUP_TABLE: [Rect; 256] = std::array::from_fn(calculate);
+	LOOKUP_TABLE[tile_idx as usize]
 }
 
 const fn nes_colour_to_argb8888(value: Option<NesColour>) -> u32 {
