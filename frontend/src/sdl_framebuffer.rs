@@ -79,8 +79,9 @@ impl<'tc> SdlFramebuffer<'tc> {
 		});
 		let pattern_tables = std::array::from_fn(|_| {
 			let mut tex = tc
-				.create_texture_streaming(
+				.create_texture(
 					PixelFormatEnum::ARGB8888,
+					TextureAccess::Target,
 					PATTERN_TABLE_SIZE,
 					PATTERN_TABLE_SIZE,
 				)
@@ -152,12 +153,12 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 	) {
 		if let Some(cached) = self.pattern_table_cache.get(&slice_palette(palette)) {
 			self.canvas
-				.with_texture_canvas(cached, |tex_canvas| {
-					tex_canvas.clear();
-					tex_canvas
-						.copy(&self.pattern_tables[palette_idx as usize], None, None)
-						.unwrap();
-				})
+				.with_texture_canvas(
+					&mut self.pattern_tables[palette_idx as usize],
+					|tex_canvas| {
+						tex_canvas.copy(cached, None, None).unwrap();
+					},
+				)
 				.unwrap();
 			return;
 		}
