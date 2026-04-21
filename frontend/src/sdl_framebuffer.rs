@@ -305,35 +305,39 @@ impl SdlFramebuffer<'_> {
 				const SCALE_DENOM_X: i64 = 256;
 				const SCALE_DENOM_Y: i64 = 240;
 
+				let render_sprite =
+					|tex_canvas: &mut Canvas<Window>, idx: usize, sprite: &SdlSprite| {
+						let nes_x = ppu.oam[idx].x as i64;
+						let nes_y = ppu.oam[idx].y as i64 + 1;
+						let left = dst_x as i64 + (nes_x * scale_num_x) / SCALE_DENOM_X;
+						let right = dst_x as i64
+							+ ((nes_x + TILE_SIZE as i64) * scale_num_x) / SCALE_DENOM_X;
+						let top = dst_y as i64 + (nes_y * scale_num_y) / SCALE_DENOM_Y;
+						let bottom = dst_y as i64
+							+ ((nes_y + TILE_SIZE as i64) * scale_num_y) / SCALE_DENOM_Y;
+						let sprite_dst = Rect::new(
+							left as i32,
+							top as i32,
+							(right - left) as u32,
+							(bottom - top) as u32,
+						);
+						tex_canvas
+							.copy_ex(
+								&self.pattern_tables[sprite.palette as usize],
+								Some(calculate_uv(sprite.tile_idx)),
+								Some(sprite_dst),
+								0.0,
+								None,
+								sprite.flip_horizontal,
+								sprite.flip_vertical,
+							)
+							.unwrap();
+					};
+
 				if ppu.mask.show_spr() {
 					for (idx, sprite) in self.sprites.iter().enumerate().rev() {
 						if ppu.oam[idx].attr.priority() && ppu.oam[idx].is_visible() {
-							let nes_x = ppu.oam[idx].x as i64;
-							let nes_y = ppu.oam[idx].y as i64 + 1;
-							let left = dst_x as i64 + (nes_x * scale_num_x) / SCALE_DENOM_X;
-							let right = dst_x as i64
-								+ ((nes_x + TILE_SIZE as i64) * scale_num_x) / SCALE_DENOM_X;
-							let top = dst_y as i64 + (nes_y * scale_num_y) / SCALE_DENOM_Y;
-							let bottom = dst_y as i64
-								+ ((nes_y + TILE_SIZE as i64) * scale_num_y) / SCALE_DENOM_Y;
-							let sprite_dst = Rect::new(
-								left as i32,
-								top as i32,
-								(right - left) as u32,
-								(bottom - top) as u32,
-							);
-							let palette = sprite.palette;
-							tex_canvas
-								.copy_ex(
-									&self.pattern_tables[palette as usize],
-									Some(calculate_uv(sprite.tile_idx)),
-									Some(sprite_dst),
-									0.0,
-									None,
-									sprite.flip_horizontal,
-									sprite.flip_vertical,
-								)
-								.unwrap();
+							render_sprite(tex_canvas, idx, sprite);
 						}
 					}
 				}
@@ -393,32 +397,7 @@ impl SdlFramebuffer<'_> {
 				if ppu.mask.show_spr() {
 					for (idx, sprite) in self.sprites.iter().enumerate().rev() {
 						if !ppu.oam[idx].attr.priority() && ppu.oam[idx].is_visible() {
-							let nes_x = ppu.oam[idx].x as i64;
-							let nes_y = ppu.oam[idx].y as i64 + 1;
-							let left = dst_x as i64 + (nes_x * scale_num_x) / SCALE_DENOM_X;
-							let right = dst_x as i64
-								+ ((nes_x + TILE_SIZE as i64) * scale_num_x) / SCALE_DENOM_X;
-							let top = dst_y as i64 + (nes_y * scale_num_y) / SCALE_DENOM_Y;
-							let bottom = dst_y as i64
-								+ ((nes_y + TILE_SIZE as i64) * scale_num_y) / SCALE_DENOM_Y;
-							let sprite_dst = Rect::new(
-								left as i32,
-								top as i32,
-								(right - left) as u32,
-								(bottom - top) as u32,
-							);
-							let palette = sprite.palette;
-							tex_canvas
-								.copy_ex(
-									&self.pattern_tables[palette as usize],
-									Some(calculate_uv(sprite.tile_idx)),
-									Some(sprite_dst),
-									0.0,
-									None,
-									sprite.flip_horizontal,
-									sprite.flip_vertical,
-								)
-								.unwrap();
+							render_sprite(tex_canvas, idx, sprite);
 						}
 					}
 				}
