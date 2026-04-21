@@ -41,7 +41,7 @@ struct SdlSprite {
 pub struct SdlFramebuffer<'tc> {
 	bg1: Texture<'tc>,
 	bg2: Texture<'tc>,
-	pattern_table_cache: Lru<Palette, Texture<'tc>>,
+	pattern_table_cache: Lru<[NesColour; 3], Texture<'tc>>,
 	pattern_tables: [Texture<'tc>; 4],
 	sprites: [SdlSprite; 64],
 	framebuffer_texture: Texture<'tc>,
@@ -150,7 +150,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		palette: Palette,
 		mut pattern_table_data: impl Iterator<Item = Option<NesColour>>,
 	) {
-		if let Some(cached) = self.pattern_table_cache.get_mut(&palette) {
+		if let Some(cached) = self.pattern_table_cache.get(&slice_palette(palette)) {
 			self.canvas
 				.with_texture_canvas(cached, |tex_canvas| {
 					tex_canvas.clear();
@@ -204,7 +204,8 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		new_pattern_table
 			.update(None, byte_buffer, PATTERN_TABLE_SIZE as usize * 4)
 			.unwrap();
-		self.pattern_table_cache.insert(palette, new_pattern_table);
+		self.pattern_table_cache
+			.insert(slice_palette(palette), new_pattern_table);
 	}
 
 	fn update_sprite(
@@ -731,4 +732,8 @@ fn draw_vertical_gradient(
 	];
 	let indices: [[i32; 3]; 2] = [[0, 1, 2], [2, 3, 0]];
 	canvas.render_geometry(&vertices, None, &indices).unwrap();
+}
+
+const fn slice_palette([_, x, y, z]: Palette) -> [NesColour; 3] {
+	[x, y, z]
 }
