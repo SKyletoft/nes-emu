@@ -211,17 +211,19 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 		&mut self,
 		sprite_idx: usize,
 		tile_idx: u8,
-		horizontal: bool,
-		vertical: bool,
+		flip_horizontal: bool,
+		flip_vertical: bool,
 		palette: u8, /* is 0..4 */
 	) {
 		unsafe { unsafe_assert!(sprite_idx < 64) };
 		unsafe { unsafe_assert!(palette < 4) };
 
-		self.sprites[sprite_idx].flip_horizontal = horizontal;
-		self.sprites[sprite_idx].flip_vertical = vertical;
-		self.sprites[sprite_idx].palette = palette;
-		self.sprites[sprite_idx].tile_idx = tile_idx;
+		self.sprites[sprite_idx] = SdlSprite {
+			palette,
+			flip_horizontal,
+			flip_vertical,
+			tile_idx,
+		};
 	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
