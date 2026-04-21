@@ -3,7 +3,7 @@ use anyhow::{Result, bail};
 use crate::{
 	frame::NesFramebuffer,
 	mapper::{Mapper, PatternAddressBuilder},
-	ppu::{NesColour, Ppu, Sprite, VRAM_MASK},
+	ppu::{Ppu, Sprite, VRAM_MASK},
 	unsafe_assert, unsafe_unreachable,
 };
 
@@ -213,8 +213,44 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 				let old = ppu.palettes[pal_idx][col_idx];
 				ppu.palettes[pal_idx][col_idx] = col;
 				let is_bg_pal = pal_idx < 4;
-				if old != col && is_bg_pal {
+				if old == col {
+					return Some(());
+				}
+
+				if is_bg_pal {
 					self.rerender_background_targetted(ppu, pal_idx as u8);
+				} else {
+					let pattern_table = ppu.ctrl.sprite_pattern_table() as usize;
+
+					let calc = |tile_idx: usize, pixel_x: usize, pixel_y: usize| {
+						unsafe { unsafe_assert!(pixel_y < 8 && pixel_x < 8) };
+						unsafe { unsafe_assert!(tile_idx < 256) };
+
+						let palette_index =
+							self.parsed_graphics[pattern_table][tile_idx][pixel_x][pixel_y];
+						if palette_index == 0 {
+							return None;
+						}
+
+						Some(ppu.palettes[pal_idx][palette_index as usize])
+					};
+
+					const TILE_COUNT: usize = 256usize.isqrt();
+					let pattern_table_data = (0..TILE_COUNT).flat_map(|tile_row| {
+						(0..TILE_COUNT).flat_map(move |tile_col| {
+							let tile_idx = tile_row * TILE_COUNT + tile_col;
+							SWIZZLE_ORDER_2D
+								.iter()
+								.copied()
+								.map(move |(pixel_x, pixel_y)| calc(tile_idx, pixel_x, pixel_y))
+						})
+					});
+
+					self.framebuffer.update_sprite_pattern_table(
+						pal_idx as u8 - 4,
+						ppu.palettes[pal_idx],
+						pattern_table_data,
+					);
 				}
 				Some(())
 			}
@@ -284,7 +320,7 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 		let old = ppu.oam[idx];
 		ppu.oam[idx] = new;
 		if new.attr.palette() != old.attr.palette() || new.tile != old.tile {
-			self.rerender_sprite(ppu, idx);
+			self.update_sprite(ppu, idx);
 		}
 		self.framebuffer().update_sprite(
 			idx,
@@ -297,53 +333,10 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 }
 
 impl<F: NesFramebuffer> NROM256<F> {
-	fn rerender_sprite(&mut self, ppu: &mut Ppu, idx: usize) {
+	fn update_sprite(&mut self, ppu: &mut Ppu, idx: usize) {
 		unsafe { unsafe_assert!(idx < ppu.oam.len()) };
 
 		let sprite = ppu.oam[idx];
-		let pattern_table = ppu.ctrl.sprite_pattern_table() as usize;
-
-		let calc = |tile_idx: usize, pixel_x: usize, pixel_y: usize| {
-			unsafe { unsafe_assert!(pixel_y < 8 && pixel_x < 8) };
-			unsafe { unsafe_assert!(tile_idx < 256) };
-
-			let palette_index = self.parsed_graphics[pattern_table][tile_idx][pixel_x][pixel_y];
-			if palette_index == 0 {
-				return None;
-			}
-
-			unsafe { unsafe_assert!((0..4).contains(&sprite.attr.palette())) };
-			unsafe { unsafe_assert!((0..4).contains(&palette_index)) };
-			let col_idx = sprite.attr.palette() as u16 * 4 + palette_index as u16;
-			unsafe { unsafe_assert!((0..16).contains(&col_idx)) };
-
-			let Some(raw_col) = ({
-				let adr = (0x3F10 + col_idx) & VRAM_MASK;
-				let palettes_raw = ppu.raw_palettes();
-				palettes_raw.get((adr & 0x1F) as usize).copied()
-			}) else {
-				unsafe { unsafe_unreachable!("Palette RAM must be in-bounds") }
-			};
-			let col = NesColour::try_from(raw_col).expect("Game used invalid colour");
-			Some(col)
-		};
-
-		const TILE_COUNT: usize = 256usize.isqrt();
-		let pattern_table_data = (0..TILE_COUNT).flat_map(|tile_row| {
-			(0..TILE_COUNT).flat_map(move |tile_col| {
-				let tile_idx = tile_row * TILE_COUNT + tile_col;
-				SWIZZLE_ORDER_2D
-					.iter()
-					.copied()
-					.map(move |(pixel_x, pixel_y)| calc(tile_idx, pixel_x, pixel_y))
-			})
-		});
-
-		self.framebuffer.update_sprite_pattern_table(
-			sprite.attr.palette(),
-			ppu.palettes[sprite.attr.palette() as usize],
-			pattern_table_data,
-		);
 
 		self.framebuffer.update_sprite(
 			idx,
@@ -354,11 +347,20 @@ impl<F: NesFramebuffer> NROM256<F> {
 		);
 
 		if idx == 0 {
+			let pattern_table = ppu.ctrl.sprite_pattern_table() as usize;
+			let calc = |tile_idx: usize, pixel_x: usize, pixel_y: usize| {
+				unsafe { unsafe_assert!(pixel_y < 8 && pixel_x < 8) };
+				unsafe { unsafe_assert!(tile_idx < 256) };
+
+				let palette_index = self.parsed_graphics[pattern_table][tile_idx][pixel_x][pixel_y];
+				palette_index != 0
+			};
+
 			for (pixel_x, pixel_y) in SWIZZLE_ORDER_2D.iter().copied() {
 				let ret = calc(sprite.tile as usize, pixel_x, pixel_y);
 				let pixel_idx = pixel_x * 8 + pixel_y;
 				unsafe { unsafe_assert!(pixel_idx < 64) };
-				self.hitbox_sprite_0[pixel_idx] = ret.is_some();
+				self.hitbox_sprite_0[pixel_idx] = ret
 			}
 		}
 	}
