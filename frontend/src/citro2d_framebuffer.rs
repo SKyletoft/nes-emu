@@ -26,6 +26,7 @@ const X_OFFSET: f32 = (400. - 256.) / 2.;
 const TOP_SCREEN_W: f32 = 400.;
 const TOP_SCREEN_H: f32 = 240.;
 
+#[derive(Copy, Clone)]
 struct Sprite {
 	palette: u8, /* is 0..4 */
 	mirror_x: bool,
