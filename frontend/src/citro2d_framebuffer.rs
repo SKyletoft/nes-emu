@@ -357,7 +357,7 @@ impl Citro2DFramebuffer<'_> {
 		let tile_idx = sprite.tile;
 
 		const SPRITE_SIZE: f32 = 128.;
-		let sprite_pos = (
+		const SPRITE_POS: (f32, f32) = (
 			(TOP_SCREEN_W - SPRITE_SIZE) / 2.,
 			(TOP_SCREEN_H - SPRITE_SIZE) / 2.,
 		);
@@ -390,8 +390,8 @@ impl Citro2DFramebuffer<'_> {
 			for (width, height, x_off, y_off) in sides {
 				t.render_2d_shape(&RectangleSolid {
 					point: Point {
-						x: sprite_pos.0 + x_off + tile_x,
-						y: sprite_pos.1 + y_off + tile_y,
+						x: SPRITE_POS.0 + x_off + tile_x,
+						y: SPRITE_POS.1 + y_off + tile_y,
 						z: 1.,
 					},
 					size: Size { width, height },
