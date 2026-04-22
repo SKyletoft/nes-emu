@@ -17,6 +17,14 @@ pub const SWIZZLE_ORDER: [usize; 64] = [
 	52, 53, 60, 61, 54, 55, 62, 63,
 ];
 
+#[derive(Copy, Clone)]
+pub struct Sprite {
+	pub palette: u8, /* is 0..4 */
+	pub mirror_x: bool,
+	pub mirror_y: bool,
+	pub tile: u8,
+}
+
 pub const fn slice_palette([_, x, y, z]: Palette) -> [NesColour; 3] {
 	[x, y, z]
 }

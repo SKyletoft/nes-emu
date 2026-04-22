@@ -14,22 +14,15 @@ use sdl2::{
 
 use crate::{
 	debug_mode::{BackgroundView, DebugBackgroundMode, DebugMode},
-	helpers::{BG_SIZE, PATTERN_TABLE_SIZE, SWIZZLE_ORDER, TILE_SIZE, slice_palette},
+	helpers::{BG_SIZE, PATTERN_TABLE_SIZE, SWIZZLE_ORDER, Sprite, TILE_SIZE, slice_palette},
 };
-
-struct SdlSprite {
-	palette: u8, /* is 0..4 */
-	flip_horizontal: bool,
-	flip_vertical: bool,
-	tile_idx: u8,
-}
 
 pub struct SdlFramebuffer<'tc> {
 	bg1: Texture<'tc>,
 	bg2: Texture<'tc>,
 	pattern_table_cache: Lru<[NesColour; 3], Texture<'tc>>,
 	pattern_tables: [Texture<'tc>; 4],
-	sprites: [SdlSprite; 64],
+	sprites: [Sprite; 64],
 	framebuffer_texture: Texture<'tc>,
 	texture_creator: &'tc TextureCreator<WindowContext>,
 	canvas: &'tc mut Canvas<Window>,
@@ -57,11 +50,11 @@ impl<'tc> SdlFramebuffer<'tc> {
 			.map_err(|e| e.to_string())?;
 		bg2.set_blend_mode(BlendMode::BLEND);
 
-		let sprites = std::array::from_fn(|_| SdlSprite {
+		let sprites = std::array::from_fn(|_| Sprite {
 			palette: 0,
-			flip_horizontal: false,
-			flip_vertical: false,
-			tile_idx: 0,
+			mirror_x: false,
+			mirror_y: false,
+			tile: 0,
 		});
 		let pattern_tables = std::array::from_fn(|_| {
 			let mut tex = tc
@@ -198,19 +191,19 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 	fn update_sprite(
 		&mut self,
 		sprite_idx: usize,
-		tile_idx: u8,
-		flip_horizontal: bool,
-		flip_vertical: bool,
+		tile: u8,
+		mirror_x: bool,
+		mirror_y: bool,
 		palette: u8, /* is 0..4 */
 	) {
 		unsafe { unsafe_assert!(sprite_idx < 64) };
 		unsafe { unsafe_assert!(palette < 4) };
 
-		self.sprites[sprite_idx] = SdlSprite {
+		self.sprites[sprite_idx] = Sprite {
 			palette,
-			flip_horizontal,
-			flip_vertical,
-			tile_idx,
+			mirror_x,
+			mirror_y,
+			tile,
 		};
 	}
 
@@ -225,7 +218,7 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 				}
 				DebugMode::Sprites(idx) => {
 					draw_debug_background(&mut *self.canvas, self.debug_background_mode, ppu);
-					let sprite_uv = calculate_uv(self.sprites[idx as usize].tile_idx);
+					let sprite_uv = calculate_uv(self.sprites[idx as usize].tile);
 					let palette = self.sprites[idx as usize].palette;
 					render_sprite_debug(
 						self.canvas,
@@ -292,7 +285,7 @@ impl SdlFramebuffer<'_> {
 				const SCALE_DENOM_Y: i64 = 240;
 
 				let render_sprite =
-					|tex_canvas: &mut Canvas<Window>, idx: usize, sprite: &SdlSprite| {
+					|tex_canvas: &mut Canvas<Window>, idx: usize, sprite: &Sprite| {
 						let nes_x = ppu.oam[idx].x as i64;
 						let nes_y = ppu.oam[idx].y as i64 + 1;
 						let left = dst_x as i64 + (nes_x * scale_num_x) / SCALE_DENOM_X;
@@ -310,12 +303,12 @@ impl SdlFramebuffer<'_> {
 						tex_canvas
 							.copy_ex(
 								&self.pattern_tables[sprite.palette as usize],
-								Some(calculate_uv(sprite.tile_idx)),
+								Some(calculate_uv(sprite.tile)),
 								Some(sprite_dst),
 								0.0,
 								None,
-								sprite.flip_horizontal,
-								sprite.flip_vertical,
+								sprite.mirror_x,
+								sprite.mirror_y,
 							)
 							.unwrap();
 					};

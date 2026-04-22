@@ -19,20 +19,12 @@ use lru_cache::Lru;
 
 use crate::{
 	debug_mode::{BackgroundView, DebugBackgroundMode, DebugMode},
-	helpers::{PATTERN_TABLE_SIZE, slice_palette},
+	helpers::{PATTERN_TABLE_SIZE, Sprite, slice_palette},
 };
 
 const X_OFFSET: f32 = (400. - 256.) / 2.;
 const TOP_SCREEN_W: f32 = 400.;
 const TOP_SCREEN_H: f32 = 240.;
-
-#[derive(Copy, Clone)]
-struct Sprite {
-	palette: u8, /* is 0..4 */
-	mirror_x: bool,
-	mirror_y: bool,
-	tile: u8,
-}
 
 pub struct Citro2DFramebuffer<'a> {
 	instance: Instance,
@@ -129,12 +121,18 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 	fn update_sprite(
 		&mut self,
 		sprite_idx: usize,
-		tile_idx: u8,
-		horizontal: bool,
-		vertical: bool,
+		tile: u8,
+		mirror_x: bool,
+		mirror_y: bool,
 		palette: u8, /* is 0..4 */
 	) {
 		unsafe { unsafe_assert!((0..4).contains(&palette)) };
+		self.sprites[sprite_idx] = Sprite {
+			mirror_x,
+			mirror_y,
+			palette,
+			tile,
+		};
 	}
 
 	fn update_sprite_pattern_table(
