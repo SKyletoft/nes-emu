@@ -321,10 +321,11 @@ impl SdlFramebuffer<'_> {
 					};
 
 				if ppu.mask.show_spr() {
-					for (idx, sprite) in self.sprites.iter().enumerate().rev() {
-						if ppu.oam[idx].attr.priority() && ppu.oam[idx].is_visible() {
-							render_sprite(tex_canvas, idx, sprite);
-						}
+					for (idx, sprite) in self.sprites.iter().enumerate().rev().filter(|(idx, _)| {
+						let spr = ppu.oam[*idx];
+						spr.attr.priority() && spr.is_visible()
+					}) {
+						render_sprite(tex_canvas, idx, sprite);
 					}
 				}
 
@@ -381,10 +382,11 @@ impl SdlFramebuffer<'_> {
 				}
 
 				if ppu.mask.show_spr() {
-					for (idx, sprite) in self.sprites.iter().enumerate().rev() {
-						if !ppu.oam[idx].attr.priority() && ppu.oam[idx].is_visible() {
-							render_sprite(tex_canvas, idx, sprite);
-						}
+					for (idx, sprite) in self.sprites.iter().enumerate().rev().filter(|(idx, _)| {
+						let spr = ppu.oam[*idx];
+						!spr.attr.priority() && spr.is_visible()
+					}) {
+						render_sprite(tex_canvas, idx, sprite);
 					}
 				}
 			})
