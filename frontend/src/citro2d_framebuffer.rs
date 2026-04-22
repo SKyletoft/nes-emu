@@ -12,7 +12,7 @@ use ctru::prelude::*;
 use emu_core::{
 	frame::NesFramebuffer,
 	perf_stats,
-	ppu::{Colour, NesColour, Ppu},
+	ppu::{Colour, NesColour, Palette, Ppu},
 	unsafe_assert,
 };
 use lru_cache::Lru;
@@ -68,6 +68,10 @@ impl<'a> Citro2DFramebuffer<'a> {
 			tile: 0,
 		});
 
+		let pattern_table_cache = Lru::new();
+		let pattern_tables =
+			std::array::from_fn(|_| Rc::new(Tex::new(256, 256, ColourFormat::Rgba5551)));
+
 		let hide_left = true;
 		let hide_right = true;
 		let debug_mode_enabled = false;
@@ -80,6 +84,8 @@ impl<'a> Citro2DFramebuffer<'a> {
 			bg1,
 			bg2,
 			sprites,
+			pattern_table_cache,
+			pattern_tables,
 			hide_left,
 			hide_right,
 			debug_mode_enabled,
@@ -113,21 +119,41 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 
 	fn update_sprite(
 		&mut self,
-		sprite_data: impl Iterator<Item = Option<NesColour>>,
 		sprite_idx: usize,
 		tile_idx: u8,
+		horizontal: bool,
+		vertical: bool,
+		palette: u8, /* is 0..4 */
 	) {
-		// unsafe { unsafe_assert!(sprite_idx < 64) };
-		// let tile = self.sprites[sprite_idx]
-		//	.sprite
-		//	.texture_mut()
-		//	.unwrap()
-		//	.raw_texture_mut();
-		// for (col, pixel) in sprite_data.zip(tile.iter_mut()) {
-		//	*pixel = nes_colour_to_rgba5551(col);
-		// }
-		// self.sprites[sprite_idx].tile = tile_idx;
+		unsafe { unsafe_assert!((0..4).contains(&palette)) };
 	}
+
+	fn update_sprite_pattern_table(
+		&mut self,
+		palette_idx: u8, /* is 0..4 */
+		palette: Palette,
+		tile_data: impl Iterator<Item = Option<NesColour>>,
+	) {
+		unsafe { unsafe_assert!((0..4).contains(&palette_idx)) };
+	}
+
+	// fn update_sprite(
+	//	&mut self,
+	//	sprite_data: impl Iterator<Item = Option<NesColour>>,
+	//	sprite_idx: usize,
+	//	tile_idx: u8,
+	// ) {
+	// unsafe { unsafe_assert!(sprite_idx < 64) };
+	// let tile = self.sprites[sprite_idx]
+	//	.sprite
+	//	.texture_mut()
+	//	.unwrap()
+	//	.raw_texture_mut();
+	// for (col, pixel) in sprite_data.zip(tile.iter_mut()) {
+	//	*pixel = nes_colour_to_rgba5551(col);
+	// }
+	// self.sprites[sprite_idx].tile = tile_idx;
+	// }
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
 		if !self.debug_mode_enabled {
@@ -210,7 +236,7 @@ impl Citro2DFramebuffer<'_> {
 				),
 			};
 
-			Citro2dSprite::from_shared_tex(&self.pattern_tables[palette as usize])
+			Citro2dSprite::from_shared_tex(self.pattern_tables[palette as usize].as_ref())
 				.with_size(size)
 				.with_depth(depth)
 				.with_pos(pos)
@@ -236,8 +262,12 @@ impl Citro2DFramebuffer<'_> {
 			t.clear(citro2d::render::Colour::new(red, green, blue));
 
 			if ppu.mask.show_spr() {
-				for sp in self.sprites.iter().filter(|sp| sp.sprite.depth() <= 0.5) {
-					t.render_2d_shape(&sp.sprite);
+				for idx in (0..self.sprites.len()).rev().filter(|idx| {
+					let spr = ppu.oam[*idx];
+					spr.attr.priority() && spr.is_visible()
+				}) {
+					let citro_sprite = self.generate_sprite(idx);
+					t.render_2d_shape(&citro_sprite);
 				}
 			}
 
@@ -282,8 +312,12 @@ impl Citro2DFramebuffer<'_> {
 			}
 
 			if ppu.mask.show_spr() {
-				for sp in self.sprites.iter().filter(|sp| sp.sprite.depth() > 0.5) {
-					t.render_2d_shape(&sp.sprite);
+				for idx in (0..self.sprites.len()).rev().filter(|idx| {
+					let spr = ppu.oam[*idx];
+					!spr.attr.priority() && spr.is_visible()
+				}) {
+					let citro_sprite = self.generate_sprite(idx);
+					t.render_2d_shape(&citro_sprite);
 				}
 			}
 
@@ -328,6 +362,10 @@ impl Citro2DFramebuffer<'_> {
 
 			perf_stats::stop_gpu();
 		});
+	}
+
+	fn generate_sprite(&self, idx: usize /* is 0..4 */) -> Citro2dSprite<&Tex> {
+		todo!()
 	}
 
 	fn render_backgrounds_debug(
@@ -389,11 +427,13 @@ impl Citro2DFramebuffer<'_> {
 			(TOP_SCREEN_H - SPRITE_SIZE) / 2.,
 		);
 
-		let sp = &mut self.sprites[sprite_idx as usize];
-		sp.sprite.set_size((SPRITE_SIZE, SPRITE_SIZE));
-		sp.sprite.set_centre((0., 0.));
-		sp.sprite.set_pos(sprite_pos);
-		sp.sprite.set_mirroring(&Mirroring::Normal);
+		 sp = Citro2dSprite::from_shared_tex(
+			self.pattern_tables[self.sprites[sprite_idx as usize].palette as usize].as_ref(),
+		)
+		.with_size((SPRITE_SIZE, SPRITE_SIZE))
+		.with_centre((0., 0.))
+		.with_pos(sprite_pos)
+		.with_mirroring(&Mirroring::Normal);
 
 		let tile_x = ((tile_idx % 16) as f32) * 8.;
 		let tile_y = ((tile_idx / 16) as f32) * 8.;
@@ -472,7 +512,7 @@ fn render_background(mode: DebugBackgroundMode, ppu: &Ppu, t: &mut Target<'_>) {
 	}
 }
 
-fn nes_colour_to_rgba5551(value: Option<NesColour>) -> Rgba5551 {
+const fn nes_colour_to_rgba5551(value: Option<NesColour>) -> Rgba5551 {
 	let Some(value) = value else {
 		return Rgba5551::TRANSPARENT;
 	};
