@@ -262,7 +262,7 @@ impl Citro2DFramebuffer<'_> {
 			t.clear(citro2d::render::Colour::new(red, green, blue));
 
 			if ppu.mask.show_spr() {
-				for idx in (0..self.sprites.len()).rev().filter(|idx| {
+				for (idx, sprite) in self.sprites.iter().enumerate().rev().filter(|(idx, _)| {
 					let spr = ppu.oam[*idx];
 					spr.attr.priority() && spr.is_visible()
 				}) {
@@ -312,7 +312,7 @@ impl Citro2DFramebuffer<'_> {
 			}
 
 			if ppu.mask.show_spr() {
-				for idx in (0..self.sprites.len()).rev().filter(|idx| {
+				for (idx, sprite) in self.sprites.iter().enumerate().rev().filter(|(idx, _)| {
 					let spr = ppu.oam[*idx];
 					!spr.attr.priority() && spr.is_visible()
 				}) {
