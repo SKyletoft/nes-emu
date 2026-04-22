@@ -448,7 +448,7 @@ fn render_background(mode: DebugBackgroundMode, ppu: &Ppu, t: &mut Target<'_>) {
 	}
 }
 
-const fn nes_colour_to_rgba5551(value: Option<NesColour>) -> Rgba5551 {
+fn nes_colour_to_rgba5551(value: Option<NesColour>) -> Rgba5551 {
 	let Some(value) = value else {
 		return Rgba5551::TRANSPARENT;
 	};
