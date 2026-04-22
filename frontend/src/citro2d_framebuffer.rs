@@ -17,7 +17,10 @@ use emu_core::{
 };
 use lru_cache::Lru;
 
-use crate::debug_mode::{BackgroundView, DebugBackgroundMode, DebugMode};
+use crate::{
+	debug_mode::{BackgroundView, DebugBackgroundMode, DebugMode},
+	helpers::{PATTERN_TABLE_SIZE, slice_palette},
+};
 
 const X_OFFSET: f32 = (400. - 256.) / 2.;
 const TOP_SCREEN_W: f32 = 400.;
@@ -69,8 +72,13 @@ impl<'a> Citro2DFramebuffer<'a> {
 		});
 
 		let pattern_table_cache = Lru::new();
-		let pattern_tables =
-			std::array::from_fn(|_| Rc::new(Tex::new(256, 256, ColourFormat::Rgba5551)));
+		let pattern_tables = std::array::from_fn(|_| {
+			Rc::new(Tex::new(
+				PATTERN_TABLE_SIZE,
+				PATTERN_TABLE_SIZE,
+				ColourFormat::Rgba5551,
+			))
+		});
 
 		let hide_left = true;
 		let hide_right = true;
