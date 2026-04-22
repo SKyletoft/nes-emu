@@ -362,14 +362,6 @@ impl Citro2DFramebuffer<'_> {
 			(TOP_SCREEN_H - SPRITE_SIZE) / 2.,
 		);
 
-		 sp = Citro2dSprite::from_shared_tex(
-			self.pattern_tables[self.sprites[sprite_idx as usize].palette as usize].as_ref(),
-		)
-		.with_size((SPRITE_SIZE, SPRITE_SIZE))
-		.with_centre((0., 0.))
-		.with_pos(sprite_pos)
-		.with_mirroring(&Mirroring::Normal);
-
 		let tile_x = ((tile_idx % 16) as f32) * 8.;
 		let tile_y = ((tile_idx / 16) as f32) * 8.;
 		const TILE_SIZE: f32 = 8.;
@@ -379,7 +371,16 @@ impl Citro2DFramebuffer<'_> {
 
 			render_background(mode, ppu, t);
 
-			t.render_2d_shape(&self.sprites[sprite_idx as usize].sprite);
+			t.render_2d_shape(
+				&Citro2dSprite::from_shared_tex(
+					self.pattern_tables[self.sprites[sprite_idx as usize].palette as usize]
+						.as_ref(),
+				)
+				.with_size((SPRITE_SIZE, SPRITE_SIZE))
+				.with_centre((0., 0.))
+				.with_pos(SPRITE_POS)
+				.with_mirroring(&Mirroring::Normal),
+			);
 
 			let sides = [
 				(TILE_SIZE + 2., 1., -1., -1.),
