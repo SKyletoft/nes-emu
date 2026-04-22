@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use citro2d::{
 	Instance, Point, Size,
 	pixel_type::Rgba5551,
@@ -13,6 +15,7 @@ use emu_core::{
 	ppu::{Colour, NesColour, Ppu},
 	unsafe_assert,
 };
+use lru_cache::Lru;
 
 use crate::debug_mode::{BackgroundView, DebugBackgroundMode, DebugMode};
 
@@ -21,7 +24,7 @@ const TOP_SCREEN_W: f32 = 400.;
 const TOP_SCREEN_H: f32 = 240.;
 
 struct Sprite {
-	sprite: Citro2dSprite,
+	palette: u8, /* is 0..4 */
 	mirror_x: bool,
 	mirror_y: bool,
 	tile: u8,
@@ -34,6 +37,8 @@ pub struct Citro2DFramebuffer<'a> {
 	bg1: Citro2dSprite,
 	bg2: Citro2dSprite,
 	sprites: [Sprite; 64],
+	pattern_table_cache: Lru<[NesColour; 3], Rc<Tex>>,
+	pattern_tables: [Rc<Tex>; 4],
 
 	pub hide_left: bool,
 	pub hide_right: bool,
@@ -56,16 +61,11 @@ impl<'a> Citro2DFramebuffer<'a> {
 		bg2.set_pos((X_OFFSET, 0.));
 		bg2.set_depth(0.5);
 
-		let sprites = std::array::from_fn(|_| {
-			let sprite = Citro2dSprite::from_tex(Tex::new(8 * 16, 8 * 16, ColourFormat::Rgba5551))
-				.with_size((8., 8.))
-				.with_mirroring(&Mirroring::Normal);
-			Sprite {
-				sprite,
-				mirror_x: false,
-				mirror_y: false,
-				tile: 0,
-			}
+		let sprites = std::array::from_fn(|_| Sprite {
+			palette: 0,
+			mirror_x: false,
+			mirror_y: false,
+			tile: 0,
 		});
 
 		let hide_left = true;
@@ -117,23 +117,16 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 		sprite_idx: usize,
 		tile_idx: u8,
 	) {
-		unsafe { unsafe_assert!(sprite_idx < 64) };
-		let tile = self.sprites[sprite_idx]
-			.sprite
-			.texture_mut()
-			.unwrap()
-			.raw_texture_mut();
-		for (col, pixel) in sprite_data.zip(tile.iter_mut()) {
-			*pixel = nes_colour_to_rgba5551(col);
-		}
-		self.sprites[sprite_idx].tile = tile_idx;
-	}
-
-	fn set_mirroring(&mut self, sprite_idx: usize, horizontal: bool, vertical: bool) {
-		unsafe { unsafe_assert!(sprite_idx < 64) };
-		let sprite = &mut self.sprites[sprite_idx];
-		sprite.mirror_x = horizontal;
-		sprite.mirror_y = vertical;
+		// unsafe { unsafe_assert!(sprite_idx < 64) };
+		// let tile = self.sprites[sprite_idx]
+		//	.sprite
+		//	.texture_mut()
+		//	.unwrap()
+		//	.raw_texture_mut();
+		// for (col, pixel) in sprite_data.zip(tile.iter_mut()) {
+		//	*pixel = nes_colour_to_rgba5551(col);
+		// }
+		// self.sprites[sprite_idx].tile = tile_idx;
 	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
@@ -155,61 +148,76 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 
 impl Citro2DFramebuffer<'_> {
 	fn render_nes_frame(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
-		for (idx, sprite) in self.sprites.iter_mut().enumerate() {
-			sprite.sprite.set_size((8., 8.));
-			sprite.sprite.set_depth(if ppu.oam[idx].attr.priority() {
+		let citro_sprites: [Citro2dSprite<&Tex>; 64] = std::array::from_fn(|idx| {
+			let Sprite {
+				mirror_x,
+				mirror_y,
+				tile,
+				palette,
+			} = self.sprites[idx];
+
+			let size = (8., 8.);
+			let depth = if ppu.oam[idx].attr.priority() {
 				0.1
 			} else {
 				0.9
-			});
-			sprite.sprite.set_pos((
+			};
+			let pos = (
 				X_OFFSET + ppu.oam[idx].x as f32 + 4.,
 				1. + ppu.oam[idx].y as f32 + 4.,
-			));
-			sprite.sprite.set_centre((4., 4.));
+			);
+			let centre = (4., 4.);
 
-			let tile_x = sprite.tile % 16;
-			let tile_y = sprite.tile / 16;
+			let tile_x = tile % 16;
+			let tile_y = tile / 16;
 
-			match (sprite.mirror_x, sprite.mirror_y) {
-				(false, false) => {
-					sprite.sprite.set_mirroring(&Mirroring::Custom {
+			let (mirroring, angle) = match (mirror_x, mirror_y) {
+				(false, false) => (
+					Mirroring::Custom {
 						top: (16 - tile_y) as f32 / 16.,
 						bottom: (15 - tile_y) as f32 / 16.,
 						left: tile_x as f32 / 16.,
 						right: (tile_x + 1) as f32 / 16.,
-					});
-					sprite.sprite.set_angle(0.);
-				}
-				(false, true) => {
-					sprite.sprite.set_mirroring(&Mirroring::Custom {
+					},
+					0.,
+				),
+				(false, true) => (
+					Mirroring::Custom {
 						top: (16 - tile_y) as f32 / 16.,
 						bottom: (15 - tile_y) as f32 / 16.,
 						right: tile_x as f32 / 16.,
 						left: (tile_x + 1) as f32 / 16.,
-					});
-					sprite.sprite.set_angle(180_f32.to_radians());
-				}
-				(true, false) => {
-					sprite.sprite.set_mirroring(&Mirroring::Custom {
+					},
+					180_f32.to_radians(),
+				),
+				(true, false) => (
+					Mirroring::Custom {
 						top: (16 - tile_y) as f32 / 16.,
 						bottom: (15 - tile_y) as f32 / 16.,
 						left: (tile_x + 1) as f32 / 16.,
 						right: tile_x as f32 / 16.,
-					});
-					sprite.sprite.set_angle(0.);
-				}
-				(true, true) => {
-					sprite.sprite.set_mirroring(&Mirroring::Custom {
+					},
+					0.,
+				),
+				(true, true) => (
+					Mirroring::Custom {
 						top: (16 - tile_y) as f32 / 16.,
 						bottom: (15 - tile_y) as f32 / 16.,
 						left: tile_x as f32 / 16.,
 						right: (tile_x + 1) as f32 / 16.,
-					});
-					sprite.sprite.set_angle(180_f32.to_radians());
-				}
+					},
+					180_f32.to_radians(),
+				),
 			};
-		}
+
+			Citro2dSprite::from_shared_tex(&self.pattern_tables[palette as usize])
+				.with_size(size)
+				.with_depth(depth)
+				.with_pos(pos)
+				.with_centre(centre)
+				.with_mirroring(&mirroring)
+				.with_angle(angle)
+		});
 
 		let background_slices =
 			lines
