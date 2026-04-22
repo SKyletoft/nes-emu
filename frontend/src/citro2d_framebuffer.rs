@@ -184,77 +184,6 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 
 impl Citro2DFramebuffer<'_> {
 	fn render_nes_frame(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
-		let citro_sprites: [Citro2dSprite<&Tex>; 64] = std::array::from_fn(|idx| {
-			let Sprite {
-				mirror_x,
-				mirror_y,
-				tile,
-				palette,
-			} = self.sprites[idx];
-
-			let size = (8., 8.);
-			let depth = if ppu.oam[idx].attr.priority() {
-				0.1
-			} else {
-				0.9
-			};
-			let pos = (
-				X_OFFSET + ppu.oam[idx].x as f32 + 4.,
-				1. + ppu.oam[idx].y as f32 + 4.,
-			);
-			let centre = (4., 4.);
-
-			let tile_x = tile % 16;
-			let tile_y = tile / 16;
-
-			let (mirroring, angle) = match (mirror_x, mirror_y) {
-				(false, false) => (
-					Mirroring::Custom {
-						top: (16 - tile_y) as f32 / 16.,
-						bottom: (15 - tile_y) as f32 / 16.,
-						left: tile_x as f32 / 16.,
-						right: (tile_x + 1) as f32 / 16.,
-					},
-					0.,
-				),
-				(false, true) => (
-					Mirroring::Custom {
-						top: (16 - tile_y) as f32 / 16.,
-						bottom: (15 - tile_y) as f32 / 16.,
-						right: tile_x as f32 / 16.,
-						left: (tile_x + 1) as f32 / 16.,
-					},
-					180_f32.to_radians(),
-				),
-				(true, false) => (
-					Mirroring::Custom {
-						top: (16 - tile_y) as f32 / 16.,
-						bottom: (15 - tile_y) as f32 / 16.,
-						left: (tile_x + 1) as f32 / 16.,
-						right: tile_x as f32 / 16.,
-					},
-					0.,
-				),
-				(true, true) => (
-					Mirroring::Custom {
-						top: (16 - tile_y) as f32 / 16.,
-						bottom: (15 - tile_y) as f32 / 16.,
-						left: tile_x as f32 / 16.,
-						right: (tile_x + 1) as f32 / 16.,
-					},
-					180_f32.to_radians(),
-				),
-			};
-
-			Citro2dSprite::from_shared_tex(self.pattern_tables[palette as usize].as_ref())
-				.with_size(size)
-				.with_depth(depth)
-				.with_pos(pos)
-				.with_centre(centre)
-				.with_mirroring(&mirroring)
-				.with_angle(angle)
-		});
-
 		let background_slices =
 			lines
 				.chunk_by(|l, r| l.0 == r.0 && l.1 + 1 == r.1)
@@ -276,7 +205,7 @@ impl Citro2DFramebuffer<'_> {
 					let spr = ppu.oam[*idx];
 					spr.attr.priority() && spr.is_visible()
 				}) {
-					let citro_sprite = self.generate_sprite(idx);
+					let citro_sprite = generate_sprite(ppu, *sprite, &self.pattern_tables, idx);
 					t.render_2d_shape(&citro_sprite);
 				}
 			}
@@ -326,7 +255,7 @@ impl Citro2DFramebuffer<'_> {
 					let spr = ppu.oam[*idx];
 					!spr.attr.priority() && spr.is_visible()
 				}) {
-					let citro_sprite = self.generate_sprite(idx);
+					let citro_sprite = generate_sprite(ppu, *sprite, &self.pattern_tables, idx);
 					t.render_2d_shape(&citro_sprite);
 				}
 			}
@@ -372,10 +301,6 @@ impl Citro2DFramebuffer<'_> {
 
 			perf_stats::stop_gpu();
 		});
-	}
-
-	fn generate_sprite(&self, idx: usize /* is 0..4 */) -> Citro2dSprite<&Tex> {
-		todo!()
 	}
 
 	fn render_backgrounds_debug(
@@ -543,4 +468,82 @@ const fn nes_colour_to_rgba5551(value: Option<NesColour>) -> Rgba5551 {
 	const TRANSLATED_COLOURS: [Rgba5551; 64] = NesColour::PALETTE.map(convert_colour);
 	unsafe { unsafe_assert!((0..64).contains(&(value as usize))) };
 	TRANSLATED_COLOURS[value as usize]
+}
+
+fn generate_sprite<'a>(
+	ppu: &Ppu,
+	Sprite {
+		mirror_x,
+		mirror_y,
+		tile,
+		palette,
+	}: Sprite,
+	pattern_tables: &'a [Rc<Tex>; 4],
+	idx: usize, /* is 0..4 */
+) -> Citro2dSprite<&'a Tex> {
+	let size = (8., 8.);
+	let depth = if ppu.oam[idx].attr.priority() {
+		0.1
+	} else {
+		0.9
+	};
+	let pos = (
+		X_OFFSET + ppu.oam[idx].x as f32 + 4.,
+		1. + ppu.oam[idx].y as f32 + 4.,
+	);
+	let centre = (4., 4.);
+
+	// TODO: Turn this into a lookup table when const eval is more stable
+	const fn calc_mirror_angle(mirror_x: bool, mirror_y: bool, tile: u8) -> (Mirroring, f32) {
+		let tile_x = tile % 16;
+		let tile_y = tile / 16;
+
+		match (mirror_x, mirror_y) {
+			(false, false) => (
+				Mirroring::Custom {
+					top: (16 - tile_y) as f32 / 16.,
+					bottom: (15 - tile_y) as f32 / 16.,
+					left: tile_x as f32 / 16.,
+					right: (tile_x + 1) as f32 / 16.,
+				},
+				0.,
+			),
+			(false, true) => (
+				Mirroring::Custom {
+					top: (16 - tile_y) as f32 / 16.,
+					bottom: (15 - tile_y) as f32 / 16.,
+					right: tile_x as f32 / 16.,
+					left: (tile_x + 1) as f32 / 16.,
+				},
+				180_f32.to_radians(),
+			),
+			(true, false) => (
+				Mirroring::Custom {
+					top: (16 - tile_y) as f32 / 16.,
+					bottom: (15 - tile_y) as f32 / 16.,
+					left: (tile_x + 1) as f32 / 16.,
+					right: tile_x as f32 / 16.,
+				},
+				0.,
+			),
+			(true, true) => (
+				Mirroring::Custom {
+					top: (16 - tile_y) as f32 / 16.,
+					bottom: (15 - tile_y) as f32 / 16.,
+					left: tile_x as f32 / 16.,
+					right: (tile_x + 1) as f32 / 16.,
+				},
+				180_f32.to_radians(),
+			),
+		}
+	}
+	let (mirroring, angle) = calc_mirror_angle(mirror_x, mirror_y, tile);
+
+	Citro2dSprite::from_shared_tex(pattern_tables[palette as usize].as_ref())
+		.with_size(size)
+		.with_depth(depth)
+		.with_pos(pos)
+		.with_centre(centre)
+		.with_mirroring(&mirroring)
+		.with_angle(angle)
 }
