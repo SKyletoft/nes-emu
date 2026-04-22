@@ -142,25 +142,28 @@ impl NesFramebuffer for Citro2DFramebuffer<'_> {
 		tile_data: impl Iterator<Item = Option<NesColour>>,
 	) {
 		unsafe { unsafe_assert!((0..4).contains(&palette_idx)) };
-	}
 
-	// fn update_sprite(
-	//	&mut self,
-	//	sprite_data: impl Iterator<Item = Option<NesColour>>,
-	//	sprite_idx: usize,
-	//	tile_idx: u8,
-	// ) {
-	// unsafe { unsafe_assert!(sprite_idx < 64) };
-	// let tile = self.sprites[sprite_idx]
-	//	.sprite
-	//	.texture_mut()
-	//	.unwrap()
-	//	.raw_texture_mut();
-	// for (col, pixel) in sprite_data.zip(tile.iter_mut()) {
-	//	*pixel = nes_colour_to_rgba5551(col);
-	// }
-	// self.sprites[sprite_idx].tile = tile_idx;
-	// }
+		if let Some(cached) = self.pattern_table_cache.get(&slice_palette(palette)) {
+			self.pattern_tables[palette_idx as usize] = cached.clone();
+			return;
+		}
+
+		let mut new_pattern_table = Rc::new(Tex::new(
+			PATTERN_TABLE_SIZE,
+			PATTERN_TABLE_SIZE,
+			ColourFormat::Rgba5551,
+		));
+		let byte_buffer = Rc::get_mut(&mut new_pattern_table)
+			.expect("Literally just created, this cannot fail")
+			.raw_texture_mut();
+		for (src, dst) in tile_data.zip(byte_buffer.iter_mut()) {
+			*dst = nes_colour_to_rgba5551(src);
+		}
+
+		self.pattern_tables[palette_idx as usize] = new_pattern_table.clone();
+		self.pattern_table_cache
+			.insert(slice_palette(palette), new_pattern_table);
+	}
 
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]) {
 		if !self.debug_mode_enabled {
