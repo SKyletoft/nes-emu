@@ -12,24 +12,10 @@ use sdl2::{
 	video::{Window, WindowContext},
 };
 
-use crate::debug_mode::{BackgroundView, DebugBackgroundMode, DebugMode};
-
-const TILE_SIZE: u32 = 8;
-const BG_TILES: u32 = 32;
-const BG_SIZE: u32 = TILE_SIZE * BG_TILES;
-const PATTERN_TABLE_SIZE: u32 = 128; // 16 tiles × 8 pixels
-
-#[rustfmt::skip]
-const SWIZZLE_ORDER: [usize; 64] = [
-	 0,  1,  8,  9,  2,  3, 10, 11,
-	16, 17, 24, 25, 18, 19, 26, 27,
-	 4,  5, 12, 13,  6,  7, 14, 15,
-	20, 21, 28, 29, 22, 23, 30, 31,
-	32, 33, 40, 41, 34, 35, 42, 43,
-	48, 49, 56, 57, 50, 51, 58, 59,
-	36, 37, 44, 45, 38, 39, 46, 47,
-	52, 53, 60, 61, 54, 55, 62, 63,
-];
+use crate::{
+	debug_mode::{BackgroundView, DebugBackgroundMode, DebugMode},
+	helpers::{BG_SIZE, PATTERN_TABLE_SIZE, SWIZZLE_ORDER, TILE_SIZE, slice_palette},
+};
 
 struct SdlSprite {
 	palette: u8, /* is 0..4 */
@@ -82,8 +68,8 @@ impl<'tc> SdlFramebuffer<'tc> {
 				.create_texture(
 					PixelFormatEnum::ARGB8888,
 					TextureAccess::Target,
-					PATTERN_TABLE_SIZE,
-					PATTERN_TABLE_SIZE,
+					PATTERN_TABLE_SIZE as u32,
+					PATTERN_TABLE_SIZE as u32,
 				)
 				.unwrap();
 			tex.set_blend_mode(BlendMode::BLEND);
@@ -168,8 +154,8 @@ impl NesFramebuffer for SdlFramebuffer<'_> {
 			.create_texture(
 				PixelFormatEnum::ARGB8888,
 				TextureAccess::Target,
-				PATTERN_TABLE_SIZE,
-				PATTERN_TABLE_SIZE,
+				PATTERN_TABLE_SIZE as u32,
+				PATTERN_TABLE_SIZE as u32,
 			)
 			.unwrap();
 		new_pattern_table.set_blend_mode(BlendMode::BLEND);
@@ -712,8 +698,4 @@ fn draw_vertical_gradient(
 	];
 	let indices: [[i32; 3]; 2] = [[0, 1, 2], [2, 3, 0]];
 	canvas.render_geometry(&vertices, None, &indices).unwrap();
-}
-
-const fn slice_palette([_, x, y, z]: Palette) -> [NesColour; 3] {
-	[x, y, z]
 }
