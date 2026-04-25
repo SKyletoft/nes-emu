@@ -194,9 +194,9 @@ macro_rules! indirect_x {
 		paste! {
 			#[inline(always)]
 			pub fn [<$fn _indirect_x>]<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-				let tmp = state.mem(state.cpu.x.wrapping_add(adr) as u16 & 0x00FF);
-				let lo = state.mem(tmp as u16);
-				let hi = state.mem((tmp.wrapping_add(1)) as u16 & 0x00FF);
+				let zp = state.cpu.x.wrapping_add(adr);
+				let lo = state.mem(zp as u16);
+				let hi = state.mem(zp.wrapping_add(1) as u16);
 				let adr2 = (lo as u16) | ((hi as u16) << 8);
 				let val = state.mem(adr2);
 				[<$fn _impl>](&mut state, val);
@@ -213,16 +213,16 @@ macro_rules! indirect_y {
 		paste! {
 			#[inline(always)]
 			pub fn [<$fn _indirect_y>]<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-				let tmp = state.mem(state.cpu.y.wrapping_add(adr) as u16 & 0x00FF);
-				let adr2 = u16::from_le_bytes([
-					state.mem(tmp as u16),
-					state.mem((tmp.wrapping_add(1)) as u16 & 0x00FF),
+				let base = u16::from_le_bytes([
+					state.mem(adr as u16),
+					state.mem(adr.wrapping_add(1) as u16),
 				]);
-				let taken = (adr2 & 0x00FF) == 0;
+				let adr2 = base.wrapping_add(state.cpu.y as u16);
+				let page_crossed = (base & 0xFF00) != (adr2 & 0xFF00);
 				let val = state.mem(adr2);
 				[<$fn _impl>](&mut state, val);
 				state.cpu.pc += 2;
-				advance(&mut state.rest, 5 + taken as usize);
+				advance(&mut state.rest, 5 + page_crossed as usize);
 				state
 			}
 		}
@@ -283,10 +283,14 @@ absolute_x_rmw!(asl);
 
 #[inline(always)]
 pub fn bcs<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
-	let old_pc = state.cpu.pc;
+	let base_pc = state.cpu.pc.wrapping_add(2);
 	let taken = state.cpu.p.c();
-	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
-	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
+	let new_pc = if taken {
+		base_pc.wrapping_add_signed(offset as i16)
+	} else {
+		base_pc
+	};
+	let page_crossed = taken && ((base_pc & 0xFF00) != (new_pc & 0xFF00));
 	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
@@ -295,10 +299,14 @@ pub fn bcs<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 
 #[inline(always)]
 pub fn bcc<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
-	let old_pc = state.cpu.pc;
+	let base_pc = state.cpu.pc.wrapping_add(2);
 	let taken = !state.cpu.p.c();
-	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
-	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
+	let new_pc = if taken {
+		base_pc.wrapping_add_signed(offset as i16)
+	} else {
+		base_pc
+	};
+	let page_crossed = taken && ((base_pc & 0xFF00) != (new_pc & 0xFF00));
 	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
@@ -307,10 +315,14 @@ pub fn bcc<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 
 #[inline(always)]
 pub fn beq<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
-	let old_pc = state.cpu.pc;
+	let base_pc = state.cpu.pc.wrapping_add(2);
 	let taken = state.cpu.p.z();
-	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
-	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
+	let new_pc = if taken {
+		base_pc.wrapping_add_signed(offset as i16)
+	} else {
+		base_pc
+	};
+	let page_crossed = taken && ((base_pc & 0xFF00) != (new_pc & 0xFF00));
 	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
@@ -319,10 +331,14 @@ pub fn beq<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 
 #[inline(always)]
 pub fn bne<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
-	let old_pc = state.cpu.pc;
+	let base_pc = state.cpu.pc.wrapping_add(2);
 	let taken = !state.cpu.p.z();
-	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
-	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
+	let new_pc = if taken {
+		base_pc.wrapping_add_signed(offset as i16)
+	} else {
+		base_pc
+	};
+	let page_crossed = taken && ((base_pc & 0xFF00) != (new_pc & 0xFF00));
 	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
@@ -331,10 +347,14 @@ pub fn bne<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 
 #[inline(always)]
 pub fn bmi<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
-	let old_pc = state.cpu.pc;
+	let base_pc = state.cpu.pc.wrapping_add(2);
 	let taken = state.cpu.p.n();
-	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
-	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
+	let new_pc = if taken {
+		base_pc.wrapping_add_signed(offset as i16)
+	} else {
+		base_pc
+	};
+	let page_crossed = taken && ((base_pc & 0xFF00) != (new_pc & 0xFF00));
 	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
@@ -343,10 +363,14 @@ pub fn bmi<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 
 #[inline(always)]
 pub fn bpl<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
-	let old_pc = state.cpu.pc;
+	let base_pc = state.cpu.pc.wrapping_add(2);
 	let taken = !state.cpu.p.n();
-	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
-	let page_crossed = (old_pc + 2) & 0xFF00 != new_pc & 0xFF00;
+	let new_pc = if taken {
+		base_pc.wrapping_add_signed(offset as i16)
+	} else {
+		base_pc
+	};
+	let page_crossed = taken && ((base_pc & 0xFF00) != (new_pc & 0xFF00));
 	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
@@ -355,10 +379,14 @@ pub fn bpl<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 
 #[inline(always)]
 pub fn bvs<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
-	let old_pc = state.cpu.pc;
+	let base_pc = state.cpu.pc.wrapping_add(2);
 	let taken = state.cpu.p.v();
-	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
-	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
+	let new_pc = if taken {
+		base_pc.wrapping_add_signed(offset as i16)
+	} else {
+		base_pc
+	};
+	let page_crossed = taken && ((base_pc & 0xFF00) != (new_pc & 0xFF00));
 	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
@@ -367,10 +395,14 @@ pub fn bvs<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
 
 #[inline(always)]
 pub fn bvc<M: Mapper>(mut state: State<M>, offset: i8) -> State<M> {
-	let old_pc = state.cpu.pc;
+	let base_pc = state.cpu.pc.wrapping_add(2);
 	let taken = !state.cpu.p.v();
-	let new_pc = old_pc + 2 + if taken { offset as u16 } else { 0 };
-	let page_crossed = (old_pc + 2) & 0xFF00 != (new_pc & 0xFF00);
+	let new_pc = if taken {
+		base_pc.wrapping_add_signed(offset as i16)
+	} else {
+		base_pc
+	};
+	let page_crossed = taken && ((base_pc & 0xFF00) != (new_pc & 0xFF00));
 	let cycles = 2 + taken as usize + page_crossed as usize;
 	state.cpu.pc = new_pc;
 	advance(&mut state.rest, cycles);
@@ -389,8 +421,22 @@ absolute!(bit);
 
 #[inline(always)]
 pub fn brk<M: Mapper>(mut state: State<M>) -> State<M> {
-	state.cpu.pc += 1;
-	advance(&mut state.rest, 2);
+	let return_pc = state.cpu.pc.wrapping_add(2);
+	let [lo, hi] = return_pc.to_le_bytes();
+	let mut stack_ptr = state.cpu.s;
+	state.set_mem(0x100 + stack_ptr as u16, hi);
+	stack_ptr = stack_ptr.wrapping_sub(1);
+	state.set_mem(0x100 + stack_ptr as u16, lo);
+	stack_ptr = stack_ptr.wrapping_sub(1);
+	let status = state.cpu.p.into_bits() | 0b0011_0000;
+	state.set_mem(0x100 + stack_ptr as u16, status);
+	stack_ptr = stack_ptr.wrapping_sub(1);
+	state.cpu.s = stack_ptr;
+	state.cpu.p.set_i(true);
+	let lo = state.mem(0xFFFE);
+	let hi = state.mem(0xFFFF);
+	state.cpu.pc = u16::from_le_bytes([lo, hi]);
+	advance(&mut state.rest, 7);
 	state
 }
 
@@ -561,7 +607,7 @@ pub fn jmp_absolute<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
 #[inline(always)]
 pub fn jmp_indirect<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
 	let low = state.mem(adr);
-	let hi = state.mem(adr + 1);
+	let hi = state.mem((adr & 0xFF00) | (adr.wrapping_add(1) & 0x00FF));
 	let target_adr = u16::from_le_bytes([low, hi]);
 	if target_adr == state.cpu.pc {
 		state.wait_for_interrupt();
@@ -625,19 +671,12 @@ pub fn lda_zero_page_x<M: Mapper>(mut state: State<M>, offset: u8) -> State<M> {
 
 #[inline(never)]
 pub fn lda_absolute<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
-	// LDA Absolute *really* cares about timing,
-	// so actually catch up and step ppu here
-	state.rest.ppu_runahead += 9;
-	#[cfg(test)]
-	state.catch_up_ppu();
 	let val = state.mem(adr);
 	state.cpu.a = val;
 	state.cpu.p.set_z(0 == state.cpu.a);
 	state.cpu.p.set_n((state.cpu.a & 0x80) >> 7 != 0);
 	state.cpu.pc += 3;
-	state.rest.cycles += 4;
-	state.rest.ppu_runahead += 3;
-	state.check_interrupt();
+	advance(&mut state.rest, 4);
 	state
 }
 
@@ -669,8 +708,8 @@ pub fn lda_absolute_y<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
 
 #[inline(always)]
 pub fn lda_indirect_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let tmp = state.mem(state.cpu.x.wrapping_add(adr) as u16);
-	let adr2 = u16::from_le_bytes([state.mem(tmp as u16), state.mem(tmp.wrapping_add(1) as u16)]);
+	let zp = state.cpu.x.wrapping_add(adr);
+	let adr2 = u16::from_le_bytes([state.mem(zp as u16), state.mem(zp.wrapping_add(1) as u16)]);
 	let val = state.mem(adr2);
 	state.cpu.a = val;
 	state.cpu.p.set_z(0 == state.cpu.a);
@@ -683,7 +722,7 @@ pub fn lda_indirect_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
 #[inline(always)]
 pub fn lda_indirect_y<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
 	let base = u16::from_le_bytes([state.mem(adr as u16), state.mem(adr.wrapping_add(1) as u16)]);
-	let adr2 = base + state.cpu.y as u16;
+	let adr2 = base.wrapping_add(state.cpu.y as u16);
 	let val = state.mem(adr2);
 
 	state.cpu.a = val;
@@ -730,29 +769,25 @@ pub fn ldx_zero_page_y<M: Mapper>(mut state: State<M>, offset: u8) -> State<M> {
 
 #[inline(always)]
 pub fn ldx_absolute<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
-	// Same as LDA Absolute, timing sensitive
-	state.rest.ppu_runahead += 9;
-	#[cfg(test)]
-	state.catch_up_ppu();
 	let val = state.mem(adr);
 	state.cpu.x = val;
 	state.cpu.p.set_z(0 == state.cpu.x);
 	state.cpu.p.set_n((state.cpu.x & 0x80) >> 7 != 0);
 	state.cpu.pc += 3;
-	state.rest.cycles += 4;
-	state.rest.ppu_runahead += 3;
-	state.check_interrupt();
+	advance(&mut state.rest, 4);
 	state
 }
 
 #[inline(always)]
 pub fn ldx_absolute_y<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
-	let val = state.mem(state.cpu.y as u16 + adr);
+	let actual_adr = adr.wrapping_add(state.cpu.y as u16);
+	let page_crossed = (state.cpu.y as u16 + (adr & 0x00FF)) > 0x00FF;
+	let val = state.mem(actual_adr);
 	state.cpu.x = val;
 	state.cpu.p.set_z(0 == state.cpu.x);
 	state.cpu.p.set_n((state.cpu.x & 0x80) != 0);
 	state.cpu.pc += 3;
-	advance(&mut state.rest, 4);
+	advance(&mut state.rest, 4 + page_crossed as usize);
 	state
 }
 
@@ -833,6 +868,7 @@ pub fn pla<M: Mapper>(mut state: State<M>) -> State<M> {
 pub fn plp<M: Mapper>(mut state: State<M>) -> State<M> {
 	state.cpu.s += 1;
 	let cc = state.mem(state.cpu.s as u16 + 0x100);
+	let cc = (cc & 0b1110_1111) | 0b0010_0000;
 	state.cpu.p.set_bits(cc);
 	state.cpu.pc += 1;
 	advance(&mut state.rest, 4);
@@ -960,7 +996,7 @@ pub fn sta_absolute_y<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
 
 #[inline(always)]
 pub fn sta_indirect_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let zp = (adr + state.cpu.x);
+	let zp = adr.wrapping_add(state.cpu.x);
 	let lo = state.mem(zp as u16);
 	let hi = state.mem(zp.wrapping_add(1) as u16);
 	let adr = u16::from_le_bytes([lo, hi]);
@@ -975,7 +1011,7 @@ pub fn sta_indirect_y<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
 	let lo = state.mem(adr as u16);
 	let hi = state.mem(adr.wrapping_add(1) as u16);
 	let base = u16::from_le_bytes([lo, hi]);
-	let adr = base + state.cpu.y as u16;
+	let adr = base.wrapping_add(state.cpu.y as u16);
 	state.set_mem(adr, state.cpu.a);
 	state.cpu.pc += 2;
 	advance(&mut state.rest, 6);
@@ -1092,6 +1128,7 @@ pub fn tya<M: Mapper>(mut state: State<M>) -> State<M> {
 pub fn rti<M: Mapper>(mut state: State<M>) -> State<M> {
 	state.cpu.s += 1;
 	let cc = state.mem(state.cpu.s as u16 + 0x100);
+	let cc = (cc & 0b1110_1111) | 0b0010_0000;
 	state.cpu.p.set_bits(cc);
 	state.cpu.s += 2;
 	state.cpu.pc = u16::from_le_bytes([
@@ -1137,7 +1174,7 @@ pub fn ign<M: Mapper>(mut state: State<M>, _: u16) -> State<M> {
 #[inline(always)]
 pub fn ign_direct<M: Mapper>(mut state: State<M>, _: u8) -> State<M> {
 	state.cpu.pc += 2;
-	advance(&mut state.rest, 4);
+	advance(&mut state.rest, 3);
 	state
 }
 
@@ -1154,75 +1191,98 @@ pub fn ign_absolute_x<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
 	let page_crossed = state.cpu.x.checked_add(adr as u8).is_none();
 	let _ = state.mem(actual_adr);
 	state.cpu.pc += 3;
-	state.rest.ppu_runahead += (4 + page_crossed as usize);
+	advance(&mut state.rest, 4 + page_crossed as usize);
 	state
 }
 
 #[inline(always)]
 pub fn lax_immediate<M: Mapper>(mut state: State<M>, _: u8) -> State<M> {
+	let val = state.mem(state.cpu.pc.wrapping_add(1));
+	state.cpu.a = val;
+	state.cpu.x = val;
+	state.cpu.p.set_z(val == 0);
+	state.cpu.p.set_n((val & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 2);
 	state
 }
 
 #[inline(always)]
 pub fn lax_zero_page<M: Mapper>(mut state: State<M>, val: u8) -> State<M> {
+	let val = state.mem(val as u16);
 	state.cpu.a = val;
 	state.cpu.x = val;
-	// Update flags
 	state.cpu.p.set_z(val == 0);
 	state.cpu.p.set_n((val & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 3);
 	state
 }
 
 #[inline(always)]
 pub fn lax_zero_page_y<M: Mapper>(mut state: State<M>, val: u8) -> State<M> {
+	let val = state.mem(state.cpu.y.wrapping_add(val) as u16);
 	state.cpu.a = val;
 	state.cpu.x = val;
-	// Update flags
 	state.cpu.p.set_z(val == 0);
 	state.cpu.p.set_n((val & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 4);
 	state
 }
 
 #[inline(always)]
 pub fn lax_absolute<M: Mapper>(mut state: State<M>, val: u16) -> State<M> {
-	state.cpu.a = val as u8;
-	state.cpu.x = val as u8;
+	let val = state.mem(val);
+	state.cpu.a = val;
+	state.cpu.x = val;
 	state.cpu.p.set_z(val == 0);
-	state.cpu.p.set_n(val & 0x80 != 0);
-	state.cpu.pc += 2;
+	state.cpu.p.set_n((val & 0x80) != 0);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 4);
 	state
 }
 
 #[inline(always)]
 pub fn lax_absolute_y<M: Mapper>(mut state: State<M>, val: u16) -> State<M> {
-	state.cpu.a = val as u8;
-	state.cpu.x = val as u8;
+	let actual_adr = val.wrapping_add(state.cpu.y as u16);
+	let page_crossed = (state.cpu.y as u16 + (val & 0x00FF)) > 0x00FF;
+	let val = state.mem(actual_adr);
+	state.cpu.a = val;
+	state.cpu.x = val;
 	state.cpu.p.set_z(val == 0);
-	state.cpu.p.set_n(val & 0x80 != 0);
-	state.cpu.pc += 2;
+	state.cpu.p.set_n((val & 0x80) != 0);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 4 + page_crossed as usize);
 	state
 }
 
 #[inline(always)]
 pub fn lax_indirect_x<M: Mapper>(mut state: State<M>, val: u8) -> State<M> {
+	let zp = state.cpu.x.wrapping_add(val);
+	let adr = u16::from_le_bytes([state.mem(zp as u16), state.mem(zp.wrapping_add(1) as u16)]);
+	let val = state.mem(adr);
 	state.cpu.a = val;
 	state.cpu.x = val;
 	state.cpu.p.set_z(val == 0);
 	state.cpu.p.set_n(val & 0x80 != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn lax_indirect_y<M: Mapper>(mut state: State<M>, val: u8) -> State<M> {
+	let base = u16::from_le_bytes([state.mem(val as u16), state.mem(val.wrapping_add(1) as u16)]);
+	let adr = base.wrapping_add(state.cpu.y as u16);
+	let page_crossed = (base & 0xFF00) != (adr & 0xFF00);
+	let val = state.mem(adr);
 	state.cpu.a = val;
 	state.cpu.x = val;
 	state.cpu.p.set_z(val == 0);
 	state.cpu.p.set_n(val & 0x80 != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 5 + page_crossed as usize);
 	state
 }
 
@@ -1231,815 +1291,643 @@ pub fn sax_zero_page<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
 	let result = state.cpu.a & state.cpu.x;
 	state.set_mem(adr as u16, result);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 3);
 	state
 }
 
 #[inline(always)]
 pub fn sax_zero_page_y<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
 	let result = state.cpu.a & state.cpu.x;
-	state.set_mem(adr as u16, result);
+	state.set_mem(state.cpu.y.wrapping_add(adr) as u16, result);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 4);
 	state
 }
 
 #[inline(always)]
 pub fn sax_absolute<M: Mapper>(mut state: State<M>, val: u16) -> State<M> {
 	let result = state.cpu.a & state.cpu.x;
-	state.set_mem(val & 0xFF, result);
-	state.cpu.pc += 2;
+	state.set_mem(val, result);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 4);
 	state
 }
 
 #[inline(always)]
 pub fn sax_indirect_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
 	let result = state.cpu.a & state.cpu.x;
-	state.set_mem(adr as u16, result);
+	let zp = adr.wrapping_add(state.cpu.x);
+	let actual_adr =
+		u16::from_le_bytes([state.mem(zp as u16), state.mem(zp.wrapping_add(1) as u16)]);
+	state.set_mem(actual_adr, result);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn dcp_zero_page<M: Mapper>(mut state: State<M>, val: u8) -> State<M> {
-	let result = val - 1;
-	state.set_mem(val as u16, result);
-
-	// Compare
-	let temp = state.cpu.a - result;
-	state.cpu.p.set_c(temp < state.cpu.a);
+	let adr = val as u16;
+	let result = state.mem(adr).wrapping_sub(1);
+	state.set_mem(adr, result);
+	let temp = state.cpu.a.wrapping_sub(result);
+	state.cpu.p.set_c(state.cpu.a >= result);
 	state.cpu.p.set_z(temp == 0);
 	state.cpu.p.set_n((temp & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 5);
 	state
 }
 
 #[inline(always)]
 pub fn dcp_zero_page_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-	let result = val - 1;
-	state.set_mem(adr as u16, result);
-
-	// Compare
-	let temp = state.cpu.a - result;
-	state.cpu.p.set_c(temp < state.cpu.a);
+	let adr = state.cpu.x.wrapping_add(adr) as u16;
+	let result = state.mem(adr).wrapping_sub(1);
+	state.set_mem(adr, result);
+	let temp = state.cpu.a.wrapping_sub(result);
+	state.cpu.p.set_c(state.cpu.a >= result);
 	state.cpu.p.set_z(temp == 0);
 	state.cpu.p.set_n((temp & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn dcp_absolute<M: Mapper>(mut state: State<M>, val: u16) -> State<M> {
-	let result = (val as u8).wrapping_sub(1);
-	state.set_mem(val & 0xFF, result);
-
-	// Compare
-	let temp = state.cpu.a - result;
-	state.cpu.p.set_c(temp < state.cpu.a);
+	let result = state.mem(val).wrapping_sub(1);
+	state.set_mem(val, result);
+	let temp = state.cpu.a.wrapping_sub(result);
+	state.cpu.p.set_c(state.cpu.a >= result);
 	state.cpu.p.set_z(temp == 0);
 	state.cpu.p.set_n((temp & 0x80) != 0);
-	state.cpu.pc += 2;
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn dcp_absolute_x<M: Mapper>(mut state: State<M>, val: u16) -> State<M> {
-	let result = (val as u8).wrapping_sub(1);
-	state.set_mem(val & 0xFF, result);
-
-	// Compare
-	let temp = state.cpu.a - result;
-	state.cpu.p.set_c(temp < state.cpu.a);
+	let adr = val.wrapping_add(state.cpu.x as u16);
+	let result = state.mem(adr).wrapping_sub(1);
+	state.set_mem(adr, result);
+	let temp = state.cpu.a.wrapping_sub(result);
+	state.cpu.p.set_c(state.cpu.a >= result);
 	state.cpu.p.set_z(temp == 0);
 	state.cpu.p.set_n((temp & 0x80) != 0);
-	state.cpu.pc += 2;
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 7);
 	state
 }
 
 #[inline(always)]
 pub fn dcp_absolute_y<M: Mapper>(mut state: State<M>, val: u16) -> State<M> {
-	let result = (val as u8).wrapping_sub(1);
-	state.set_mem(val & 0xFF, result);
-
-	// Compare
-	let temp = state.cpu.a - result;
-	state.cpu.p.set_c(temp < state.cpu.a);
+	let adr = val.wrapping_add(state.cpu.y as u16);
+	let result = state.mem(adr).wrapping_sub(1);
+	state.set_mem(adr, result);
+	let temp = state.cpu.a.wrapping_sub(result);
+	state.cpu.p.set_c(state.cpu.a >= result);
 	state.cpu.p.set_z(temp == 0);
 	state.cpu.p.set_n((temp & 0x80) != 0);
-	state.cpu.pc += 2;
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 7);
 	state
 }
 
 #[inline(always)]
 pub fn dcp_indirect_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-	let result = val - 1;
-	state.set_mem(adr as u16, result);
-
-	// Compare
-	let temp = state.cpu.a - result;
-	state.cpu.p.set_c(temp < state.cpu.a);
+	let zp = adr.wrapping_add(state.cpu.x);
+	let actual_adr =
+		u16::from_le_bytes([state.mem(zp as u16), state.mem(zp.wrapping_add(1) as u16)]);
+	let result = state.mem(actual_adr).wrapping_sub(1);
+	state.set_mem(actual_adr, result);
+	let temp = state.cpu.a.wrapping_sub(result);
+	state.cpu.p.set_c(state.cpu.a >= result);
 	state.cpu.p.set_z(temp == 0);
 	state.cpu.p.set_n((temp & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 8);
 	state
 }
 
 #[inline(always)]
 pub fn dcp_indirect_y<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-	let result = val - 1;
-	state.set_mem(adr as u16, result);
-
-	// Compare
-	let temp = state.cpu.a - result;
-	state.cpu.p.set_c(temp < state.cpu.a);
+	let base = u16::from_le_bytes([state.mem(adr as u16), state.mem(adr.wrapping_add(1) as u16)]);
+	let actual_adr = base.wrapping_add(state.cpu.y as u16);
+	let result = state.mem(actual_adr).wrapping_sub(1);
+	state.set_mem(actual_adr, result);
+	let temp = state.cpu.a.wrapping_sub(result);
+	state.cpu.p.set_c(state.cpu.a >= result);
 	state.cpu.p.set_z(temp == 0);
 	state.cpu.p.set_n((temp & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 8);
 	state
 }
 
 #[inline(always)]
 pub fn isc_zero_page<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-	let result = val + 1;
-	state.set_mem(adr as u16, result);
-
-	// Subtract with borrow
-	let temp = state.cpu.a - result - (1 - state.cpu.p.c() as u8);
-	state.cpu.p.set_c(temp <= state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-	state.cpu.a = temp;
+	let adr = adr as u16;
+	let result = state.mem(adr).wrapping_add(1);
+	state.set_mem(adr, result);
+	sbc_impl(&mut state, result);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 5);
 	state
 }
 
 #[inline(always)]
 pub fn isc_zero_page_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-	let result = val + 1;
-	state.set_mem(adr as u16, result);
-
-	// Subtract with borrow
-	let temp = state.cpu.a - result - (1 - state.cpu.p.c() as u8);
-	state.cpu.p.set_c(temp <= state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-	state.cpu.a = temp;
+	let adr = state.cpu.x.wrapping_add(adr) as u16;
+	let result = state.mem(adr).wrapping_add(1);
+	state.set_mem(adr, result);
+	sbc_impl(&mut state, result);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn isc_absolute<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
-	let val = state.mem(adr);
-	let result = val.wrapping_add(1);
-	state.set_mem(adr & 0xFF, result);
-
-	// Subtract with borrow
-	let temp = state.cpu.a - result - (1 - state.cpu.p.c() as u8);
-	state.cpu.p.set_c(temp <= state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-	state.cpu.a = temp;
-	state.cpu.pc += 2;
+	let result = state.mem(adr).wrapping_add(1);
+	state.set_mem(adr, result);
+	sbc_impl(&mut state, result);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn isc_absolute_x<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
-	let val = state.mem(adr);
-	let result = val.wrapping_add(1);
+	let adr = adr.wrapping_add(state.cpu.x as u16);
+	let result = state.mem(adr).wrapping_add(1);
 	state.set_mem(adr, result);
-
-	// Subtract with borrow
-	let temp = state.cpu.a - result - (1 - state.cpu.p.c() as u8);
-	state.cpu.p.set_c(temp <= state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-	state.cpu.a = temp;
-	state.cpu.pc += 2;
+	sbc_impl(&mut state, result);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 7);
 	state
 }
 
 #[inline(always)]
 pub fn isc_absolute_y<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
-	let val = state.mem(adr);
-	let result = val.wrapping_add(1);
+	let adr = adr.wrapping_add(state.cpu.y as u16);
+	let result = state.mem(adr).wrapping_add(1);
 	state.set_mem(adr, result);
-
-	// Subtract with borrow
-	let temp = state.cpu.a - result - (1 - state.cpu.p.c() as u8);
-	state.cpu.p.set_c(temp <= state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-	state.cpu.a = temp;
-	state.cpu.pc += 2;
+	sbc_impl(&mut state, result);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 7);
 	state
 }
 
 #[inline(always)]
 pub fn isc_indirect_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-	let result = val + 1;
-	state.set_mem(adr as u16, result);
-
-	// Subtract with borrow
-	let temp = state.cpu.a - result - (1 - state.cpu.p.c() as u8);
-	state.cpu.p.set_c(temp <= state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-	state.cpu.a = temp;
+	let zp = adr.wrapping_add(state.cpu.x);
+	let actual_adr =
+		u16::from_le_bytes([state.mem(zp as u16), state.mem(zp.wrapping_add(1) as u16)]);
+	let result = state.mem(actual_adr).wrapping_add(1);
+	state.set_mem(actual_adr, result);
+	sbc_impl(&mut state, result);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 8);
 	state
 }
 
 #[inline(always)]
 pub fn isc_indirect_y<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-	let result = val + 1;
-	state.set_mem(adr as u16, result);
-
-	// Subtract with borrow
-	let temp = state.cpu.a - result - (1 - state.cpu.p.c() as u8);
-	state.cpu.p.set_c(temp <= state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-	state.cpu.a = temp;
+	let base = u16::from_le_bytes([state.mem(adr as u16), state.mem(adr.wrapping_add(1) as u16)]);
+	let actual_adr = base.wrapping_add(state.cpu.y as u16);
+	let result = state.mem(actual_adr).wrapping_add(1);
+	state.set_mem(actual_adr, result);
+	sbc_impl(&mut state, result);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 8);
 	state
 }
 
 #[inline(always)]
 pub fn rla_zero_page<M: Mapper>(mut state: State<M>, val: u8) -> State<M> {
-	// Rotate left
-	let carry = val & 0x80 != 0;
-	let mut result = (val << 1) | state.cpu.p.c() as u8;
-	state.cpu.p.set_c(carry);
-
-	// AND with accumulator
-	result &= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(val as u16, result);
-	state.cpu.a = result;
+	let adr = val as u16;
+	let mem = state.mem(adr);
+	let carry_in = state.cpu.p.c() as u8;
+	state.cpu.p.set_c((mem & 0x80) != 0);
+	let rotated = (mem << 1) | carry_in;
+	state.set_mem(adr, rotated);
+	state.cpu.a &= rotated;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 5);
 	state
 }
 
 #[inline(always)]
 pub fn rla_zero_page_x<M: Mapper>(mut state: State<M>, val: u8) -> State<M> {
-	// Rotate left
-	let carry = val & 0x80 != 0;
-	let mut result = (val << 1) | state.cpu.p.c() as u8;
-	state.cpu.p.set_c(carry);
-
-	// AND with accumulator
-	result &= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(val as u16, result);
-	state.cpu.a = result;
+	let adr = state.cpu.x.wrapping_add(val) as u16;
+	let mem = state.mem(adr);
+	let carry_in = state.cpu.p.c() as u8;
+	state.cpu.p.set_c((mem & 0x80) != 0);
+	let rotated = (mem << 1) | carry_in;
+	state.set_mem(adr, rotated);
+	state.cpu.a &= rotated;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn rla_absolute<M: Mapper>(mut state: State<M>, val: u16) -> State<M> {
-	// Rotate left
-	let carry = val & 0x80 != 0;
-	let mut result = (val << 1) as u8 | state.cpu.p.c() as u8;
-	state.cpu.p.set_c(carry);
-
-	// AND with accumulator
-	result &= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(val & 0xFF, result);
-	state.cpu.a = result;
-	state.cpu.pc += 2;
+	let mem = state.mem(val);
+	let carry_in = state.cpu.p.c() as u8;
+	state.cpu.p.set_c((mem & 0x80) != 0);
+	let rotated = (mem << 1) | carry_in;
+	state.set_mem(val, rotated);
+	state.cpu.a &= rotated;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn rla_absolute_x<M: Mapper>(mut state: State<M>, val: u16) -> State<M> {
-	// Rotate left
-	let carry = val & 0x80 != 0;
-	let mut result = (val << 1) as u8 | state.cpu.p.c() as u8;
-	state.cpu.p.set_c(carry);
-
-	// AND with accumulator
-	result &= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(val & 0xFF, result);
-	state.cpu.a = result;
-	state.cpu.pc += 2;
+	let adr = val.wrapping_add(state.cpu.x as u16);
+	let mem = state.mem(adr);
+	let carry_in = state.cpu.p.c() as u8;
+	state.cpu.p.set_c((mem & 0x80) != 0);
+	let rotated = (mem << 1) | carry_in;
+	state.set_mem(adr, rotated);
+	state.cpu.a &= rotated;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 7);
 	state
 }
 
 #[inline(always)]
 pub fn rla_absolute_y<M: Mapper>(mut state: State<M>, val: u16) -> State<M> {
-	// Rotate left
-	let carry = val & 0x80 != 0;
-	let mut result = (val << 1) as u8 | state.cpu.p.c() as u8;
-	state.cpu.p.set_c(carry);
-
-	// AND with accumulator
-	result &= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(val & 0xFF, result);
-	state.cpu.a = result;
-	state.cpu.pc += 2;
+	let adr = val.wrapping_add(state.cpu.y as u16);
+	let mem = state.mem(adr);
+	let carry_in = state.cpu.p.c() as u8;
+	state.cpu.p.set_c((mem & 0x80) != 0);
+	let rotated = (mem << 1) | carry_in;
+	state.set_mem(adr, rotated);
+	state.cpu.a &= rotated;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 7);
 	state
 }
 
 #[inline(always)]
 pub fn rla_indirect_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-	// Rotate left
-	let mut result = (val << 1) | state.cpu.p.c() as u8;
-	state.cpu.p.set_c((val & 0x80) != 0);
-
-	// AND with accumulator
-	result &= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = result;
+	let zp = adr.wrapping_add(state.cpu.x);
+	let actual_adr =
+		u16::from_le_bytes([state.mem(zp as u16), state.mem(zp.wrapping_add(1) as u16)]);
+	let mem = state.mem(actual_adr);
+	let carry_in = state.cpu.p.c() as u8;
+	state.cpu.p.set_c((mem & 0x80) != 0);
+	let rotated = (mem << 1) | carry_in;
+	state.set_mem(actual_adr, rotated);
+	state.cpu.a &= rotated;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 8);
 	state
 }
 
 #[inline(always)]
 pub fn rla_indirect_y<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-	// Rotate left
-	let mut result = (val << 1) | state.cpu.p.c() as u8;
-	state.cpu.p.set_c((val & 0x80) != 0);
-
-	// AND with accumulator
-	result &= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = result;
+	let base = u16::from_le_bytes([state.mem(adr as u16), state.mem(adr.wrapping_add(1) as u16)]);
+	let actual_adr = base.wrapping_add(state.cpu.y as u16);
+	let mem = state.mem(actual_adr);
+	let carry_in = state.cpu.p.c() as u8;
+	state.cpu.p.set_c((mem & 0x80) != 0);
+	let rotated = (mem << 1) | carry_in;
+	state.set_mem(actual_adr, rotated);
+	state.cpu.a &= rotated;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 8);
 	state
 }
 
 #[inline(always)]
 pub fn rra_zero_page<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-
-	// Rotate right
-	let result = val >> 1 | (state.cpu.p.c() as u8) << 7;
+	let adr = adr as u16;
+	let val = state.mem(adr);
+	let carry_in = state.cpu.p.c() as u8;
 	state.cpu.p.set_c(val & 1 != 0);
-
-	// Add with carry
-	let temp = state.cpu.a + result + state.cpu.p.c() as u8;
-	state.cpu.p.set_c(temp < state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = temp;
+	let rotated = (val >> 1) | (carry_in << 7);
+	state.set_mem(adr, rotated);
+	adc_impl(&mut state, rotated);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 5);
 	state
 }
 
 #[inline(always)]
 pub fn rra_zero_page_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-
-	// Rotate right
-	let result = val >> 1 | (state.cpu.p.c() as u8) << 7;
+	let adr = state.cpu.x.wrapping_add(adr) as u16;
+	let val = state.mem(adr);
+	let carry_in = state.cpu.p.c() as u8;
 	state.cpu.p.set_c(val & 1 != 0);
-
-	// Add with carry
-	let temp = state.cpu.a + result + state.cpu.p.c() as u8;
-	state.cpu.p.set_c(temp < state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = temp;
+	let rotated = (val >> 1) | (carry_in << 7);
+	state.set_mem(adr, rotated);
+	adc_impl(&mut state, rotated);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn rra_absolute<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
 	let val = state.mem(adr);
-
-	let result = val >> 1 | (state.cpu.p.c() as u8) << 7;
+	let carry_in = state.cpu.p.c() as u8;
 	state.cpu.p.set_c(val & 1 != 0);
-
-	// Add with carry
-	let temp = state.cpu.a + result + state.cpu.p.c() as u8;
-	state.cpu.p.set_c(temp < state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-
-	state.set_mem(adr, result);
-	state.cpu.a = temp;
-	state.cpu.pc += 2;
+	let rotated = (val >> 1) | (carry_in << 7);
+	state.set_mem(adr, rotated);
+	adc_impl(&mut state, rotated);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn rra_absolute_x<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
+	let adr = adr.wrapping_add(state.cpu.x as u16);
 	let val = state.mem(adr);
-
-	// Rotate right
-	let result = val >> 1 | (state.cpu.p.c() as u8) << 7;
+	let carry_in = state.cpu.p.c() as u8;
 	state.cpu.p.set_c(val & 1 != 0);
-
-	// Add with carry
-	let temp = state.cpu.a + result + state.cpu.p.c() as u8;
-	state.cpu.p.set_c(temp < state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-
-	state.set_mem(adr, result);
-	state.cpu.a = temp;
-	state.cpu.pc += 2;
+	let rotated = (val >> 1) | (carry_in << 7);
+	state.set_mem(adr, rotated);
+	adc_impl(&mut state, rotated);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 7);
 	state
 }
 
 #[inline(always)]
 pub fn rra_absolute_y<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
+	let adr = adr.wrapping_add(state.cpu.y as u16);
 	let val = state.mem(adr);
-
-	// Rotate right
-	let result = val >> 1 | (state.cpu.p.c() as u8) << 7;
+	let carry_in = state.cpu.p.c() as u8;
 	state.cpu.p.set_c(val & 1 != 0);
-
-	// Add with carry
-	let temp = state.cpu.a + result + state.cpu.p.c() as u8;
-	state.cpu.p.set_c(temp < state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-
-	state.set_mem(adr, result);
-	state.cpu.a = temp;
-	state.cpu.pc += 2;
+	let rotated = (val >> 1) | (carry_in << 7);
+	state.set_mem(adr, rotated);
+	adc_impl(&mut state, rotated);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 7);
 	state
 }
 
 #[inline(always)]
 pub fn rra_indirect_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-
-	// Rotate right
-	let result = val >> 1 | (state.cpu.p.c() as u8) << 7;
+	let zp = adr.wrapping_add(state.cpu.x);
+	let actual_adr =
+		u16::from_le_bytes([state.mem(zp as u16), state.mem(zp.wrapping_add(1) as u16)]);
+	let val = state.mem(actual_adr);
+	let carry_in = state.cpu.p.c() as u8;
 	state.cpu.p.set_c(val & 1 != 0);
-
-	// Add with carry
-	let temp = state.cpu.a + result + state.cpu.p.c() as u8;
-	state.cpu.p.set_c(temp < state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = temp;
+	let rotated = (val >> 1) | (carry_in << 7);
+	state.set_mem(actual_adr, rotated);
+	adc_impl(&mut state, rotated);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 8);
 	state
 }
 
 #[inline(always)]
 pub fn rra_indirect_y<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-
-	// Rotate right
-	let result = val >> 1 | (state.cpu.p.c() as u8) << 7;
+	let base = u16::from_le_bytes([state.mem(adr as u16), state.mem(adr.wrapping_add(1) as u16)]);
+	let actual_adr = base.wrapping_add(state.cpu.y as u16);
+	let val = state.mem(actual_adr);
+	let carry_in = state.cpu.p.c() as u8;
 	state.cpu.p.set_c(val & 1 != 0);
-
-	// Add with carry
-	let temp = state.cpu.a + result + state.cpu.p.c() as u8;
-	state.cpu.p.set_c(temp < state.cpu.a);
-	state.cpu.p.set_z(temp == 0);
-	state.cpu.p.set_n((temp & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = temp;
+	let rotated = (val >> 1) | (carry_in << 7);
+	state.set_mem(actual_adr, rotated);
+	adc_impl(&mut state, rotated);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 8);
 	state
 }
 
 #[inline(always)]
 pub fn slo_zero_page<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
 	let val = state.mem(adr as u16);
-
-	// Shift left
-	let mut result = (val << 1);
 	state.cpu.p.set_c((val & 0x80) != 0);
-
-	// OR with accumulator
-	result |= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = result;
+	let shifted = val << 1;
+	state.set_mem(adr as u16, shifted);
+	state.cpu.a |= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 5);
 	state
 }
 
 #[inline(always)]
 pub fn slo_zero_page_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-
-	// Shift left
-	let carry = (val & 0x80) != 0;
-	let mut result = (val << 1);
-	state.cpu.p.set_c(carry);
-
-	// OR with accumulator
-	result |= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = result;
+	let adr = state.cpu.x.wrapping_add(adr) as u16;
+	let val = state.mem(adr);
+	state.cpu.p.set_c((val & 0x80) != 0);
+	let shifted = val << 1;
+	state.set_mem(adr, shifted);
+	state.cpu.a |= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn slo_absolute<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
 	let val = state.mem(adr);
-
-	// Shift left
-	let carry = (val & 0x80) != 0;
-	let mut result = (val << 1);
-	state.cpu.p.set_c(carry);
-
-	// OR with accumulator
-	result |= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr, result);
-	state.cpu.a = result;
-	state.cpu.pc += 2;
+	state.cpu.p.set_c((val & 0x80) != 0);
+	let shifted = val << 1;
+	state.set_mem(adr, shifted);
+	state.cpu.a |= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn slo_absolute_x<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
+	let adr = adr.wrapping_add(state.cpu.x as u16);
 	let val = state.mem(adr);
-
-	// Shift left
-	let carry = (val & 0x80) != 0;
-	let mut result = val << 1;
-	state.cpu.p.set_c(carry);
-
-	// OR with accumulator
-	result |= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr, result);
-	state.cpu.a = result;
-	state.cpu.pc += 2;
+	state.cpu.p.set_c((val & 0x80) != 0);
+	let shifted = val << 1;
+	state.set_mem(adr, shifted);
+	state.cpu.a |= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 7);
 	state
 }
 
 #[inline(always)]
 pub fn slo_absolute_y<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
+	let adr = adr.wrapping_add(state.cpu.y as u16);
 	let val = state.mem(adr);
-
-	// Shift left
-	let carry = (val & 0x80) != 0;
-	let mut result = val << 1;
-	state.cpu.p.set_c(carry);
-
-	// OR with accumulator
-	result |= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr, result);
-	state.cpu.a = result;
-	state.cpu.pc += 2;
+	state.cpu.p.set_c((val & 0x80) != 0);
+	let shifted = val << 1;
+	state.set_mem(adr, shifted);
+	state.cpu.a |= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 7);
 	state
 }
 
 #[inline(always)]
 pub fn slo_indirect_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-
-	// Shift left
-	let carry = (val & 0x80) != 0;
-	let mut result = val << 1;
-	state.cpu.p.set_c(carry);
-
-	// OR with accumulator
-	result |= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = result;
+	let zp = adr.wrapping_add(state.cpu.x);
+	let actual_adr =
+		u16::from_le_bytes([state.mem(zp as u16), state.mem(zp.wrapping_add(1) as u16)]);
+	let val = state.mem(actual_adr);
+	state.cpu.p.set_c((val & 0x80) != 0);
+	let shifted = val << 1;
+	state.set_mem(actual_adr, shifted);
+	state.cpu.a |= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 8);
 	state
 }
 
 #[inline(always)]
 pub fn slo_indirect_y<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-
-	// Shift left
-	let carry = (val & 0x80) != 0;
-	let mut result = val << 1;
-	state.cpu.p.set_c(carry);
-
-	// OR with accumulator
-	result |= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = result;
+	let base = u16::from_le_bytes([state.mem(adr as u16), state.mem(adr.wrapping_add(1) as u16)]);
+	let actual_adr = base.wrapping_add(state.cpu.y as u16);
+	let val = state.mem(actual_adr);
+	state.cpu.p.set_c((val & 0x80) != 0);
+	let shifted = val << 1;
+	state.set_mem(actual_adr, shifted);
+	state.cpu.a |= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 8);
 	state
 }
 
 #[inline(always)]
 pub fn sre_zero_page<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-
-	// Shift right
-	let mut result = val >> 1;
-	state.cpu.p.set_c(val & 1 != 0);
-
-	// XOR with accumulator
-	result ^= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = result;
+	let adr = adr as u16;
+	let mem = state.mem(adr);
+	state.cpu.p.set_c(mem & 1 != 0);
+	let shifted = mem >> 1;
+	state.set_mem(adr, shifted);
+	state.cpu.a ^= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 5);
 	state
 }
 
 #[inline(always)]
 pub fn sre_zero_page_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-
-	// Shift right
-	let mut result = val >> 1;
-	state.cpu.p.set_c(val & 1 != 0);
-
-	// XOR with accumulator
-	result ^= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = result;
+	let adr = state.cpu.x.wrapping_add(adr) as u16;
+	let mem = state.mem(adr);
+	state.cpu.p.set_c(mem & 1 != 0);
+	let shifted = mem >> 1;
+	state.set_mem(adr, shifted);
+	state.cpu.a ^= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn sre_absolute<M: Mapper>(mut state: State<M>, adr: u16) -> State<M> {
-	let val = state.mem(adr);
-
-	// Shift right
-	let mut result = (val >> 1);
-	state.cpu.p.set_c(val & 1 != 0);
-
-	// XOR with accumulator
-	result ^= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr & 0xFF, result);
-	state.cpu.a = result;
-	state.cpu.pc += 2;
+	let mem = state.mem(adr);
+	state.cpu.p.set_c(mem & 1 != 0);
+	let shifted = mem >> 1;
+	state.set_mem(adr, shifted);
+	state.cpu.a ^= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 6);
 	state
 }
 
 #[inline(always)]
 pub fn sre_absolute_x<M: Mapper>(mut state: State<M>, val: u16) -> State<M> {
-	// Shift right
-	let mut result = (val >> 1) as u8;
-	state.cpu.p.set_c(val & 1 != 0);
-
-	// XOR with accumulator
-	result ^= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(val & 0xFF, result);
-	state.cpu.a = result;
-	state.cpu.pc += 2;
+	let adr = val.wrapping_add(state.cpu.x as u16);
+	let mem = state.mem(adr);
+	state.cpu.p.set_c(mem & 1 != 0);
+	let shifted = mem >> 1;
+	state.set_mem(adr, shifted);
+	state.cpu.a ^= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 7);
 	state
 }
 
 #[inline(always)]
 pub fn sre_absolute_y<M: Mapper>(mut state: State<M>, val: u16) -> State<M> {
-	// Shift right
-	let mut result = (val >> 1) as u8;
-	state.cpu.p.set_c(val & 1 != 0);
-
-	// XOR with accumulator
-	result ^= state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(val & 0xFF, result);
-	state.cpu.a = result;
-	state.cpu.pc += 2;
+	let adr = val.wrapping_add(state.cpu.y as u16);
+	let mem = state.mem(adr);
+	state.cpu.p.set_c(mem & 1 != 0);
+	let shifted = mem >> 1;
+	state.set_mem(adr, shifted);
+	state.cpu.a ^= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
+	state.cpu.pc += 3;
+	advance(&mut state.rest, 7);
 	state
 }
 
 #[inline(always)]
 pub fn sre_indirect_x<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-
-	state.cpu.p.set_c(val & 1 != 0);
-
-	// Shift right
-	// XOR with accumulator
-	let result = val >> 1 ^ state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = result;
+	let zp = adr.wrapping_add(state.cpu.x);
+	let actual_adr =
+		u16::from_le_bytes([state.mem(zp as u16), state.mem(zp.wrapping_add(1) as u16)]);
+	let mem = state.mem(actual_adr);
+	state.cpu.p.set_c(mem & 1 != 0);
+	let shifted = mem >> 1;
+	state.set_mem(actual_adr, shifted);
+	state.cpu.a ^= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 8);
 	state
 }
 
 #[inline(always)]
 pub fn sre_indirect_y<M: Mapper>(mut state: State<M>, adr: u8) -> State<M> {
-	let val = state.mem(adr as u16);
-
-	state.cpu.p.set_c(val & 1 != 0);
-
-	// Shift right
-	let result = (val >> 1) ^ state.cpu.a;
-
-	// Update flags
-	state.cpu.p.set_z(result == 0);
-	state.cpu.p.set_n((result & 0x80) != 0);
-
-	state.set_mem(adr as u16, result);
-	state.cpu.a = result;
+	let base = u16::from_le_bytes([state.mem(adr as u16), state.mem(adr.wrapping_add(1) as u16)]);
+	let actual_adr = base.wrapping_add(state.cpu.y as u16);
+	let mem = state.mem(actual_adr);
+	state.cpu.p.set_c(mem & 1 != 0);
+	let shifted = mem >> 1;
+	state.set_mem(actual_adr, shifted);
+	state.cpu.a ^= shifted;
+	state.cpu.p.set_z(state.cpu.a == 0);
+	state.cpu.p.set_n((state.cpu.a & 0x80) != 0);
 	state.cpu.pc += 2;
+	advance(&mut state.rest, 8);
 	state
 }
 
