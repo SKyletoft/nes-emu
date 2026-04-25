@@ -3,7 +3,7 @@ use anyhow::{Result, bail};
 use crate::{
 	frame::{NesFramebuffer, NoFramebuffer},
 	mapper::{Mapper, PatternAddressBuilder},
-	ppu::{NesColour, Ppu, Sprite, VRAM_MASK},
+	ppu::{Ppu, Sprite, VRAM_MASK},
 	unsafe_assert, unsafe_unreachable,
 };
 
