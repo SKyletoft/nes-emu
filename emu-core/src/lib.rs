@@ -13,6 +13,9 @@ pub mod perf_stats;
 pub mod ppu;
 
 #[cfg(test)]
+mod nestest;
+
+#[cfg(test)]
 mod tests;
 
 /// An assertion that is checked in debug mode and UB to violate in release mode.
