@@ -841,29 +841,43 @@ impl Inst {
 			Inst::StyZeroPage(x) => sty_zero_page(state, *x),
 			Inst::StyZeroPageX(x) => sty_zero_page_x(state, *x),
 			Inst::Tax => tax(state),
+			Inst::TasAbsoluteY(a) => tas_absolute_y(state, a.as_u16()),
 			Inst::Tay => tay(state),
+			Inst::Stp
+			| Inst::Stp2
+			| Inst::Stp3
+			| Inst::Stp4
+			| Inst::Stp5
+			| Inst::Stp6
+			| Inst::Stp7
+			| Inst::Stp8
+			| Inst::Stp9
+			| Inst::Stp10
+			| Inst::Stp11
+			| Inst::Stp12 => stp(state),
 			Inst::Tsx => tsx(state),
 			Inst::Txa => txa(state),
 			Inst::Txs => txs(state),
 			Inst::Tya => tya(state),
-
-			// Inst::ANC(x) => anc(cpu, *x),
-			// Inst::Alr(x) => alr(cpu, *x),
-			// Inst::ARR(x) => arr(cpu, *x),
-			// Inst::Axs(x) => axs(cpu, *x),
-			// Inst::LAS(x) => las(cpu, *x),
-			// Inst::TAS(x) => tas(cpu, *x),
-			// Inst::SHY(x) => shy(cpu, *x),
-			// Inst::SHX(x) => shx(cpu, *x),
-			// Inst::Ahx(Ahx::AbsoluteY(a)) => ahx_absolute_y(cpu, *a),
-			// Inst::Ahx(Ahx::IndirectY(x)) => ahx_indirect_y(cpu, *x),
-			// Inst::NOPU(..) => {}
-			_ => {
-				todo!(
-					"No support for unofficial instructions yet ({self:?}, {:02X?})",
-					unsafe { std::mem::transmute::<Inst, [u8; 3]>(*self) }
-				)
-			}
+			Inst::XaaImmediate(x) => xaa_immediate(state, *x),
+			Inst::AhxAbsoluteY(a) => ahx_absolute_y(state, a.as_u16()),
+			Inst::AhxIndirectY(x) => ahx_indirect_y(state, *x),
+			Inst::AlrImmediate(x) => alr_immediate(state, *x),
+			Inst::AncImmediate(x) | Inst::AncImmediate2(x) => anc_immediate(state, *x),
+			Inst::ArrImmediate(x) => arr_immediate(state, *x),
+			Inst::AxsImmediate(x) => axs_immediate(state, *x),
+			Inst::IgnDirect(x) | Inst::IgnDirect2(x) | Inst::IgnDirect3(x) => ign_direct(state, *x),
+			Inst::IgnDirectX(x)
+			| Inst::IgnDirectX2(x)
+			| Inst::IgnDirectX3(x)
+			| Inst::IgnDirectX4(x)
+			| Inst::IgnDirectX5(x)
+			| Inst::IgnDirectX6(x) => ign_direct_x(state, *x),
+			Inst::LasAbsoluteY(a) => las_absolute_y(state, a.as_u16()),
+			Inst::LaxImmediate(x) => lax_immediate(state, *x),
+			Inst::SbcImmediate2(x) => sbc_immediate(state, *x),
+			Inst::ShxAbsoluteY(a) => shx_absolute_y(state, a.as_u16()),
+			Inst::ShyAbsoluteX(a) => shy_absolute_x(state, a.as_u16()),
 		}
 	}
 
