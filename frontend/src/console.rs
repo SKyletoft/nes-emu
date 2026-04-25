@@ -19,7 +19,7 @@ pub fn main() {
 	let game = game::MAPPER.clone().with_framebuffer(framebuffer);
 
 	#[cfg(not(feature = "compiled-game"))]
-	let game = emu_core::nrom256::NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes"))
+	let game = emu_core::nrom::NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes"))
 		.unwrap()
 		.with_framebuffer(framebuffer);
 

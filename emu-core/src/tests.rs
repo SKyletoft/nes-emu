@@ -1,7 +1,11 @@
 use std::fmt::{self, Write};
 
 use crate::{
-	cpu, inst::Inst, interpret::State, mapper::Mapper, nrom128::NROM128, nrom256::NROM256,
+	cpu,
+	inst::Inst,
+	interpret::State,
+	mapper::Mapper,
+	nrom::{NROM128, NROM256},
 };
 
 fn print_instruction<M: Mapper>(state: &State<M>, f: &mut String) -> fmt::Result {

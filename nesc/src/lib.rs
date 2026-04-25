@@ -4,7 +4,11 @@ use std::{
 	path::PathBuf,
 };
 
-use emu_core::{inst::Inst, mapper::Mapper, nrom128::NROM128, nrom256::NROM256};
+use emu_core::{
+	inst::Inst,
+	mapper::Mapper,
+	nrom::{NROM128, NROM256},
+};
 use proc_macro::TokenStream;
 use proc_macro2::Literal;
 use quote::quote;
@@ -129,7 +133,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 	}
 	quote! {
 		#[allow(unused_imports)]
-		use emu_core::{evaluate_instruction::*, interpret::State, nrom128::NROM128, nrom256::NROM256};
+		use emu_core::{evaluate_instruction::*, interpret::State, nrom::{NROM128, NROM256}};
 
 		#(#fns)*
 
@@ -166,21 +170,24 @@ fn parse_ines(buffer: &[u8]) -> (Mappers, proc_macro2::TokenStream) {
 		0 if *prg_size == 1 => {
 			let parsed_file = NROM128::parse_ines(buffer).unwrap();
 			let lit1 = Literal::byte_string(&parsed_file.prg_ram);
-			let lit2 = Literal::byte_string(&parsed_file.prg_rom);
-			let lit3 = Literal::byte_string(&parsed_file.chr_rom);
+			let lit2 = Literal::byte_string(parsed_file.prg_rom);
+			let lit3 = Literal::byte_string(parsed_file.chr_rom);
 			let lit4 = Literal::byte_string(unsafe {
 				std::mem::transmute::<&[[[[u8; 8]; 8]; 256]; 2], &[u8; 32768]>(
-					&parsed_file.parsed_graphics,
+					parsed_file.parsed_graphics,
 				)
 			});
 			let mapper_literal = quote! {
 				pub const MAPPER: NROM128 = NROM128 {
+					framebuffer: emu_core::frame::NoFramebuffer,
 					prg_ram: *#lit1,
-					prg_rom: *#lit2,
-					chr_rom: *#lit3,
-					parsed_graphics: unsafe {
+					prg_rom: &*#lit2,
+					chr_rom: &*#lit3,
+					parsed_graphics: &unsafe {
 						std::mem::transmute::<[u8; 32768], [[[[u8; 8]; 8]; 256]; 2]>(*#lit4)
 					},
+					hitbox_background: [[[false;_];_];_],
+					hitbox_sprite_0: [false; _],
 				};
 			};
 			(Mappers::NROM128(parsed_file), mapper_literal)

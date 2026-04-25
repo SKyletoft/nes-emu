@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use emu_core::{controller::ControllerState, interpret::State, mapper::Mapper, nrom256::NROM256};
+use emu_core::{controller::ControllerState, interpret::State, mapper::Mapper, nrom::NROM256};
 use sdl2::{controller::Button, event::Event, keyboard::Keycode};
 
 use crate::{

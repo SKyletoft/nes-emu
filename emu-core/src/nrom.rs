@@ -1,9 +1,9 @@
 use anyhow::{Result, bail};
 
 use crate::{
-	frame::NesFramebuffer,
+	frame::{NesFramebuffer, NoFramebuffer},
 	mapper::{Mapper, PatternAddressBuilder},
-	ppu::{Ppu, Sprite, VRAM_MASK},
+	ppu::{NesColour, Ppu, Sprite, VRAM_MASK},
 	unsafe_assert, unsafe_unreachable,
 };
 
@@ -28,10 +28,10 @@ const SWIZZLE_ORDER_2D: [(usize, usize); 64] = [
 ];
 
 #[derive(Debug, Clone)]
-pub struct NROM256<F: NesFramebuffer = crate::frame::NoFramebuffer> {
+pub struct Nrom<const SIZE: usize, F: NesFramebuffer = NoFramebuffer> {
 	pub framebuffer: F,
 	pub prg_ram: [u8; 8 * 1024],
-	pub prg_rom: &'static [u8; 32 * 1024],
+	pub prg_rom: &'static [u8; SIZE],
 	pub chr_rom: &'static [u8; 8 * 1024],
 
 	/// `this[pattern table][tile][y][x]`
@@ -40,7 +40,7 @@ pub struct NROM256<F: NesFramebuffer = crate::frame::NoFramebuffer> {
 	pub hitbox_sprite_0: [bool; 64],
 }
 
-impl NROM256 {
+impl<const SIZE: usize> Nrom<SIZE> {
 	pub fn parse_ines(buffer: &[u8]) -> Result<Self> {
 		let [
 			b'N',
@@ -71,12 +71,15 @@ impl NROM256 {
 		let chr_offset = prg_offset + (*prg_size as usize * 16 * 1024);
 		let mapper_type = (*flags_7 & 0xF0) | *flags_6 >> 4;
 
+		let expected_prg_banks = (SIZE / (16 * 1024)) as u8;
+
 		match mapper_type {
-			0 if *prg_size == 2 => {
-				let mut prg_rom = Box::new([0; _]);
-				let mut chr_rom = Box::new([0; _]);
-				let mut parsed_graphics = Box::new([[[[0; _]; _]; _]; _]);
-				prg_rom.copy_from_slice(&buffer[prg_offset..prg_offset + 32 * 1024]);
+			0 if *prg_size == expected_prg_banks => {
+				let mut prg_rom = Box::new([0; SIZE]);
+				let mut chr_rom = Box::new([0; 8 * 1024]);
+				let mut parsed_graphics = Box::new([[[[0; 8]; 8]; 256]; 2]);
+
+				prg_rom.copy_from_slice(&buffer[prg_offset..prg_offset + SIZE]);
 				chr_rom.copy_from_slice(&buffer[chr_offset..chr_offset + 8 * 1024]);
 
 				for half in 0..2 {
@@ -105,9 +108,9 @@ impl NROM256 {
 					}
 				}
 
-				Ok(NROM256 {
-					framebuffer: crate::frame::NoFramebuffer,
-					prg_ram: [0; _],
+				Ok(Nrom {
+					framebuffer: NoFramebuffer,
+					prg_ram: [0; 8 * 1024],
 					prg_rom: Box::leak(prg_rom),
 					chr_rom: Box::leak(chr_rom),
 					parsed_graphics: Box::leak(parsed_graphics),
@@ -120,8 +123,8 @@ impl NROM256 {
 		}
 	}
 
-	pub fn with_framebuffer<NewF: NesFramebuffer>(self, framebuffer: NewF) -> NROM256<NewF> {
-		NROM256 {
+	pub fn with_framebuffer<NewF: NesFramebuffer>(self, framebuffer: NewF) -> Nrom<SIZE, NewF> {
+		Nrom {
 			framebuffer,
 			prg_ram: self.prg_ram,
 			prg_rom: self.prg_rom,
@@ -133,7 +136,7 @@ impl NROM256 {
 	}
 }
 
-impl<F: NesFramebuffer> Mapper for NROM256<F> {
+impl<const SIZE: usize, F: NesFramebuffer> Mapper for Nrom<SIZE, F> {
 	type Framebuffer = F;
 
 	#[inline]
@@ -143,7 +146,7 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 
 	#[inline]
 	fn get_cpu(&self, adr: u16) -> Option<u8> {
-		let NROM256 {
+		let Nrom {
 			prg_ram: ram,
 			prg_rom: rom,
 			..
@@ -155,14 +158,14 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 
 		match adr {
 			0x6000..=0x7FFF => ram.get(adr as usize % ram.len()).copied(),
-			0x8000..=0xFFFF => rom.get((adr - 0x8000) as usize).copied(),
+			0x8000..=0xFFFF => rom.get((adr - 0x8000) as usize % SIZE).copied(),
 			_ => panic!("Out of bounds read from mapper, check against actual emulators"),
 		}
 	}
 
 	#[inline]
 	fn set_cpu(&mut self, adr: u16, val: u8) -> Option<()> {
-		let NROM256 {
+		let Nrom {
 			prg_ram: ram,
 			prg_rom: _rom,
 			..
@@ -177,7 +180,7 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 
 	#[inline]
 	fn get_ppu(&self, adr: u16, ppu: &Ppu) -> Option<u8> {
-		let NROM256 { chr_rom, .. } = self;
+		let Nrom { chr_rom, .. } = self;
 		let adr = adr & VRAM_MASK;
 		match adr {
 			0x0000..=0x1FFF => chr_rom.get(adr as usize).copied(),
@@ -332,7 +335,7 @@ impl<F: NesFramebuffer> Mapper for NROM256<F> {
 	}
 }
 
-impl<F: NesFramebuffer> NROM256<F> {
+impl<const SIZE: usize, F: NesFramebuffer> Nrom<SIZE, F> {
 	fn update_sprite(&mut self, ppu: &mut Ppu, idx: usize) {
 		unsafe { unsafe_assert!(idx < ppu.oam.len()) };
 
@@ -439,9 +442,22 @@ impl<F: NesFramebuffer> NROM256<F> {
 	}
 }
 
+pub type NROM128<F = NoFramebuffer> = Nrom<{ 16 * 1024 }, F>;
+pub type NROM256<F = NoFramebuffer> = Nrom<{ 32 * 1024 }, F>;
+
 #[cfg(test)]
 mod test {
 	use super::*;
+
+	#[test]
+	fn load_nestest() {
+		let buffer = std::fs::read(concat!(
+			env!("CARGO_MANIFEST_DIR"),
+			"/../non-free/nestest.nes"
+		))
+		.unwrap();
+		NROM128::parse_ines(&buffer).unwrap();
+	}
 
 	#[test]
 	fn load_smb1() {

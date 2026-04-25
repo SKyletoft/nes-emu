@@ -4,7 +4,7 @@ use std::{
 	str::FromStr,
 };
 
-use crate::{interpret::State, mapper::Mapper, nrom128::NROM128};
+use crate::{interpret::State, mapper::Mapper, nrom::NROM128};
 
 const AUTOMATION_ENTRY_POINT: u16 = 0xC000;
 

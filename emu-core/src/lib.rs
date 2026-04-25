@@ -7,8 +7,7 @@ pub mod inst;
 pub mod interpret;
 pub mod mapper;
 // pub mod mmc3;
-pub mod nrom128;
-pub mod nrom256;
+pub mod nrom;
 pub mod perf_stats;
 pub mod ppu;
 
