@@ -65,13 +65,12 @@ impl<'a> Citro2DFramebuffer<'a> {
 		});
 
 		let pattern_table_cache = Lru::new();
-		let pattern_tables = std::array::from_fn(|_| {
-			Rc::new(Tex::new(
-				PATTERN_TABLE_SIZE,
-				PATTERN_TABLE_SIZE,
-				ColourFormat::Rgba5551,
-			))
-		});
+		let empty_texture = Rc::new(Tex::new(
+			PATTERN_TABLE_SIZE,
+			PATTERN_TABLE_SIZE,
+			ColourFormat::Rgba5551,
+		));
+		let pattern_tables = std::array::from_fn(|_| empty_texture.clone());
 
 		let hide_left = true;
 		let hide_right = true;
