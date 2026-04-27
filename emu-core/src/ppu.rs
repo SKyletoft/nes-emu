@@ -364,6 +364,7 @@ impl TryFrom<u8> for NesColour {
 
 // These colours are entirely untrusted and probably just hallucinated.
 impl Colour {
+	// TODO: Turn this into a [const] From impl when const generics are stable
 	pub const fn from_const(c: NesColour) -> Self {
 		use NesColour::*;
 		match c {
