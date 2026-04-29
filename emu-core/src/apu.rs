@@ -91,6 +91,27 @@ pub struct Dmc {
 	sample_length: u8,
 }
 
+#[bitfield(u8)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Zeroable, Pod)]
+pub struct Status {
+	#[bits(1)]
+	dmc_interrupt: bool,
+	#[bits(1)]
+	frame_interrupt: bool,
+	#[bits(1)]
+	_unused: bool,
+	#[bits(1)]
+	dmc_active: bool,
+	#[bits(1)]
+	noise_active: bool,
+	#[bits(1)]
+	triangle_active: bool,
+	#[bits(1)]
+	pulse1_active: bool,
+	#[bits(1)]
+	pulse2_active: bool,
+}
+
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default, Pod, Zeroable)]
 pub struct Apu {
@@ -113,30 +134,7 @@ impl Apu {
 		let prefix: &mut [u8; 0x14] = (&mut full_thing[..0x14]).try_into().expect("0x14 < 0x18");
 		prefix
 	}
-}
 
-#[bitfield(u8)]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Zeroable, Pod)]
-pub struct Status {
-	#[bits(1)]
-	dmc_interrupt: bool,
-	#[bits(1)]
-	frame_interrupt: bool,
-	#[bits(1)]
-	_unused: bool,
-	#[bits(1)]
-	dmc_active: bool,
-	#[bits(1)]
-	noise_active: bool,
-	#[bits(1)]
-	triangle_active: bool,
-	#[bits(1)]
-	pulse1_active: bool,
-	#[bits(1)]
-	pulse2_active: bool,
-}
-
-impl Apu {
 	pub fn write_status(&mut self, val: u8) {
 		let new_status = Status::from_bits(val & 0b0001_1111);
 		if !new_status.noise_active() {
