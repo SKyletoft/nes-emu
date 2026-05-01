@@ -11,7 +11,8 @@ pub fn main() {
 	let mut hid = Hid::new().unwrap();
 	let gfx = Gfx::new().unwrap();
 	let _console = Console::new(gfx.bottom_screen.borrow_mut());
-	println!(" FRAME   CPU   PPU   APU   GPU  FPS  ACTUAL");
+	// Abuses a bug in the console renderer that leaves the first line at the top regardless of scroll.
+	println!(" FRAME   CPU  PPU  APU  GPU FPS ACTUAL");
 
 	let framebuffer = Citro2DFramebuffer::new(&gfx).unwrap();
 

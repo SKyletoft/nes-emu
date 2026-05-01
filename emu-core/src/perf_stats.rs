@@ -130,7 +130,7 @@ impl std::fmt::Display for FrameStats {
 		let frame_time = self.total_ms();
 		write!(
 			f,
-			"{cpu_time:3}ms {ppu_time:3}ms {apu_time:3}ms {gpu_time:3}ms {fps:.02} {frame_time:3}ms"
+			"{cpu_time:3}ms {ppu_time:2}ms {apu_time:2}ms {gpu_time:2}ms {fps:3.0} {frame_time:3}ms"
 		)
 	}
 }
