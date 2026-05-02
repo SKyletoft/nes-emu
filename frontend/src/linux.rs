@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use emu_core::{controller::ControllerState, interpret::State, mapper::Mapper, nrom::NROM256};
-use sdl2::{controller::Button, event::Event, keyboard::Keycode};
+use sdl2::{audio::AudioSpecDesired, controller::Button, event::Event, keyboard::Keycode};
 
 use crate::{
 	debug_mode::{BackgroundView, DebugMode},
@@ -12,6 +12,7 @@ pub fn main() {
 	let sdl_context = sdl2::init().unwrap();
 	let video_subsystem = sdl_context.video().unwrap();
 	let controller_subsystem = sdl_context.game_controller().unwrap();
+	let audio_subsystem = sdl_context.audio().unwrap();
 
 	let window = video_subsystem
 		.window("NES Emulator", 800, 600)
@@ -28,7 +29,20 @@ pub fn main() {
 		.unwrap();
 	let texture_creator = canvas.texture_creator();
 
-	let framebuffer = SdlFramebuffer::new(&texture_creator, &mut canvas).unwrap();
+	let mut audio_device = audio_subsystem
+		.open_playback(
+			None,
+			&AudioSpecDesired {
+				freq: None,
+				channels: Some(1),
+				samples: None,
+			},
+			|_| Default::default(),
+		)
+		.unwrap();
+
+	let framebuffer =
+		SdlFramebuffer::new(&texture_creator, &mut canvas, &mut audio_device).unwrap();
 
 	let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -44,7 +58,6 @@ pub fn main() {
 
 	#[cfg(not(feature = "compiled-game"))]
 	let game = NROM256::parse_ines(include_bytes!("../../non-free/SMB1.nes"))
-		.map_err(|e| e.to_string())
 		.unwrap()
 		.with_framebuffer(framebuffer);
 

@@ -10,6 +10,7 @@ use citro2d::{
 };
 use ctru::prelude::*;
 use emu_core::{
+	apu::Apu,
 	frame::NesFramebuffer,
 	perf_stats,
 	ppu::{Colour, NesColour, Palette, Ppu},
@@ -96,6 +97,10 @@ impl<'a> Citro2DFramebuffer<'a> {
 }
 
 impl NesFramebuffer for Citro2DFramebuffer<'_> {
+	fn render_audio(&mut self, _apu: &Apu) {
+		todo!()
+	}
+
 	fn update_tile(
 		&mut self,
 		tile_data: impl Iterator<Item = Option<NesColour>>,

@@ -1,4 +1,5 @@
 use emu_core::{
+	apu::Apu,
 	frame::NesFramebuffer,
 	perf_stats,
 	ppu::{Colour, NesColour, Palette, Ppu},
@@ -6,6 +7,7 @@ use emu_core::{
 };
 use lru_cache::Lru;
 use sdl2::{
+	audio::{AudioCallback, AudioDevice},
 	pixels::{Color, PixelFormatEnum},
 	rect::{FPoint, Rect},
 	render::{BlendMode, Canvas, Texture, TextureAccess, TextureCreator, Vertex},
@@ -17,6 +19,21 @@ use crate::{
 	helpers::{BG_SIZE, PATTERN_TABLE_SIZE, SWIZZLE_ORDER, Sprite, TILE_SIZE, slice_palette},
 };
 
+#[derive(Default, Debug)]
+pub struct SoundSample {
+	apu: Apu,
+	time: f32,
+}
+
+impl AudioCallback for SoundSample {
+	type Channel = f32;
+
+	fn callback(&mut self, _: &mut [Self::Channel]) {
+		let _apu = self.apu;
+		self.time += 0.0;
+	}
+}
+
 pub struct SdlFramebuffer<'tc> {
 	bg1: Texture<'tc>,
 	bg2: Texture<'tc>,
@@ -26,6 +43,7 @@ pub struct SdlFramebuffer<'tc> {
 	framebuffer_texture: Texture<'tc>,
 	texture_creator: &'tc TextureCreator<WindowContext>,
 	canvas: &'tc mut Canvas<Window>,
+	audio_device: &'tc mut AudioDevice<SoundSample>,
 	pub hide_left: bool,
 	pub hide_right: bool,
 	pub debug_mode_enabled: bool,
@@ -37,6 +55,7 @@ impl<'tc> SdlFramebuffer<'tc> {
 	pub fn new(
 		tc: &'tc TextureCreator<WindowContext>,
 		canvas: &'tc mut Canvas<Window>,
+		audio_device: &'tc mut AudioDevice<SoundSample>,
 	) -> Result<Self, String> {
 		let (win_w, win_h) = canvas.window().size();
 
@@ -90,6 +109,7 @@ impl<'tc> SdlFramebuffer<'tc> {
 			framebuffer_texture,
 			texture_creator: tc,
 			canvas,
+			audio_device,
 			hide_left: true,
 			hide_right: true,
 			debug_mode_enabled: false,
@@ -100,6 +120,11 @@ impl<'tc> SdlFramebuffer<'tc> {
 }
 
 impl NesFramebuffer for SdlFramebuffer<'_> {
+	fn render_audio(&mut self, apu: &Apu) {
+		let mut device = self.audio_device.lock();
+		device.apu = *apu;
+	}
+
 	fn update_tile(
 		&mut self,
 		tile_data: impl Iterator<Item = Option<NesColour>>,
