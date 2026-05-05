@@ -1,6 +1,8 @@
 use bitfields::bitfield;
 use bytemuck::{Pod, Zeroable};
 
+use crate::const_assert_eq;
+
 #[bitfield(u32)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 pub struct Pulse {
@@ -127,9 +129,7 @@ pub struct Apu {
 
 impl Apu {
 	pub fn registers_as_raw_bytes_mut(&mut self) -> &mut [u8; 0x14] {
-		const _: () = {
-			assert!(size_of::<Apu>() == 0x18);
-		};
+		const_assert_eq!(size_of::<Apu>(), 0x18);
 		let full_thing: &mut [u8; 0x18] = bytemuck::cast_mut(self);
 		let prefix: &mut [u8; 0x14] = (&mut full_thing[..0x14]).try_into().expect("0x14 < 0x18");
 		prefix

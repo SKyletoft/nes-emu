@@ -29,6 +29,7 @@ macro_rules! unsafe_assert {
 	}};
 }
 
+/// An assertion that is checked in debug mode and UB to violate in release mode.
 #[macro_export]
 macro_rules! unsafe_assert_eq {
 	($t:expr, $t2:expr $(, $ts:expr)*) => {{
@@ -40,6 +41,7 @@ macro_rules! unsafe_assert_eq {
 	}};
 }
 
+/// An assertion that is checked in debug mode and UB to violate in release mode.
 #[macro_export]
 macro_rules! unsafe_unreachable {
 	() => {{
@@ -56,4 +58,22 @@ macro_rules! unsafe_unreachable {
 		#[cfg(not(debug_assertions))]
 		::core::hint::unreachable_unchecked();
 	}};
+}
+
+#[macro_export]
+macro_rules! const_assert {
+	($($arg:tt)*) => {
+		const _: () = {
+			assert!($($arg)*);
+		};
+	};
+}
+
+#[macro_export]
+macro_rules! const_assert_eq {
+	($left:expr, $right:expr $(, $($arg:tt)+)?) => {
+		const _: () = {
+			assert!($left == $right $(, $($arg)+)?);
+		};
+	};
 }

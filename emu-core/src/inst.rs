@@ -5,7 +5,8 @@ use std::fmt::{self, Display};
 use anyhow::{Result, bail};
 
 use crate::{
-	cpu::Cpu, evaluate_instruction::*, frame::NesFramebuffer, interpret::State, mapper::Mapper,
+	const_assert_eq, cpu::Cpu, evaluate_instruction::*, frame::NesFramebuffer, interpret::State,
+	mapper::Mapper,
 };
 
 #[repr(C)]
@@ -320,10 +321,8 @@ pub enum Inst {
 	XaaImmediate(u8) = 0x8B,
 }
 
-const _: () = {
-	assert!(1 == align_of::<Inst>());
-	assert!(3 == size_of::<Inst>());
-};
+const_assert_eq!(align_of::<Inst>(), 1);
+const_assert_eq!(size_of::<Inst>(), 3);
 
 impl From<[u8; 3]> for Inst {
 	fn from(code: [u8; 3]) -> Self {

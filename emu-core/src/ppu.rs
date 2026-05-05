@@ -5,6 +5,8 @@ use bitfields::bitfield;
 use bytemuck::{Pod, Zeroable};
 use derive_more::derive::Into;
 
+use crate::{const_assert, const_assert_eq};
+
 pub const VRAM_MASK: u16 = (1 << 14) - 1;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -212,11 +214,9 @@ pub struct SpriteAttributes {
 type Oam = [Sprite; 64];
 
 type Palettes = [Palette; 8];
-const _: () = {
-	assert!(size_of::<Palettes>() == 32);
-	assert!(size_of::<Palette>() == 4);
-	assert!(align_of::<Palette>() >= align_of::<u8>());
-};
+const_assert_eq!(size_of::<Palettes>(), 32);
+const_assert_eq!(size_of::<Palette>(), 4);
+const_assert!(align_of::<Palette>() >= align_of::<u8>());
 
 pub type Palette = [NesColour; 4];
 
