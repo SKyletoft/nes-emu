@@ -153,4 +153,22 @@ impl Apu {
 		self.status.0 &= 0b1110_0000;
 		self.status.0 |= new_status.into_bits();
 	}
+
+	pub fn get_sound(&self, time: f32 /* is 0.0..1.0 */) -> f32 {
+		[
+			self.pulse1.get_sound(time),
+			// self.pulse2.get_sound(time),
+			// self.triangle.get_sound(time),
+			// self.noise.get_sound(time),
+			// self.dmc.get_sound(time),
+		]
+		.into_iter()
+		.sum()
+	}
+}
+
+impl Pulse {
+	fn get_sound(&self, time: f32) -> f32 {
+		(time * 440. * std::f32::consts::TAU).sin()
+	}
 }

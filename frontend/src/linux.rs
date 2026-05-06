@@ -1,11 +1,14 @@
 use std::time::{Duration, Instant};
 
-use emu_core::{controller::ControllerState, interpret::State, mapper::Mapper, nrom::NROM256};
+use emu_core::{
+	controller::ControllerState, frame::NesFramebuffer, interpret::State, mapper::Mapper,
+	nrom::NROM256,
+};
 use sdl2::{audio::AudioSpecDesired, controller::Button, event::Event, keyboard::Keycode};
 
 use crate::{
 	debug_mode::{BackgroundView, DebugMode},
-	sdl_framebuffer::SdlFramebuffer,
+	sdl_framebuffer::{SdlFramebuffer, SoundSample},
 };
 
 pub fn main() {
@@ -37,9 +40,14 @@ pub fn main() {
 				channels: Some(1),
 				samples: None,
 			},
-			|_| Default::default(),
+			|spec| SoundSample {
+				apu_log: [Default::default()].into(),
+				actual_spec: Some(spec),
+				time: 0.,
+			},
 		)
 		.unwrap();
+	audio_device.resume();
 
 	let framebuffer =
 		SdlFramebuffer::new(&texture_creator, &mut canvas, &mut audio_device).unwrap();
@@ -86,8 +94,16 @@ pub fn main() {
 			}
 			emu_core::perf_stats::stop_cpu();
 			system_state.catch_up_ppu();
+			emu_core::perf_stats::start_apu();
+			system_state
+				.rest
+				.rom
+				.framebuffer
+				.render_audio(&system_state.rest.apu);
+			emu_core::perf_stats::stop_apu();
 		}
 
+		println!("CPU: {}", system_state.rest.cycles);
 		let end_of_frame = Instant::now();
 		let to_sleep = FRAME_DURATION.saturating_sub(end_of_frame - start_of_frame);
 		std::thread::sleep(to_sleep);

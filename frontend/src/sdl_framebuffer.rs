@@ -1,13 +1,15 @@
+use std::collections::VecDeque;
+
 use emu_core::{
 	apu::Apu,
 	frame::NesFramebuffer,
 	perf_stats,
 	ppu::{Colour, NesColour, Palette, Ppu},
-	unsafe_assert,
+	unsafe_assert, unsafe_unreachable,
 };
 use lru_cache::Lru;
 use sdl2::{
-	audio::{AudioCallback, AudioDevice},
+	audio::{AudioCallback, AudioDevice, AudioSpec},
 	pixels::{Color, PixelFormatEnum},
 	rect::{FPoint, Rect},
 	render::{BlendMode, Canvas, Texture, TextureAccess, TextureCreator, Vertex},
@@ -21,16 +23,39 @@ use crate::{
 
 #[derive(Default, Debug)]
 pub struct SoundSample {
-	apu: Apu,
-	time: f32,
+	pub apu_log: VecDeque<Apu>,
+	pub actual_spec: Option<AudioSpec>,
+	pub time: f32,
 }
 
 impl AudioCallback for SoundSample {
 	type Channel = f32;
 
-	fn callback(&mut self, _: &mut [Self::Channel]) {
-		let _apu = self.apu;
-		self.time += 0.0;
+	fn callback(&mut self, out: &mut [Self::Channel]) {
+		let Some(actual_spec) = self.actual_spec else {
+			unsafe { unsafe_unreachable!() }
+		};
+		let Some(apu) = self.apu_log.front() else {
+			unsafe { unsafe_unreachable!("There must always be an APU in the apu log") }
+		};
+
+		let samples_per_second = actual_spec.freq;
+
+		const NES_CPU_CLOCKSPEED_HZ: f64 = 1789773.;
+		let time_advanced = out.len() as f64 / samples_per_second as f64;
+		let cycles_advanced = time_advanced * NES_CPU_CLOCKSPEED_HZ;
+		// println!("{cycles_advanced}");
+
+		let sample_count = out.len() as f64;
+		for val in out.iter_mut() {
+			self.time += (cycles_advanced / sample_count) as f32;
+			*val = apu.get_sound(self.time);
+		}
+
+		println!("APU: {}", self.time);
+		if self.time > 1. / 341. && self.apu_log.len() > 1 {
+			self.apu_log.pop_front();
+		}
 	}
 }
 
@@ -122,7 +147,7 @@ impl<'tc> SdlFramebuffer<'tc> {
 impl NesFramebuffer for SdlFramebuffer<'_> {
 	fn render_audio(&mut self, apu: &Apu) {
 		let mut device = self.audio_device.lock();
-		device.apu = *apu;
+		device.apu_log.push_back(*apu);
 	}
 
 	fn update_tile(
