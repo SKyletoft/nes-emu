@@ -47,7 +47,6 @@ pub fn main() {
 			},
 		)
 		.unwrap();
-	audio_device.resume();
 
 	let framebuffer =
 		SdlFramebuffer::new(&texture_creator, &mut canvas, &mut audio_device).unwrap();
@@ -73,6 +72,7 @@ pub fn main() {
 
 	const FRAME_DURATION: Duration = Duration::from_nanos(1_000_000_000 / 60);
 
+	system_state.rest.rom.framebuffer.audio_device.resume();
 	'running: loop {
 		let start_of_frame = Instant::now();
 		let frame = system_state.rest.ppu.frame;

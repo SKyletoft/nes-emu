@@ -66,7 +66,7 @@ pub struct SdlFramebuffer<'tc> {
 	framebuffer_texture: Texture<'tc>,
 	texture_creator: &'tc TextureCreator<WindowContext>,
 	canvas: &'tc mut Canvas<Window>,
-	audio_device: &'tc mut AudioDevice<SoundSample>,
+	pub audio_device: &'tc mut AudioDevice<SoundSample>,
 	pub hide_left: bool,
 	pub hide_right: bool,
 	pub debug_mode_enabled: bool,
