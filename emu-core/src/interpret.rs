@@ -364,16 +364,21 @@ impl<M: Mapper> State<M> {
 		self.rest.ppu.status.set_sprite_overflow(overflow);
 	}
 
-	pub fn wait_for_interrupt(&mut self) {
+	pub fn wait_for_interrupt(&mut self, jmp_cycles: usize) {
 		const ENTIRE_FRAME: isize = 341 * 262;
 
 		let current_runahead = self.rest.ppu_runahead;
-
-		self.rest.ppu_runahead += if self.rest.ppu.scanline >= 241 {
+		let runahead_delta = if self.rest.ppu.scanline >= 241 {
 			341 * (262 - self.rest.ppu.scanline) as usize
 		} else {
 			341 * (241 - self.rest.ppu.scanline) as usize
 		};
+		let dots_per_jmp = jmp_cycles * 3;
+		let jmp_count = runahead_delta.div_ceil(dots_per_jmp);
+		let cpu_cycles = jmp_count * jmp_cycles;
+
+		self.rest.cycles += cpu_cycles;
+		self.rest.ppu_runahead += jmp_count * dots_per_jmp;
 
 		unsafe { unsafe_assert!((0..ENTIRE_FRAME).contains(&(self.rest.ppu_runahead as isize))) };
 		unsafe { unsafe_assert!(self.rest.ppu_runahead > current_runahead) };
