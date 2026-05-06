@@ -21,20 +21,18 @@ use crate::{
 	helpers::{BG_SIZE, PATTERN_TABLE_SIZE, SWIZZLE_ORDER, Sprite, TILE_SIZE, slice_palette},
 };
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct SoundSample {
 	pub apu_log: VecDeque<Apu>,
-	pub actual_spec: Option<AudioSpec>,
-	pub time: f32,
+	pub actual_spec: AudioSpec,
+	pub time_in_seconds: f32,
 }
 
 impl AudioCallback for SoundSample {
 	type Channel = f32;
 
 	fn callback(&mut self, out: &mut [Self::Channel]) {
-		let Some(actual_spec) = self.actual_spec else {
-			unsafe { unsafe_unreachable!() }
-		};
+		let actual_spec = &self.actual_spec;
 		let Some(apu) = self.apu_log.front() else {
 			unsafe { unsafe_unreachable!("There must always be an APU in the apu log") }
 		};
