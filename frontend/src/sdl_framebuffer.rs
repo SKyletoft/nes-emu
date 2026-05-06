@@ -36,22 +36,22 @@ impl AudioCallback for SoundSample {
 		let Some(apu) = self.apu_log.front() else {
 			unsafe { unsafe_unreachable!("There must always be an APU in the apu log") }
 		};
+		debug_assert_eq!(out.len(), actual_spec.samples as usize);
 
-		let samples_per_second = actual_spec.freq;
+		let time_per_sample = 1. / actual_spec.freq as f64;
 
-		const NES_CPU_CLOCKSPEED_HZ: f64 = 1789773.;
-		let time_advanced = out.len() as f64 / samples_per_second as f64;
-		let cycles_advanced = time_advanced * NES_CPU_CLOCKSPEED_HZ;
-		// println!("{cycles_advanced}");
+		const NES_CPU_CLOCKSPEED_HZ: f64 = 1_789_773.;
+		const TIME_PER_SCANLINE_IN_SECONDS: f32 = 1.0; // todo
 
-		let sample_count = out.len() as f64;
 		for val in out.iter_mut() {
-			self.time += (cycles_advanced / sample_count) as f32;
-			*val = apu.get_sound(self.time);
+			self.time_in_seconds += time_per_sample as f32;
+			*val = apu.get_sound(self.time_in_seconds);
 		}
 
-		println!("APU: {}", self.time);
-		if self.time > 1. / 341. && self.apu_log.len() > 1 {
+		let time_in_cpu_cycles = self.time_in_seconds * NES_CPU_CLOCKSPEED_HZ as f32;
+		println!("APU: {time_in_cpu_cycles}");
+
+		if self.time_in_seconds > TIME_PER_SCANLINE_IN_SECONDS && self.apu_log.len() > 1 {
 			self.apu_log.pop_front();
 		}
 	}
