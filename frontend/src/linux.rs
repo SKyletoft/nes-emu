@@ -72,6 +72,19 @@ pub fn main() {
 
 	const FRAME_DURATION: Duration = Duration::from_nanos(1_000_000_000 / 60);
 
+	// Run two frames quickly before calculating offsets so that the PPU
+	// and CPU can sync before starting the audio subsystem.
+	while system_state.rest.ppu.frame < 2 {
+		while system_state.rest.ppu_runahead <= 341 {
+			#[cfg(feature = "compiled-game")]
+			game::nes_game(&mut system_state);
+
+			#[cfg(not(feature = "compiled-game"))]
+			system_state.next();
+		}
+		system_state.catch_up_ppu();
+	}
+
 	system_state.rest.rom.framebuffer.audio_device.resume();
 	'running: loop {
 		let start_of_frame = Instant::now();
