@@ -2038,8 +2038,7 @@ pub fn shy_immediate<M: Mapper>(mut state: State<M>, val: u8) -> State<M> {
 
 #[inline(always)]
 pub fn shy_absolute_x<M: Mapper>(mut state: State<M>, _: u16) -> State<M> {
-	state.cpu.pc += 3;
-	state
+	todo!()
 }
 
 #[inline(always)]
@@ -2073,21 +2072,15 @@ pub fn ahx_indirect_y<M: Mapper>(mut state: State<M>, val: u8) -> State<M> {
 
 #[inline(always)]
 pub fn stp<M: Mapper>(mut state: State<M>) -> State<M> {
-	state.cpu.pc += 1;
-	state.rest.ppu_runahead += (1);
-	state
+	todo!()
 }
 
 #[inline(always)]
 pub fn xaa_immediate<M: Mapper>(mut state: State<M>, _: u8) -> State<M> {
-	state.cpu.pc += 2;
-	state.rest.ppu_runahead += (1);
-	state
+	todo!()
 }
 
 #[inline(always)]
 pub fn las_absolute_y<M: Mapper>(mut state: State<M>, _: u16) -> State<M> {
-	state.cpu.pc += 2;
-	state.rest.ppu_runahead += (1);
-	state
+	todo!()
 }
