@@ -5,7 +5,7 @@ use emu_core::{
 	frame::NesFramebuffer,
 	perf_stats,
 	ppu::{Colour, NesColour, Palette, Ppu},
-	unsafe_assert, unsafe_unreachable,
+	unsafe_assert,
 };
 use lru_cache::Lru;
 use sdl2::{
