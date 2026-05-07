@@ -115,15 +115,7 @@ pub fn main() {
 				.render_audio(&system_state.rest.apu);
 			emu_core::perf_stats::stop_apu();
 		}
-		let cycles = system_state.rest.cycles as f64 / (1_789_773. / 60.);
-		println!("Offset: {}", cycles.fract());
-		// assert!(
-		//	cycles.fract() < 0.001,
-		//	"{cycles} {}",
-		//	system_state.rest.cycles
-		// );
 
-		println!("CPU: {}", system_state.rest.cycles);
 		let end_of_frame = Instant::now();
 		let to_sleep = FRAME_DURATION.saturating_sub(end_of_frame - start_of_frame);
 		std::thread::sleep(to_sleep);
