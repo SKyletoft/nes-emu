@@ -3,6 +3,8 @@ use bytemuck::{Pod, Zeroable};
 
 use crate::const_assert_eq;
 
+const NES_CPU_CLOCKSPEED_HZ: f32 = 1_789_773.;
+
 #[bitfield(u32)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 pub struct Pulse {
@@ -15,7 +17,7 @@ pub struct Pulse {
 	#[bits(4)]
 	volume_envelope: u8,
 	#[bits(1)]
-	sweet_unit_enabled: bool,
+	sweep_unit_enabled: bool,
 	#[bits(3)]
 	period: u8,
 	#[bits(1)]
@@ -154,13 +156,16 @@ impl Apu {
 		self.status.0 |= new_status.into_bits();
 	}
 
-	pub fn get_sound(&self, time: f32 /* is 0.0..1.0 */) -> f32 {
+	pub fn get_sound(&self, time: f32) -> f32 {
 		[
-			self.pulse1.get_sound(time),
-			// self.pulse2.get_sound(time),
-			// self.triangle.get_sound(time),
-			// self.noise.get_sound(time),
-			// self.dmc.get_sound(time),
+			// if self.status.pulse1_active() {
+			self.pulse1.get_sound(time), // } else {
+			                             //	0.
+			                             // },
+			                             // self.pulse2.get_sound(time),
+			                             // self.triangle.get_sound(time),
+			                             // self.noise.get_sound(time),
+			                             // self.dmc.get_sound(time),
 		]
 		.into_iter()
 		.sum()
@@ -168,7 +173,53 @@ impl Apu {
 }
 
 impl Pulse {
+	const DUTY_CYCLES: [[bool; 8]; 4] = [
+		[false, true, false, false, false, false, false, false],
+		[false, true, true, false, false, false, false, false],
+		[false, true, true, true, true, false, false, false],
+		[true, false, false, true, true, true, true, true],
+	];
+
 	fn get_sound(&self, time: f32) -> f32 {
-		(time * 440. * std::f32::consts::TAU).sin()
+		let period = ((self.timer_high() as u16) << 8) | (self.timer_low() as u16);
+		if period < 8 {
+			return 0.;
+		}
+
+		let mut effective_period = period;
+		if self.sweep_unit_enabled() && self.shift() > 0 {
+			let sweep_delta = period >> self.shift();
+			if self.negate() {
+				effective_period = effective_period.saturating_sub(sweep_delta);
+			} else {
+				effective_period = effective_period.saturating_add(sweep_delta);
+			}
+		}
+
+		if effective_period < 8 {
+			return 0.;
+		}
+
+		let apu_cycles = (time * NES_CPU_CLOCKSPEED_HZ / 2.) as usize;
+		let duty_index = (apu_cycles / (effective_period as usize + 1)) % 8;
+
+		eprintln!(
+			"DEBUG: period={}, effective={}, apu_cycles={}, duty_idx={}, duty_val={}",
+			period,
+			effective_period,
+			apu_cycles,
+			duty_index,
+			Self::DUTY_CYCLES[self.duty() as usize][duty_index] as i32
+		);
+
+		let duty_value = if Self::DUTY_CYCLES[self.duty() as usize][duty_index] {
+			1.
+		} else {
+			-1.
+		};
+
+		let volume = self.volume_envelope() as f32;
+
+		duty_value * volume / 15. / 2.
 	}
 }

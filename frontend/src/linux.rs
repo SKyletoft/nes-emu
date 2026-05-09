@@ -43,7 +43,8 @@ pub fn main() {
 			|spec| SoundSample {
 				apu_log: [Default::default()].into(),
 				actual_spec: spec,
-				time_in_seconds: 0.,
+				total_time_in_seconds: 0.,
+				last_second_in_seconds: 0.,
 			},
 		)
 		.unwrap();

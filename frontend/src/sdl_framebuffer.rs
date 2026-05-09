@@ -25,21 +25,24 @@ use crate::{
 pub struct SoundSample {
 	pub apu_log: VecDeque<Apu>,
 	pub actual_spec: AudioSpec,
-	pub time_in_seconds: f32,
+	pub last_second_in_seconds: f32,
+	pub total_time_in_seconds: f32,
 }
 
 impl AudioCallback for SoundSample {
 	type Channel = f32;
 
 	fn callback(&mut self, out: &mut [Self::Channel]) {
+		const TIME_PER_SCANLINE_IN_SECONDS: f32 = 1. / (341. * 262. * 60.);
+
 		emu_core::perf_stats::start_apu();
 
 		// Audio is expected to be about three frames behind. Slices of 0.046s ≈ 2.78 frames
 		debug_assert!(
-			self.time_in_seconds == 0. || self.apu_log.len() < 262 * 5,
+			self.total_time_in_seconds == 0. || self.apu_log.len() < 262 * 5,
 			"Audio is more than five frames behind! ({} scanlines, {} seconds elapsed) (convert if below to while?)",
 			self.apu_log.len(),
-			self.time_in_seconds,
+			self.total_time_in_seconds,
 		);
 
 		unsafe {
@@ -53,25 +56,24 @@ impl AudioCallback for SoundSample {
 
 		let time_per_sample = 1. / self.actual_spec.freq as f64;
 
-		const NES_CPU_CLOCKSPEED_HZ: f32 = 1_789_773.;
-		const TIME_PER_SCANLINE_IN_SECONDS: f32 = 1. / (341. * 262. * 60.);
-
-		let time_in_seconds_old = self.time_in_seconds;
+		let total_time_in_seconds_old = self.total_time_in_seconds;
 		for val in out.iter_mut() {
-			self.time_in_seconds += time_per_sample as f32;
-			let time_in_cycles = self.time_in_seconds * NES_CPU_CLOCKSPEED_HZ;
-			*val = self.apu_log[0].get_sound(time_in_cycles);
+			self.total_time_in_seconds += time_per_sample as f32;
+			self.last_second_in_seconds += time_per_sample as f32;
 
-			if self.time_in_seconds > TIME_PER_SCANLINE_IN_SECONDS && self.apu_log.len() > 1 {
+			*val = self.apu_log[0].get_sound(self.total_time_in_seconds);
+
+			if self.last_second_in_seconds > TIME_PER_SCANLINE_IN_SECONDS && self.apu_log.len() > 1
+			{
 				self.apu_log.pop_front();
-				self.time_in_seconds -= TIME_PER_SCANLINE_IN_SECONDS;
+				self.last_second_in_seconds -= TIME_PER_SCANLINE_IN_SECONDS;
 			}
 		}
 
 		// Redo the calculation in constant time instead of an iffy integral approximation
 		// to minimise floating point issues.
-		self.time_in_seconds =
-			time_in_seconds_old + self.actual_spec.samples as f32 / self.actual_spec.freq as f32;
+		self.total_time_in_seconds = total_time_in_seconds_old
+			+ self.actual_spec.samples as f32 / self.actual_spec.freq as f32;
 
 		emu_core::perf_stats::stop_apu();
 	}
