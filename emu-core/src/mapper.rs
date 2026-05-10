@@ -16,6 +16,10 @@ pub trait Mapper {
 	fn set_ppu(&mut self, adr: u16, ppu: &mut Ppu, val: u8) -> Option<()>;
 	fn get_palette_index(&self, half: bool, tile: u8, y: u8, x: u8) -> u8;
 
+	fn prg_rom(&self) -> &'static [u8] {
+		&[]
+	}
+
 	fn get_bg_visible(&self, tilemap_x: i16, tilemap_y: i16, ppu: &Ppu) -> bool
 	where
 		Self: Sized,

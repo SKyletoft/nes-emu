@@ -1,5 +1,5 @@
 use crate::{
-	apu::Apu,
+	apu::{Apu, ApuWrite},
 	controller::Controller,
 	cpu::{Cpu, P},
 	frame::NesFramebuffer,
@@ -27,6 +27,7 @@ pub struct State<M: Mapper> {
 pub struct StateTail<M: Mapper> {
 	pub ppu: Ppu,
 	pub apu: Apu,
+	pub apu_writes: Vec<ApuWrite>,
 	pub controller1: Controller,
 	pub controller2: Controller,
 	pub rom: M,
@@ -41,6 +42,7 @@ pub struct StateTail<M: Mapper> {
 
 impl<M: Mapper> State<M> {
 	pub fn new(rom: M) -> Self {
+		let prg_rom = rom.prg_rom();
 		let pc = u16::from_le_bytes([
 			rom.get_cpu(0xFFFC).expect("Cannot read reset vector"),
 			rom.get_cpu(0xFFFD).expect("Cannot read reset vector (2)"),
@@ -56,7 +58,8 @@ impl<M: Mapper> State<M> {
 		};
 
 		let ram = [0; 2048];
-		let apu = Apu::default();
+		let mut apu = Apu::default();
+		apu.prg_rom = prg_rom;
 		let ppu = Ppu::default();
 		let controller1 = Controller::default();
 		let controller2 = Controller::default();
@@ -76,6 +79,7 @@ impl<M: Mapper> State<M> {
 				ppu_bus,
 				cycles,
 				apu,
+				apu_writes: Vec::new(),
 				controller1,
 				controller2,
 				interrupt_requested,
@@ -196,16 +200,12 @@ impl<M: Mapper> State<M> {
 	}
 
 	pub fn write_apu(&mut self, adr: u16, val: u8) {
-		match adr {
-			0x4000..0x4014 => {
-				let raw_bytes: &mut [u8; 0x14] = self.rest.apu.registers_as_raw_bytes_mut();
-				raw_bytes[(adr & 0xFF) as usize] = val;
-			}
-			0x4014 => panic!("4014 is not an APU register"),
-			0x4015 => self.rest.apu.write_status(val),
-			0x4017 => self.rest.apu.frame_counter = val,
-			_ => {}
+		if adr == 0x4009 || adr == 0x400D {
+			return;
 		}
+		let write = map_apu_address(adr, val, self.rest.cycles);
+		self.rest.apu_writes.push(write);
+		self.rest.apu.write_register(&write);
 	}
 
 	pub(crate) fn mem_pure(&self, adr: u16) -> u8 {
@@ -214,9 +214,7 @@ impl<M: Mapper> State<M> {
 			0x0800..0x2000 => self.rest.ram[(adr % 2048) as usize],
 			0x2000..0x4000 => self.read_ppu_pure(adr),
 			0x4000..0x4015 => self.rest.cpu_bus,
-			0x4015 => {
-				(self.rest.apu.status.into_bits() & 0b1101_1111) | (self.rest.cpu_bus & 0b0010_0000)
-			}
+			0x4015 => self.rest.apu.peek_status() | (self.rest.cpu_bus & 0b0010_0000),
 			0x4016 => {
 				(self.rest.controller1.read_pure() & 0b0000_0111)
 					| (self.rest.cpu_bus & 0b1111_1000)
@@ -236,9 +234,7 @@ impl<M: Mapper> State<M> {
 			0x0800..0x2000 => self.rest.ram[(adr % 2048) as usize],
 			0x2000..0x4000 => self.read_ppu(adr),
 			0x4000..0x4015 => self.rest.cpu_bus,
-			0x4015 => {
-				(self.rest.apu.status.into_bits() & 0b1101_1111) | (self.rest.cpu_bus & 0b0010_0000)
-			}
+			0x4015 => self.rest.apu.read_status() | (self.rest.cpu_bus & 0b0010_0000),
 			0x4016 => {
 				(self.rest.controller1.read() & 0b0000_0111) | (self.rest.cpu_bus & 0b1111_1000)
 			}
@@ -658,4 +654,30 @@ pub fn calculate_background_colour(
 		return None;
 	}
 	Some(palettes[attribute_bits as usize][tile_palette_index as usize])
+}
+
+fn map_apu_address(adr: u16, val: u8, cycle: usize) -> ApuWrite {
+	match adr {
+		0x4000 => ApuWrite::Pulse1Reg0(val, cycle),
+		0x4001 => ApuWrite::Pulse1Reg1(val, cycle),
+		0x4002 => ApuWrite::Pulse1Reg2(val, cycle),
+		0x4003 => ApuWrite::Pulse1Reg3(val, cycle),
+		0x4004 => ApuWrite::Pulse2Reg0(val, cycle),
+		0x4005 => ApuWrite::Pulse2Reg1(val, cycle),
+		0x4006 => ApuWrite::Pulse2Reg2(val, cycle),
+		0x4007 => ApuWrite::Pulse2Reg3(val, cycle),
+		0x4008 => ApuWrite::TriangleReg0(val, cycle),
+		0x400A => ApuWrite::TriangleReg2(val, cycle),
+		0x400B => ApuWrite::TriangleReg3(val, cycle),
+		0x400C => ApuWrite::NoiseReg0(val, cycle),
+		0x400E => ApuWrite::NoiseReg2(val, cycle),
+		0x400F => ApuWrite::NoiseReg3(val, cycle),
+		0x4010 => ApuWrite::DmcReg0(val, cycle),
+		0x4011 => ApuWrite::DmcReg1(val, cycle),
+		0x4012 => ApuWrite::DmcReg2(val, cycle),
+		0x4013 => ApuWrite::DmcReg3(val, cycle),
+		0x4015 => ApuWrite::Status(val, cycle),
+		0x4017 => ApuWrite::FrameCounter(val, cycle),
+		_ => unreachable!("Invalid APU address: {:04X}", adr),
+	}
 }

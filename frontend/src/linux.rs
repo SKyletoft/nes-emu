@@ -1,7 +1,10 @@
-use std::time::{Duration, Instant};
+use std::{
+	collections::VecDeque,
+	time::{Duration, Instant},
+};
 
 use emu_core::{
-	controller::ControllerState, frame::NesFramebuffer, interpret::State, mapper::Mapper,
+	apu::Apu, controller::ControllerState, frame::NesFramebuffer, interpret::State, mapper::Mapper,
 	nrom::NROM256,
 };
 use sdl2::{audio::AudioSpecDesired, controller::Button, event::Event, keyboard::Keycode};
@@ -41,10 +44,10 @@ pub fn main() {
 				samples: None,
 			},
 			|spec| SoundSample {
-				apu_log: [Default::default()].into(),
+				apu: Apu::default(),
+				writes: VecDeque::new(),
 				actual_spec: spec,
-				total_time_in_seconds: 0.,
-				last_second_in_seconds: 0.,
+				current_cycle: 0,
 			},
 		)
 		.unwrap();
@@ -86,6 +89,12 @@ pub fn main() {
 		system_state.catch_up_ppu();
 	}
 
+	{
+		let prg_rom = system_state.rest.rom.prg_rom();
+		system_state.rest.apu.prg_rom = prg_rom;
+		let mut device = system_state.rest.rom.framebuffer.audio_device.lock();
+		device.apu.prg_rom = prg_rom;
+	}
 	system_state.rest.rom.framebuffer.audio_device.resume();
 	'running: loop {
 		let start_of_frame = Instant::now();
@@ -108,13 +117,12 @@ pub fn main() {
 			}
 			emu_core::perf_stats::stop_cpu();
 			system_state.catch_up_ppu();
-			emu_core::perf_stats::start_apu();
 			system_state
 				.rest
 				.rom
 				.framebuffer
-				.render_audio(&system_state.rest.apu);
-			emu_core::perf_stats::stop_apu();
+				.render_audio(&system_state.rest.apu_writes);
+			system_state.rest.apu_writes.clear();
 		}
 
 		let end_of_frame = Instant::now();

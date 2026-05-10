@@ -318,6 +318,11 @@ impl<const SIZE: usize, F: NesFramebuffer> Mapper for Nrom<SIZE, F> {
 	}
 
 	#[inline]
+	fn prg_rom(&self) -> &'static [u8] {
+		self.prg_rom.as_slice()
+	}
+
+	#[inline]
 	fn set_sprite(&mut self, ppu: &mut Ppu, new: Sprite, idx: usize) {
 		unsafe { unsafe_assert!(idx < ppu.oam.len()) };
 		let old = ppu.oam[idx];

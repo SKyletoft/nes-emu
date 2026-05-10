@@ -1,12 +1,12 @@
 use crate::{
-	apu::Apu,
+	apu::ApuWrite,
 	ppu::{NesColour, Palette, Ppu},
 };
 
 pub trait NesFramebuffer {
 	fn render(&mut self, ppu: &Ppu, lines: &[(i16, i16); 240]);
 
-	fn render_audio(&mut self, apu: &Apu);
+	fn render_audio(&mut self, writes: &[ApuWrite]);
 
 	fn update_tile(
 		&mut self,
@@ -39,7 +39,7 @@ pub struct NoFramebuffer;
 impl NesFramebuffer for NoFramebuffer {
 	fn render(&mut self, _: &Ppu, _: &[(i16, i16); 240]) {}
 
-	fn render_audio(&mut self, _: &Apu) {}
+	fn render_audio(&mut self, _: &[ApuWrite]) {}
 
 	fn update_tile(
 		&mut self,

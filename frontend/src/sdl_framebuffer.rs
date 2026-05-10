@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use emu_core::{
-	apu::Apu,
+	apu::{Apu, ApuWrite, NES_CPU_CLOCKSPEED_HZ},
 	frame::NesFramebuffer,
 	perf_stats,
 	ppu::{Colour, NesColour, Palette, Ppu},
@@ -23,57 +23,36 @@ use crate::{
 
 #[derive(Debug)]
 pub struct SoundSample {
-	pub apu_log: VecDeque<Apu>,
+	pub apu: Apu,
+	pub writes: VecDeque<ApuWrite>,
 	pub actual_spec: AudioSpec,
-	pub last_second_in_seconds: f32,
-	pub total_time_in_seconds: f32,
+	pub current_cycle: usize,
 }
 
 impl AudioCallback for SoundSample {
 	type Channel = f32;
 
 	fn callback(&mut self, out: &mut [Self::Channel]) {
-		const TIME_PER_SCANLINE_IN_SECONDS: f32 = 1. / (341. * 262. * 60.);
-
 		emu_core::perf_stats::start_apu();
-
-		// Audio is expected to be about three frames behind. Slices of 0.046s ≈ 2.78 frames
-		debug_assert!(
-			self.total_time_in_seconds == 0. || self.apu_log.len() < 262 * 5,
-			"Audio is more than five frames behind! ({} scanlines, {} seconds elapsed) (convert if below to while?)",
-			self.apu_log.len(),
-			self.total_time_in_seconds,
-		);
-
-		unsafe {
-			unsafe_assert!(
-				!self.apu_log.is_empty(),
-				"There must always be an APU in the apu log"
-			)
-		};
 
 		debug_assert_eq!(out.len(), self.actual_spec.samples as usize);
 
-		let time_per_sample = 1. / self.actual_spec.freq as f64;
+		let cpu_cycles_per_sample =
+			(NES_CPU_CLOCKSPEED_HZ as f64 / self.actual_spec.freq as f64) as usize;
 
-		let total_time_in_seconds_old = self.total_time_in_seconds;
 		for val in out.iter_mut() {
-			self.total_time_in_seconds += time_per_sample as f32;
-			self.last_second_in_seconds += time_per_sample as f32;
-
-			*val = self.apu_log[0].get_sound(self.total_time_in_seconds);
-
-			if self.last_second_in_seconds > TIME_PER_SCANLINE_IN_SECONDS && self.apu_log.len() > 1
-			{
-				self.apu_log.pop_front();
-				self.last_second_in_seconds -= TIME_PER_SCANLINE_IN_SECONDS;
+			while let Some(write) = self.writes.front() {
+				if write.cycle() <= self.current_cycle {
+					self.apu.write_register(write);
+					self.writes.pop_front();
+				} else {
+					break;
+				}
 			}
-		}
 
-		// Redo the calculation in constant time instead of an iffy integral approximation
-		// to minimise floating point issues.
-		self.total_time_in_seconds = total_time_in_seconds_old
-			+ self.actual_spec.samples as f32 / self.actual_spec.freq as f32;
+			*val = self.apu.get_sound(cpu_cycles_per_sample);
+			self.current_cycle += cpu_cycles_per_sample;
+		}
 
 		emu_core::perf_stats::stop_apu();
 	}
@@ -165,9 +144,9 @@ impl<'tc> SdlFramebuffer<'tc> {
 }
 
 impl NesFramebuffer for SdlFramebuffer<'_> {
-	fn render_audio(&mut self, apu: &Apu) {
+	fn render_audio(&mut self, writes: &[ApuWrite]) {
 		let mut device = self.audio_device.lock();
-		device.apu_log.push_back(*apu);
+		device.writes.extend(writes.iter().copied());
 	}
 
 	fn update_tile(

@@ -10,11 +10,10 @@ use citro2d::{
 };
 use ctru::prelude::*;
 use emu_core::{
-	apu::Apu,
+	apu::ApuWrite,
 	frame::NesFramebuffer,
-	perf_stats,
-	ppu::{Colour, NesColour, Palette, Ppu},
-	unsafe_assert,
+	ppu::{Colour, NesColour, Palette},
+	unsafe_assert, unsafe_unreachable,
 };
 use lru_cache::Lru;
 
@@ -97,7 +96,7 @@ impl<'a> Citro2DFramebuffer<'a> {
 }
 
 impl NesFramebuffer for Citro2DFramebuffer<'_> {
-	fn render_audio(&mut self, _apu: &Apu) {
+	fn render_audio(&mut self, _writes: &[ApuWrite]) {
 		todo!()
 	}
 
