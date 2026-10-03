@@ -21,5 +21,15 @@ sdl2 = { git = "https://github.com/SKyletoft/rust-sdl2", features = [ "use-pkgco
 ctru-rs = { git = "https://github.com/rust3ds/ctru-rs" }
 citro2d = { path = "../citro3d-rs/citro2d" }
 
+[target.'cfg(target_arch = "xtensa")'.dependencies]
+esp-hal = { version = "1.2", features = ["esp32s3", "unstable"] }
+esp-bootloader-esp-idf = { version = "0.6", features = ["esp32s3"] }
+esp-println = { version = "0.18", features = ["esp32s3"] }
+embedded-hal-bus = "0.3"
+embedded-hal = "1"
+embedded-graphics = "0.8"
+mipidsi = "0.10"
+static_cell = "2.1"
+
 [package.metadata.cargo-3ds]
 romfs_dir = "romfs"
