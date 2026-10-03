@@ -30,6 +30,7 @@ pub fn main() {
 
 	let mut canvas = window
 		.into_canvas()
+		.accelerated()
 		.build()
 		.map_err(|e| e.to_string())
 		.unwrap();
