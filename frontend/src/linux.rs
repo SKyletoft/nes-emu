@@ -4,7 +4,7 @@ use std::{
 };
 
 use emu_core::{
-	apu::Apu, controller::ControllerState, frame::NesFramebuffer, interpret::State, mapper::Mapper,
+	apu::Apu, controller::ControllerState, interpret::State, mapper::Mapper,
 	nrom::NROM256,
 };
 use sdl2::{audio::AudioSpecDesired, controller::Button, event::Event, keyboard::Keycode};
