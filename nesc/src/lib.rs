@@ -173,7 +173,7 @@ fn parse_ines(buffer: &[u8]) -> (Mappers, proc_macro2::TokenStream) {
 			let lit2 = Literal::byte_string(parsed_file.prg_rom);
 			let lit3 = Literal::byte_string(parsed_file.chr_rom);
 			let lit4 = Literal::byte_string(unsafe {
-				std::mem::transmute::<&[[[[u8; 8]; 8]; 256]; 2], &[u8; 32768]>(
+				core::mem::transmute::<&[[[[u8; 8]; 8]; 256]; 2], &[u8; 32768]>(
 					parsed_file.parsed_graphics,
 				)
 			});
@@ -184,7 +184,7 @@ fn parse_ines(buffer: &[u8]) -> (Mappers, proc_macro2::TokenStream) {
 					prg_rom: &*#lit2,
 					chr_rom: &*#lit3,
 					parsed_graphics: &unsafe {
-						std::mem::transmute::<[u8; 32768], [[[[u8; 8]; 8]; 256]; 2]>(*#lit4)
+						core::mem::transmute::<[u8; 32768], [[[[u8; 8]; 8]; 256]; 2]>(*#lit4)
 					},
 					hitbox_background: [[[false;_];_];_],
 					hitbox_sprite_0: [false; _],
@@ -198,7 +198,7 @@ fn parse_ines(buffer: &[u8]) -> (Mappers, proc_macro2::TokenStream) {
 			let lit2 = Literal::byte_string(parsed_file.prg_rom);
 			let lit3 = Literal::byte_string(parsed_file.chr_rom);
 			let lit4 = Literal::byte_string(unsafe {
-				std::mem::transmute::<&[[[[u8; 8]; 8]; 256]; 2], &[u8; 32768]>(
+				core::mem::transmute::<&[[[[u8; 8]; 8]; 256]; 2], &[u8; 32768]>(
 					parsed_file.parsed_graphics,
 				)
 			});
@@ -209,7 +209,7 @@ fn parse_ines(buffer: &[u8]) -> (Mappers, proc_macro2::TokenStream) {
 					prg_rom: &*#lit2,
 					chr_rom: &*#lit3,
 					parsed_graphics: &unsafe {
-						std::mem::transmute::<[u8; 32768], [[[[u8; 8]; 8]; 256]; 2]>(*#lit4)
+						core::mem::transmute::<[u8; 32768], [[[[u8; 8]; 8]; 256]; 2]>(*#lit4)
 					},
 					hitbox_background: [[[false;_];_];_],
 					hitbox_sprite_0: [false; _],

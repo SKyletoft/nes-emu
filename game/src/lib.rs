@@ -1,3 +1,5 @@
+#![no_std]
+
 use nesc::compile_nes_to_rust;
 
 compile_nes_to_rust!("../non-free/SMB1.nes");
