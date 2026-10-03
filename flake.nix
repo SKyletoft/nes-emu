@@ -7,9 +7,13 @@
 			url = "github:oxalica/rust-overlay";
 			inputs.nixpkgs.follows = "nixpkgs";
 		};
+		rust-esp32 = {
+			url = "github:SKyletoft/rust-esp32-flake";
+			inputs.nixpkgs.follows = "nixpkgs";
+		};
 	};
 
-	outputs = { self, nixpkgs, devkitnix, rust-overlay, flake-utils }:
+	outputs = { self, nixpkgs, devkitnix, rust-overlay, flake-utils, rust-esp32 }:
 		flake-utils.lib.eachDefaultSystem(system:
 			let
 				pkgs = import nixpkgs {
@@ -21,9 +25,11 @@
 					targets = [ "x86_64-unknown-linux-gnu" ];
 				});
 				devkitARM = devkitnix.packages.${system}.devkitARM;
+				cargo-esp = rust-esp32.packages.${system}.cargo-esp;
 				shellInputs = with pkgs; [
 					rustToolchain
 					cargo-3ds
+					cargo-esp
 					cargo-expand
 					cargo-show-asm
 					cargo-flamegraph
