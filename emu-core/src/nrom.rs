@@ -1,7 +1,11 @@
+#[cfg(feature = "std")]
 use crate::{
 	error::{EmuError, Result},
+	mapper::PatternAddressBuilder,
+};
+use crate::{
 	frame::{NesFramebuffer, NoFramebuffer},
-	mapper::{Mapper, PatternAddressBuilder},
+	mapper::Mapper,
 	ppu::{Ppu, Sprite, VRAM_MASK},
 	unsafe_assert, unsafe_unreachable,
 };
