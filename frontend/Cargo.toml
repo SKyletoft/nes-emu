@@ -12,7 +12,7 @@ game = { path = "../game", optional = true }
 lru-cache = { path = "../lru-cache" }
 
 # Desktop
-[target.'cfg(all(not(target_os = "horizon"), not(target_arch = "xtensa")))'.dependencies]
+[target.'cfg(target_os = "linux")'.dependencies]
 # sdl2 = { version = "0.38", features = [ "use-pkgconfig" ] }
 sdl2 = { git = "https://github.com/SKyletoft/rust-sdl2", features = [ "use-pkgconfig" ] } # Mirroring fix from master, use release when 0.39 or 0.38.1
 emu-core = { path = "../emu-core", features = [ "std" ] }
@@ -24,7 +24,7 @@ citro2d = { path = "../citro3d-rs/citro2d" }
 emu-core = { path = "../emu-core", features = [ "std" ] }
 
 # Badge
-[target.'cfg(target_arch = "xtensa")'.dependencies]
+[target.'cfg(target_os = "none")'.dependencies]
 emu-core = { path = "../emu-core" }
 esp-hal = { version = "1.2", features = ["esp32s3", "unstable"] }
 esp-bootloader-esp-idf = { version = "0.6", features = ["esp32s3"] }

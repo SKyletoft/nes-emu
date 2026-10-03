@@ -1,16 +1,13 @@
 #![feature(const_array, const_trait_impl)]
-#![cfg_attr(target_arch = "xtensa", no_std)]
-#![cfg_attr(target_arch = "xtensa", no_main)]
+#![cfg_attr(target_os = "none", no_std)]
+#![cfg_attr(target_os = "none", no_main)]
 
 pub mod debug_mode;
 pub mod helpers;
 
-#[cfg(not(target_arch = "xtensa"))]
-pub mod badge;
-
-#[cfg(not(target_os = "horizon"))]
+#[cfg(target_os = "linux")]
 pub mod linux;
-#[cfg(not(target_os = "horizon"))]
+#[cfg(target_os = "linux")]
 pub mod sdl_framebuffer;
 
 #[cfg(target_os = "horizon")]
@@ -18,14 +15,14 @@ pub mod citro2d_framebuffer;
 #[cfg(target_os = "horizon")]
 pub mod console;
 
-#[cfg_attr(target_arch = "xtensa", esp_hal::main)]
+#[cfg(target_os = "none")]
+pub mod badge;
+
+#[cfg_attr(target_os = "none", expect(dead_code))]
 fn main() {
-	#[cfg(not(target_os = "horizon"))]
+	#[cfg(target_os = "linux")]
 	linux::main();
 
 	#[cfg(target_os = "horizon")]
 	console::main();
-
-	#[cfg(target_arch = "xtensa")]
-	badge::main();
 }

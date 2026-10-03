@@ -40,6 +40,7 @@ pub struct Nrom<const SIZE: usize, F: NesFramebuffer = NoFramebuffer> {
 }
 
 impl<const SIZE: usize> Nrom<SIZE> {
+	#[cfg(feature = "std")]
 	pub fn parse_ines(buffer: &[u8]) -> Result<Self> {
 		let [
 			b'N',

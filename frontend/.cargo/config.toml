@@ -3,3 +3,12 @@ runner = "mangohud"
 
 [target.armv6k-nintendo-3ds]
 runner = "azahar"
+
+[target.xtensa-esp32s3-none-elf]
+runner = "espflash flash --monitor"
+linker = "ldproxy"
+rustflags = [
+	"-C", "link-arg=-Tlinkall.x",
+	"-C", "force-frame-pointers",
+	"-C", "link-arg=--ldproxy-linker=xtensa-esp32s3-elf-gcc",
+]
