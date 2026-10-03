@@ -27,7 +27,7 @@ pub struct State<'a, M: Mapper> {
 pub struct StateTail<M: Mapper> {
 	pub ppu: Ppu,
 	pub apu: Apu,
-	pub apu_writes: Vec<ApuWrite>,
+	// pub apu_writes: Vec<ApuWrite>,
 	pub controller1: Controller,
 	pub controller2: Controller,
 	pub rom: M,
@@ -86,7 +86,7 @@ impl<'a, M: Mapper> State<'a, M> {
 			ppu_bus,
 			cycles,
 			apu,
-			apu_writes: Vec::new(),
+			// apu_writes: Vec::new(),
 			controller1,
 			controller2,
 			interrupt_requested,
@@ -210,7 +210,7 @@ impl<'a, M: Mapper> State<'a, M> {
 			return;
 		}
 		let write = map_apu_address(adr, val, self.rest.cycles);
-		self.rest.apu_writes.push(write);
+		// self.rest.apu_writes.push(write);
 		self.rest.apu.write_register(&write);
 	}
 

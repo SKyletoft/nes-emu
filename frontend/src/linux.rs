@@ -119,12 +119,12 @@ pub fn main() {
 			}
 			emu_core::perf_stats::stop_cpu();
 			system_state.catch_up_ppu();
-			system_state
-				.rest
-				.rom
-				.framebuffer
-				.render_audio(&system_state.rest.apu_writes);
-			system_state.rest.apu_writes.clear();
+			// system_state
+			//	.rest
+			//	.rom
+			//	.framebuffer
+			//	.render_audio(&system_state.rest.apu_writes);
+			// system_state.rest.apu_writes.clear();
 		}
 
 		let end_of_frame = Instant::now();
