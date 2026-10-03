@@ -1,6 +1,5 @@
-use anyhow::{Result, bail};
-
 use crate::{
+	error::{EmuError, Result},
 	frame::{NesFramebuffer, NoFramebuffer},
 	mapper::{Mapper, PatternAddressBuilder},
 	ppu::{Ppu, Sprite, VRAM_MASK},
@@ -59,28 +58,41 @@ impl<const SIZE: usize> Nrom<SIZE> {
 			_,
 			_,
 			_,
-		] = &buffer[0..16]
+		] = *buffer.first_chunk::<16>().ok_or(EmuError::Truncated {
+			expected: 16,
+			found: buffer.len(),
+		})?
 		else {
-			bail!("Missing header!");
+			return Err(EmuError::MissingHeader);
 		};
 
 		let trainer_present = flags_6 & (1 << 2) != 0;
 		assert!(!trainer_present); // Not really, but please error early when I hit a game with one.
 		let trainer_offset = if trainer_present { 512 } else { 0 };
 		let prg_offset = 16 + trainer_offset;
-		let chr_offset = prg_offset + (*prg_size as usize * 16 * 1024);
-		let mapper_type = (*flags_7 & 0xF0) | *flags_6 >> 4;
+		let chr_offset = prg_offset + (prg_size as usize * 16 * 1024);
+		let mapper_type = (flags_7 & 0xF0) | flags_6 >> 4;
 
 		let expected_prg_banks = (SIZE / (16 * 1024)) as u8;
 
 		match mapper_type {
-			0 if *prg_size == expected_prg_banks => {
+			0 if prg_size == expected_prg_banks => {
 				let mut prg_rom = Box::new([0; SIZE]);
 				let mut chr_rom = Box::new([0; 8 * 1024]);
 				let mut parsed_graphics = Box::new([[[[0; 8]; 8]; 256]; 2]);
 
-				prg_rom.copy_from_slice(&buffer[prg_offset..prg_offset + SIZE]);
-				chr_rom.copy_from_slice(&buffer[chr_offset..chr_offset + 8 * 1024]);
+				prg_rom.copy_from_slice(buffer.get(prg_offset..prg_offset + SIZE).ok_or(
+					EmuError::Truncated {
+						expected: prg_offset + SIZE,
+						found: buffer.len(),
+					},
+				)?);
+				chr_rom.copy_from_slice(buffer.get(chr_offset..chr_offset + 8 * 1024).ok_or(
+					EmuError::Truncated {
+						expected: chr_offset + 8 * 1024,
+						found: buffer.len(),
+					},
+				)?);
 
 				for half in 0..2 {
 					for tile in 0..=255 {
@@ -118,8 +130,13 @@ impl<const SIZE: usize> Nrom<SIZE> {
 					hitbox_sprite_0: [false; _],
 				})
 			}
-			0 => bail!("Wrong amount of prg_roms for an NROM"),
-			_ => bail!("Unknown mapper type {mapper_type}"),
+			0 => Err(EmuError::WrongPrgSize {
+				found: prg_size,
+				expected: expected_prg_banks,
+			}),
+			_ => Err(EmuError::UnknownMapper {
+				mapper: mapper_type,
+			}),
 		}
 	}
 

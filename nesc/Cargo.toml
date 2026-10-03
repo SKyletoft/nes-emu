@@ -11,5 +11,4 @@ proc-macro2 = "1"
 quote = "1"
 syn = { version = "2", features = ["full"] }
 emu-core = { path = "../emu-core" }
-anyhow = "1"
 tempfile = "3"

@@ -1,6 +1,4 @@
-use anyhow::{Result, bail};
-
-use crate::{mapper::Mapper, ppu::Ppu};
+use crate::{error::{EmuError, Result}, mapper::Mapper, ppu::Ppu};
 
 #[derive(Debug, Clone)]
 pub struct MMC3 {
@@ -45,39 +43,29 @@ pub struct Mmc3Registers {
 
 impl MMC3 {
 	pub fn parse_ines(buffer: &[u8]) -> Result<Box<Self>> {
-		let [
-			b'N',
-			b'E',
-			b'S',
-			0x1A,
-			prg_size,
-			_,
-			flags_6,
-			flags_7,
-			_,
-			_,
-			_,
-			_,
-			_,
-			_,
-			_,
-			_,
-		] = &buffer[0..16]
+		let [b'N', b'E', b'S', 0x1A, prg_size, _, flags_6, flags_7, _, _, _, _, _, _, _, _] =
+			*buffer.first_chunk::<16>().ok_or(EmuError::Truncated {
+				expected: 16,
+				found: buffer.len(),
+			})?
 		else {
-			bail!("Missing header!");
+			return Err(EmuError::MissingHeader);
 		};
 
 		let trainer_present = flags_6 & (1 << 2) != 0;
 		assert!(!trainer_present); // Not really, but please error early when I hit a game with one.
 		let trainer_offset = if trainer_present { 512 } else { 0 };
 		let prg_offset = 16 + trainer_offset;
-		let _chr_offset = prg_offset + (*prg_size as usize * 16 * 1024);
-		let mapper_type = (*flags_7 & 0xF0) | *flags_6 >> 4;
+		let _chr_offset = prg_offset + (prg_size as usize * 16 * 1024);
+		let mapper_type = (flags_7 & 0xF0) | flags_6 >> 4;
 
 		match mapper_type {
 			4 | 118 | 119 => {
-				if *prg_size != 16 {
-					bail!("Wrong amount of prg_roms for an MMC3 mapper");
+				if prg_size != 16 {
+					return Err(EmuError::WrongPrgSize {
+						found: prg_size,
+						expected: 16,
+					});
 				}
 
 				let mut mapper = Box::new(MMC3 {
@@ -90,10 +78,17 @@ impl MMC3 {
 					registers: Mmc3Registers::default(),
 				});
 
+				let prg_len = prg_size as usize * 16 * 1024;
+				let prg_src = buffer.get(prg_offset..prg_offset + prg_len).ok_or(
+					EmuError::Truncated {
+						expected: prg_offset + prg_len,
+						found: buffer.len(),
+					},
+				)?;
 				let MMC3 { prg_roms, .. } = &mut *mapper;
-				for (src, dst) in buffer[prg_offset..]
+				for (src, dst) in prg_src
 					.chunks(16 * 1024)
-					.take(*prg_size as _)
+					.take(prg_size as _)
 					.flat_map(|slice_16| slice_16.chunks(8 * 1024))
 					.zip(prg_roms.iter_mut())
 				{
@@ -102,7 +97,7 @@ impl MMC3 {
 
 				Ok(mapper)
 			}
-			_ => bail!("Unknown mapper type {mapper_type}"),
+			_ => Err(EmuError::UnknownMapper { mapper: mapper_type }),
 		}
 	}
 }

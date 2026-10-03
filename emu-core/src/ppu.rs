@@ -1,11 +1,10 @@
 #![allow(dead_code, unused)]
 
-use anyhow::bail;
 use bitfields::bitfield;
 use bytemuck::{Pod, Zeroable};
 use derive_more::derive::Into;
 
-use crate::{const_assert, const_assert_eq};
+use crate::{const_assert, const_assert_eq, error::EmuError};
 
 pub const VRAM_MASK: u16 = (1 << 14) - 1;
 
@@ -352,13 +351,13 @@ const _: () = {
 };
 
 impl TryFrom<u8> for NesColour {
-	type Error = anyhow::Error;
+	type Error = EmuError;
 
 	fn try_from(value: u8) -> Result<Self, Self::Error> {
 		NesColour::PALETTE
 			.get(value as usize)
 			.copied()
-			.ok_or_else(|| anyhow::anyhow!("Invalid colour id: 0x{:X}", value))
+			.ok_or(EmuError::InvalidColour { value })
 	}
 }
 

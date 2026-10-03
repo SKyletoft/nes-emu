@@ -1,6 +1,7 @@
 pub mod apu;
 pub mod controller;
 pub mod cpu;
+pub mod error;
 pub mod evaluate_instruction;
 pub mod frame;
 pub mod inst;

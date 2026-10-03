@@ -2,8 +2,6 @@
 
 use std::fmt::{self, Display};
 
-use anyhow::{Result, bail};
-
 use crate::{
 	const_assert_eq, cpu::Cpu, evaluate_instruction::*, frame::NesFramebuffer, interpret::State,
 	mapper::Mapper,

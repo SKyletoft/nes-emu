@@ -1,5 +1,4 @@
 #![feature(const_array, const_trait_impl)]
-
 #![cfg_attr(target_arch = "xtensa", no_std)]
 #![cfg_attr(target_arch = "xtensa", no_main)]
 
