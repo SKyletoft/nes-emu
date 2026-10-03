@@ -72,7 +72,7 @@ impl Ppu {
 	}
 
 	pub fn raw_palettes(&self) -> &[u8; 64] {
-		unsafe { std::mem::transmute::<&[Palette; 8], &[u8; 64]>(&self.palettes) }
+		unsafe { core::mem::transmute::<&[Palette; 8], &[u8; 64]>(&self.palettes) }
 	}
 
 	pub fn actual_pos(&self) -> (i16, i16) {
@@ -346,8 +346,8 @@ impl NesColour {
 }
 
 const _: () = {
-	assert!(std::mem::size_of::<Option<NesColour>>() == std::mem::size_of::<NesColour>());
-	assert!(std::mem::size_of::<Option<NesColour>>() == 1);
+	assert!(core::mem::size_of::<Option<NesColour>>() == core::mem::size_of::<NesColour>());
+	assert!(core::mem::size_of::<Option<NesColour>>() == 1);
 };
 
 impl TryFrom<u8> for NesColour {

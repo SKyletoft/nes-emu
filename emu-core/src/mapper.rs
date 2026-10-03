@@ -41,8 +41,8 @@ pub trait Mapper {
 		let calc =
 			|y, x| 0 != self.get_palette_index(ppu.ctrl.sprite_pattern_table(), sprite.tile, y, x);
 
-		let mut colour_data = std::array::from_fn::<_, 8, _>(move |y| {
-			std::array::from_fn::<_, 8, _>(|x| calc(y as u8, x as u8))
+		let mut colour_data = core::array::from_fn::<_, 8, _>(move |y| {
+			core::array::from_fn::<_, 8, _>(|x| calc(y as u8, x as u8))
 		});
 
 		if sprite.attr.flip_h() {
@@ -52,7 +52,7 @@ pub trait Mapper {
 			colour_data.reverse();
 		}
 
-		let colour_data = unsafe { std::mem::transmute::<[[bool; 8]; 8], [bool; 64]>(colour_data) };
+		let colour_data = unsafe { core::mem::transmute::<[[bool; 8]; 8], [bool; 64]>(colour_data) };
 		colour_data.into_iter()
 	}
 

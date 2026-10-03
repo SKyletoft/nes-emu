@@ -1,5 +1,6 @@
 #![allow(unused, clippy::upper_case_acronyms)]
 
+#[cfg(feature = "std")]
 use std::fmt::{self, Display};
 
 use crate::{
@@ -14,18 +15,21 @@ pub struct UnalignedU16 {
 	hi: u8,
 }
 
+#[cfg(feature = "std")]
 impl Display for UnalignedU16 {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		fmt::Display::fmt(&u16::from(*self), f)
 	}
 }
 
+#[cfg(feature = "std")]
 impl fmt::UpperHex for UnalignedU16 {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		fmt::UpperHex::fmt(&u16::from(*self), f)
 	}
 }
 
+#[cfg(feature = "std")]
 impl std::fmt::Debug for UnalignedU16 {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		fmt::Debug::fmt(&u16::from(*self), f)
@@ -59,7 +63,8 @@ impl UnalignedU16 {
 
 // Auto-generated NES CPU instruction set
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum Inst {
 	AdcAbsolute(UnalignedU16) = 0x6D,
 	AdcAbsoluteX(UnalignedU16) = 0x7D,
@@ -327,7 +332,7 @@ impl From<[u8; 3]> for Inst {
 		// This could be a huge match statement, but I checked that LLVM could optimise that to the
 		// same thing and then went with the more readable version:
 		// https://godbolt.org/z/eM74c6EEs
-		unsafe { std::mem::transmute::<[u8; size_of::<Inst>()], Inst>(code) }
+		unsafe { core::mem::transmute::<[u8; size_of::<Inst>()], Inst>(code) }
 	}
 }
 
@@ -878,6 +883,7 @@ impl Inst {
 		}
 	}
 
+	#[cfg(feature = "std")]
 	pub fn instruction_representation(&self) -> String {
 		match self {
 			Inst::AdcAbsolute(a) => format!("adc_absolute(state, {a});\n"),

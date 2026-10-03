@@ -6,6 +6,9 @@ edition = "2024"
 [lib]
 crate-type = ["lib", "staticlib"]
 
+[features]
+std = []
+
 [dependencies]
 bitfields = "1.0"
 bytemuck = { version = "1.23", features = [ "derive" ] }

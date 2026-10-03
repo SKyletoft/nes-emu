@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
 pub mod apu;
 pub mod controller;
 pub mod cpu;
@@ -9,7 +11,13 @@ pub mod interpret;
 pub mod mapper;
 // pub mod mmc3;
 pub mod nrom;
+#[cfg(feature = "std")]
 pub mod perf_stats;
+#[cfg(not(feature = "std"))]
+pub mod perf_stats_mock;
+#[cfg(not(feature = "std"))]
+pub use perf_stats_mock as perf_stats;
+
 pub mod ppu;
 
 #[cfg(test)]

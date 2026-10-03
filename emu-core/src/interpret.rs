@@ -386,6 +386,7 @@ impl<'a, M: Mapper> State<'a, M> {
 		unsafe { unsafe_assert!(self.rest.ppu_runahead > current_runahead) };
 	}
 
+	#[cfg(feature = "std")]
 	pub fn display(&self) -> String {
 		use std::fmt::Write;
 
@@ -490,8 +491,8 @@ impl<'a, M: Mapper> State<'a, M> {
 }
 
 impl<'a, M: Mapper> State<'a, M> {
-	const RENDER_RANGE: std::ops::Range<i16> = 0..256i16;
-	const WORKING_RANGE: std::ops::Range<i16> = 0..341;
+	const RENDER_RANGE: core::ops::Range<i16> = 0..256i16;
+	const WORKING_RANGE: core::ops::Range<i16> = 0..341;
 
 	pub fn catch_up_ppu(&mut self) {
 		perf_stats::start_ppu();
