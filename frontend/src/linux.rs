@@ -72,7 +72,8 @@ pub fn main() {
 		.unwrap()
 		.with_framebuffer(framebuffer);
 
-	let mut system_state = State::new(game);
+	let mut system_core = State::new(game);
+	let mut system_state = system_core.head();
 
 	const FRAME_DURATION: Duration = Duration::from_nanos(1_000_000_000 / 60);
 

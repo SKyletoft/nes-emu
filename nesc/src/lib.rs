@@ -115,7 +115,7 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 
 		starting_points.insert(pc);
 		fns.push(quote! {
-			fn #ident<M: emu_core::mapper::Mapper>(mut state: State<M>) -> State<M> {
+			fn #ident<'a, M: emu_core::mapper::Mapper>(mut state: State<'a, M>) -> State<'a, M> {
 				#(#insts)*
 				state
 			}
@@ -126,9 +126,9 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 		let id = syn::Ident::new("id", proc_macro2::Span::call_site());
 		if starting_points.contains(&i) {
 			let ident = syn::Ident::new(&format!("b_{i:04x}"), proc_macro2::Span::call_site());
-			branches.push(quote! { #i => #ident, });
+			branches.push(quote! { #i => #ident as fn(state: State<'a, M>) -> State<'a, M>, });
 		} else {
-			branches.push(quote! { #i => #id, });
+			branches.push(quote! { #i => #id as fn(state: State<'a, M>) -> State<'a, M>, });
 		}
 	}
 	quote! {
@@ -137,16 +137,16 @@ pub fn compile_nes_to_rust(input: TokenStream) -> TokenStream {
 
 		#(#fns)*
 
-		fn id<T>(x: T) -> T { x }
+		fn id<'a, M: emu_core::mapper::Mapper>(state: State<'a, M>) -> State<'a, M> { state }
 
-		fn b_ffff<M: emu_core::mapper::Mapper>(state: State<M>) -> State<M> { state }
+		fn b_ffff<'a, M: emu_core::mapper::Mapper>(state: State<'a, M>) -> State<'a, M> { state }
 
-		pub fn nes_game<M: emu_core::mapper::Mapper>(state: &mut State<M>) {
+		pub fn nes_game<'a, M: emu_core::mapper::Mapper>(state: &mut State<'a, M>) {
 			unsafe {
-				let mut local: State<M> = (&raw mut *state).read();
+				let mut local: State<'a, M> = (&raw mut *state).read();
 				(&raw mut *state).write(
 					match local.cpu.pc {
-						0..0x8000 => id,
+						0..0x8000 => id as fn(state: State<'a, M>) -> State<'a, M>,
 						#(#branches)*
 					}(local)
 				)

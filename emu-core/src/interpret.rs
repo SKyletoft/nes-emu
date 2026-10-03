@@ -19,9 +19,9 @@ pub enum InterruptTiming {
 	Ready,
 }
 
-pub struct State<M: Mapper> {
+pub struct State<'a, M: Mapper> {
 	pub cpu: Cpu,
-	pub rest: Box<StateTail<M>>,
+	pub rest: &'a mut StateTail<M>,
 }
 
 pub struct StateTail<M: Mapper> {
@@ -40,23 +40,32 @@ pub struct StateTail<M: Mapper> {
 	pub lines: [(i16, i16); 240],
 }
 
-impl<M: Mapper> State<M> {
-	pub fn new(rom: M) -> Self {
-		let prg_rom = rom.prg_rom();
+impl<M: Mapper> StateTail<M> {
+	pub fn head<'a>(&'a mut self) -> State<'a, M> {
 		let pc = u16::from_le_bytes([
-			rom.get_cpu(0xFFFC).expect("Cannot read reset vector"),
-			rom.get_cpu(0xFFFD).expect("Cannot read reset vector (2)"),
+			self.rom.get_cpu(0xFFFC).expect("Cannot read reset vector"),
+			self.rom
+				.get_cpu(0xFFFD)
+				.expect("Cannot read reset vector (2)"),
 		]);
 
-		let cpu = Cpu {
-			a: 0,
-			x: 0,
-			y: 0,
-			s: 0xFD,
-			p: P::new(),
-			pc,
-		};
+		State {
+			cpu: Cpu {
+				a: 0,
+				x: 0,
+				y: 0,
+				s: 0xFD,
+				p: P::new(),
+				pc,
+			},
+			rest: self,
+		}
+	}
+}
 
+impl<'a, M: Mapper> State<'a, M> {
+	pub fn new(rom: M) -> StateTail<M> {
+		let prg_rom = rom.prg_rom();
 		let ram = [0; 2048];
 		let mut apu = Apu::default();
 		apu.prg_rom = prg_rom;
@@ -69,23 +78,20 @@ impl<M: Mapper> State<M> {
 		let ppu_runahead = 0;
 		let interrupt_requested = InterruptTiming::Clear;
 
-		Self {
-			cpu,
-			rest: Box::new(StateTail {
-				ppu,
-				rom,
-				ram,
-				cpu_bus,
-				ppu_bus,
-				cycles,
-				apu,
-				apu_writes: Vec::new(),
-				controller1,
-				controller2,
-				interrupt_requested,
-				ppu_runahead,
-				lines: [(0, 0); _],
-			}),
+		StateTail {
+			ppu,
+			rom,
+			ram,
+			cpu_bus,
+			ppu_bus,
+			cycles,
+			apu,
+			apu_writes: Vec::new(),
+			controller1,
+			controller2,
+			interrupt_requested,
+			ppu_runahead,
+			lines: [(0, 0); _],
 		}
 	}
 
@@ -483,7 +489,7 @@ impl<M: Mapper> State<M> {
 	}
 }
 
-impl<M: Mapper> State<M> {
+impl<'a, M: Mapper> State<'a, M> {
 	const RENDER_RANGE: std::ops::Range<i16> = 0..256i16;
 	const WORKING_RANGE: std::ops::Range<i16> = 0..341;
 
