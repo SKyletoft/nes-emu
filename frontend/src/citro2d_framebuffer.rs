@@ -12,7 +12,8 @@ use ctru::prelude::*;
 use emu_core::{
 	apu::ApuWrite,
 	frame::NesFramebuffer,
-	ppu::{Colour, NesColour, Palette},
+	perf_stats,
+	ppu::{Colour, NesColour, Palette, Ppu},
 	unsafe_assert, unsafe_unreachable,
 };
 use lru_cache::Lru;
