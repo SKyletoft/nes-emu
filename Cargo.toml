@@ -24,7 +24,7 @@ opt-level = 1
 opt-level = 3
 
 [profile.release]
-opt-level = "z"
+opt-level = "s"
 codegen-units = 1
 lto = "fat"
 overflow-checks = false
